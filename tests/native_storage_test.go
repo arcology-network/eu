@@ -75,7 +75,7 @@ func TestGasDebitInFailedTx(t *testing.T) {
 // 	db := curstorage.NewTransientDB(persistentDB)
 
 // 	url := concurrenturl.NewConcurrentUrl(db)
-// 	api := ccapi.NewAPI(url)
+// 	api := eu.NewAPI(url)
 
 // 	statedb := cceueth.NewImplStateDB(api)
 // 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -149,7 +149,7 @@ func TestGasDebitInFailedTx(t *testing.T) {
 // 	db := curstorage.NewTransientDB(persistentDB)
 
 // 	url := concurrenturl.NewConcurrentUrl(db)
-// 	api := ccapi.NewAPI(url)
+// 	api := eu.NewAPI(url)
 // 	statedb := cceueth.NewImplStateDB(api)
 // 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
 // 	statedb.CreateAccount(adaptorcommon.Coinbase)

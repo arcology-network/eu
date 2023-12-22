@@ -9,7 +9,7 @@ import (
 
 	commontypes "github.com/arcology-network/common-lib/types"
 	concurrenturl "github.com/arcology-network/concurrenturl"
-	eu "github.com/arcology-network/eu"
+	"github.com/arcology-network/eu/execution"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	"github.com/arcology-network/vm-adaptor/compiler"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -18,7 +18,7 @@ import (
 )
 
 func TestBaseContainer(t *testing.T) {
-	executor, config, db, url, _ := NewTestEU()
+	eu, config, db, url, _ := NewTestEU()
 
 	// ================================== Compile the contract ==================================
 	currentPath, _ := os.Getwd()
@@ -30,7 +30,7 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	// ================================== Deploy the contract ==================================
-	msg := core.NewMessage(adaptorcommon.Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true)
+	msg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true)
 	stdMsg := &adaptorcommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
@@ -38,11 +38,11 @@ func TestBaseContainer(t *testing.T) {
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err := executor.(*eu.EU).Run(stdMsg, eu.NewEVMBlockContext(config), eu.NewEVMTxContext(*stdMsg.Native)) // Execute it
-	_, transitions := executor.(*eu.EU).Api().StateFilter().ByType()
+	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
+	_, transitions := eu.Api().StateFilter().ByType()
 
-	// msg := core.NewMessage(adaptorcommon.Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true) // Build the message
-	// receipt, _, err := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, eu.NewEVMBlockContext(config), eu.NewEVMTxContext(msg)) // Execute it
+	// msg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true) // Build the message
+	// receipt, _, err := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg)) // Execute it
 	// _, transitions := eu.Api().StateFilter().ByType()
 
 	//t.Log("\n" + adaptorcommon.FormatTransitions(transitions))
@@ -59,14 +59,14 @@ func TestBaseContainer(t *testing.T) {
 	url.Commit([]uint32{1})
 
 	// ================================== Call() ==================================
-	// receipt, _, err = eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, eu.NewEVMBlockContext(config), eu.NewEVMTxContext(msg))
+	// receipt, _, err = eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
 	// if err != nil {
 	// 	fmt.Print(err)
 	// }
 	// return
 
 	data := crypto.Keccak256([]byte("call()"))[:4]
-	msg = core.NewMessage(adaptorcommon.Alice, &contractAddress, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
+	msg = core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 	stdMsg = &adaptorcommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
@@ -74,8 +74,8 @@ func TestBaseContainer(t *testing.T) {
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err = executor.(*eu.EU).Run(stdMsg, eu.NewEVMBlockContext(config), eu.NewEVMTxContext(*stdMsg.Native)) // Execute it
-	_, transitions = executor.(*eu.EU).Api().StateFilter().ByType()
+	receipt, execResult, err = eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
+	_, transitions = eu.Api().StateFilter().ByType()
 
 	if err != nil {
 		t.Error(err)

@@ -1,10 +1,10 @@
-package common
+package execution
 
 import (
 	"math"
 	"math/big"
 
-	adaptorintf "github.com/arcology-network/vm-adaptor/interface"
+	intf "github.com/arcology-network/vm-adaptor/interface"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -26,7 +26,7 @@ type Config struct {
 	BlockNumber *big.Int    // types.Header.Number
 	ParentHash  common.Hash // types.Header.ParentHash
 	Time        *big.Int    // types.Header.Time
-	Chain       adaptorintf.ChainContext
+	Chain       intf.ChainContext
 	Coinbase    *evmcommon.Address
 	GasLimit    uint64   // types.Header.GasLimit
 	Difficulty  *big.Int // types.Header.Difficulty
