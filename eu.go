@@ -6,7 +6,6 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/arcology-network/eu/common"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	eth "github.com/arcology-network/vm-adaptor/eth"
 	ethCommon "github.com/ethereum/go-ethereum/common"
@@ -20,7 +19,7 @@ import (
 )
 
 type EU struct {
-	stdMsg      *common.StandardMessage
+	stdMsg      *adaptorcommon.StandardMessage
 	evm         *vm.EVM                    // Original ETH EVM
 	statedb     vm.StateDB                 // Arcology Implementation of Eth StateDB
 	api         adaptorcommon.EthApiRouter // Arcology API calls
@@ -42,7 +41,18 @@ func NewEU(chainConfig *params.ChainConfig, vmConfig vm.Config, statedb vm.State
 	return eu
 }
 
-func (this *EU) Message() *common.StandardMessage         { return this.stdMsg }
+// func (this *EU) TxHash() [32]byte   { return this.stdMsg.TxHash }
+// func (this *EU) GasPrice() *big.Int { return this.stdMsg.Native.GasPrice }
+// func (this *EU) Coinbase() [20]byte { return this.evm.Context.Coinbase }
+// func (this *EU) Origin() [20]byte   { return this.evm.TxContext.Origin }
+
+func (this *EU) ID() uint32         { return uint32(this.stdMsg.ID) }
+func (this *EU) TxHash() [32]byte   { return this.stdMsg.TxHash }
+func (this *EU) GasPrice() *big.Int { return this.stdMsg.Native.GasPrice }
+func (this *EU) Coinbase() [20]byte { return this.evm.Context.Coinbase }
+func (this *EU) Origin() [20]byte   { return this.evm.TxContext.Origin }
+
+func (this *EU) Message() *adaptorcommon.StandardMessage  { return this.stdMsg }
 func (this *EU) VM() *vm.EVM                              { return this.evm }
 func (this *EU) Statedb() vm.StateDB                      { return this.statedb }
 func (this *EU) Api() adaptorcommon.EthApiRouter          { return this.api }
@@ -56,7 +66,7 @@ func (this *EU) SetRuntimeContext(statedb vm.StateDB, api adaptorcommon.EthApiRo
 	this.evm.ArcologyNetworkAPIs.APIs = api
 }
 
-func (this *EU) Run(stdmsg *common.StandardMessage, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
+func (this *EU) Run(stdmsg *adaptorcommon.StandardMessage, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
 	this.statedb.(*eth.ImplStateDB).PrepareFormer(stdmsg.TxHash, ethCommon.Hash{}, uint32(stdmsg.ID))
 
 	this.evm.Context = blockContext

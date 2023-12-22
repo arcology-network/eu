@@ -14,6 +14,8 @@ import (
 	evmcore "github.com/ethereum/go-ethereum/core"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
+
+	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 )
 
 type Result struct {
@@ -26,7 +28,7 @@ type Result struct {
 	immuned          []ccurlinterfaces.Univalue
 	Receipt          *evmTypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
-	StdMsg           *StandardMessage
+	StdMsg           *adaptorcommon.StandardMessage
 	Err              error
 }
 

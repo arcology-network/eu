@@ -22,7 +22,7 @@ import (
 type JobSequence struct {
 	ID           uint32 // group id
 	PreTxs       []uint32
-	StdMsgs      []*eucommon.StandardMessage
+	StdMsgs      []*adaptorcommon.StandardMessage
 	Results      []*eucommon.Result
 	ApiRouter    adaptorcommon.EthApiRouter
 	RecordBuffer []ccurlinterfaces.Univalue
@@ -80,7 +80,7 @@ func (this *JobSequence) FlagConflict(dict *map[uint32]uint64, err error) {
 	}
 }
 
-func (this *JobSequence) execute(stdMsg *eucommon.StandardMessage, config *eucommon.Config, api adaptorcommon.EthApiRouter) *eucommon.Result { //
+func (this *JobSequence) execute(stdMsg *adaptorcommon.StandardMessage, config *eucommon.Config, api adaptorcommon.EthApiRouter) *eucommon.Result { //
 	statedb := eth.NewImplStateDB(api)                                  // Eth state DB
 	statedb.PrepareFormer(stdMsg.TxHash, [32]byte{}, uint32(stdMsg.ID)) // tx hash , block hash and tx index
 
