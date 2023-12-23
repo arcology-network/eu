@@ -1,9 +1,9 @@
 ## eu
 The EU project introduces an Abstract Execution Unit that serves as a transaction processing unit on the Arcology network. This module is designed to be VM-agnostic, providing a versatile solution for transaction processing. The module comprises two fundamental components.
 
-- **Parallelized EVM:** A module responsible for parallelizing the Ethereum Virtual Machine (EVM) on Arcology Network.
+- **[Parallelized EVM](https://github.com/arcology-network/concurrent-evm):** A module responsible for parallelizing the Ethereum Virtual Machine (EVM) on Arcology Network.
 
-- **EVM-adaptor:** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
+- **[EVM-adaptor](https://github.com/arcology-network/vm-adaptor):** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
 
 <p align="center">
 <img src="./img/eu.svg" alt="multi evms" height="300">
