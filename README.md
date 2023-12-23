@@ -7,9 +7,9 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 
 ## Input and Output
 
-- **Input:** Executable messages are provided as input to the Multiprocessor module.
+- **Input:** Executable messages from either the executor module or the Multiprocessor API calls.
 
-- **Output:** State transitions are generated as output from the EVM-adaptor module.
+- **Output:** State transitions generated as output from the EVM-adaptor module.
 
 ## Multiprocessor Handling
 
