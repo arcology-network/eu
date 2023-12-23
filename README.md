@@ -1,9 +1,13 @@
 ## eu
 The EU project introduces an Abstract Execution Unit that serves as a transaction processing unit on the Arcology network. This module is designed to be VM-agnostic, providing a versatile solution for transaction processing. The module comprises two fundamental components.
 
-- **Parallelized EVM:** A module responsible for parallelizing the Ethereum Virtual Machine (EVM) on the Arcology network.
+- **Parallelized EVM:** A module responsible for parallelizing the Ethereum Virtual Machine (EVM) on Arcology Network.
 
 - **EVM-adaptor:** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
+
+<p align="center">
+<img src="./img/eu.svg" alt="multi evms" height="300">
+</p>
 
 ## Input and Output
 
@@ -11,9 +15,11 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 
 - **Output:** State transitions generated as output from the EVM-adaptor module.
 
+
+
 ## Multiprocessor Handling
 
-The Multiprocessor module within the EU project enables developers to manually initiate multiple independent threads for concurrent function execution on the Arcology network using the [concurrent API](https://github.com/arcology-network/concurrentlib) in Solidity. It is the focal point for handling all multiprocessor-related logic within the EU project. The module is responsible for the following tasks:
+The Multiprocessor module within the EU project enables developers to manually initiate multiple independent threads for concurrent function execution on the Arcology network using the [concurrent API in Solidity](https://github.com/arcology-network/concurrentlib). It is the focal point for handling all multiprocessor-related logic within the EU project. The module is responsible for the following tasks:
 
 - Start Multiprocessor:
 Initiates the Multiprocessor to enable parallel processing.
