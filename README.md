@@ -9,6 +9,8 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 <img src="./img/eu.png" alt="eu" >
 </p>
 
+![](./img/eu.png)
+
 ## Input and Output
 
 - **Input:** Executable messages from either the executor module or the Multiprocessor API calls.
