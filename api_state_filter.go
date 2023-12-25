@@ -4,7 +4,7 @@ import (
 	commonlibcommon "github.com/arcology-network/common-lib/common"
 
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 )
 

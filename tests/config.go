@@ -8,7 +8,7 @@ import (
 	commontypes "github.com/arcology-network/common-lib/types"
 	concurrenturl "github.com/arcology-network/concurrenturl"
 	"github.com/arcology-network/concurrenturl/commutative"
-	"github.com/arcology-network/concurrenturl/interfaces"
+	ccurlintef "github.com/arcology-network/concurrenturl/interfaces"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/eu"
 	"github.com/ethereum/go-ethereum/common"
@@ -55,14 +55,14 @@ func MainTestConfig() *execution.Config {
 }
 
 // Choose which data source to use
-func chooseDataStore() interfaces.Datastore {
+func chooseDataStore() ccurlintef.Datastore {
 	return ccurlstorage.NewParallelEthMemDataStore() // Eth trie datastore
 	// return ccurlstorage.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 }
 
-func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concurrenturl.ConcurrentUrl, []interfaces.Univalue) {
+func NewTestEU() (*execution.EU, *execution.Config, ccurlintef.Datastore, *concurrenturl.ConcurrentUrl, []ccurlintef.Univalue) {
 	datastore := chooseDataStore()
 	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 

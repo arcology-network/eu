@@ -10,7 +10,7 @@ import (
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 
-	ccurlinterfaces "github.com/arcology-network/concurrenturl/interfaces"
+	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	"github.com/arcology-network/vm-adaptor/eth"
 	intf "github.com/arcology-network/vm-adaptor/interface"
@@ -27,9 +27,9 @@ type JobSequence struct {
 	StdMsgs      []*adaptorcommon.StandardMessage
 	Results      []*Result
 	ApiRouter    intf.EthApiRouter
-	RecordBuffer []ccurlinterfaces.Univalue
-	// TransitionBuffer []ccurlinterfaces.Univalue
-	// immunedBuffer    []ccurlinterfaces.Univalue
+	RecordBuffer []ccurlintf.Univalue
+	// TransitionBuffer []ccurlintf.Univalue
+	// immunedBuffer    []ccurlintf.Univalue
 }
 
 func (*JobSequence) T() intf.JobSequence { return &JobSequence{} }
@@ -60,7 +60,7 @@ func (this *JobSequence) DeriveNewHash(original [32]byte) [32]byte {
 func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
 // Run executes the job sequence and returns the results.
-func (this *JobSequence) Run(config *Config, mainApi intf.EthApiRouter) ([]uint32, []ccurlinterfaces.Univalue) {
+func (this *JobSequence) Run(config *Config, mainApi intf.EthApiRouter) ([]uint32, []ccurlintf.Univalue) {
 	this.Results = make([]*Result, len(this.StdMsgs))
 	this.ApiRouter = mainApi.New((&concurrenturl.ConcurrentUrl{}).New(indexer.NewWriteCache(mainApi.Ccurl().WriteCache())), this.ApiRouter.Schedule())
 
@@ -77,13 +77,13 @@ func (this *JobSequence) Run(config *Config, mainApi intf.EthApiRouter) ([]uint3
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
-func (this *JobSequence) GetClearedTransition() []ccurlinterfaces.Univalue {
+func (this *JobSequence) GetClearedTransition() []ccurlintf.Univalue {
 	if idx, _ := common.FindFirstIf(this.Results, func(v *Result) bool { return v.Err != nil }); idx < 0 {
 		return this.ApiRouter.Ccurl().Export()
 	}
 
 	trans := common.Concate(this.Results,
-		func(v *Result) []ccurlinterfaces.Univalue {
+		func(v *Result) []ccurlintf.Univalue {
 			return v.Transitions()
 		},
 	)
@@ -138,7 +138,7 @@ func (this *JobSequence) execute(stdMsg *adaptorcommon.StandardMessage, config *
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
 	for _, v := range *this.ApiRouter.Ccurl().WriteCache().Cache() {
-		typed := v.Value().(ccurlinterfaces.Type)
+		typed := v.Value().(ccurlintf.Type)
 		amount += common.IfThen(
 			!v.Preexist(),
 			(uint64(typed.Size())/32)*uint64(v.Writes())*evmparams.SstoreSetGas,
@@ -149,15 +149,15 @@ func (this *JobSequence) CalcualteRefund() uint64 {
 }
 
 // RefundTo refunds the specified amount from the payer to the recipient.
-func (this *JobSequence) RefundTo(payer, recipent ccurlinterfaces.Univalue, amount uint64) (uint64, error) {
+func (this *JobSequence) RefundTo(payer, recipent ccurlintf.Univalue, amount uint64) (uint64, error) {
 	credit := commutative.NewU256Delta(uint256.NewInt(amount), true).(*commutative.U256)
-	if _, _, _, _, err := recipent.Value().(ccurlinterfaces.Type).Set(credit, nil); err != nil {
+	if _, _, _, _, err := recipent.Value().(ccurlintf.Type).Set(credit, nil); err != nil {
 		return 0, err
 	}
 	recipent.IncrementDeltaWrites(1)
 
 	debit := commutative.NewU256Delta(uint256.NewInt(amount), false).(*commutative.U256)
-	if _, _, _, _, err := payer.Value().(ccurlinterfaces.Type).Set(debit, nil); err != nil {
+	if _, _, _, _, err := payer.Value().(ccurlintf.Type).Set(debit, nil); err != nil {
 		return 0, err
 	}
 	payer.IncrementDeltaWrites(1)

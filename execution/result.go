@@ -9,7 +9,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
-	ccurlinterfaces "github.com/arcology-network/concurrenturl/interfaces"
+	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/univalue"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
@@ -23,8 +23,8 @@ type Result struct {
 	TxHash           [32]byte
 	From             [20]byte
 	Coinbase         [20]byte
-	rawStateAccesses []ccurlinterfaces.Univalue
-	immuned          []ccurlinterfaces.Univalue
+	rawStateAccesses []ccurlintf.Univalue
+	immuned          []ccurlintf.Univalue
 	Receipt          *evmTypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
 	stdMsg           *adaptorcommon.StandardMessage
@@ -32,16 +32,16 @@ type Result struct {
 }
 
 // The tx sender has to pay the tx fees regardless the execution status.
-func (this *Result) GenGasTransition(rawTransition ccurlinterfaces.Univalue, gasDelta *uint256.Int, isCredit bool) ccurlinterfaces.Univalue {
-	balanceTransition := rawTransition.Clone().(ccurlinterfaces.Univalue)
-	if diff := balanceTransition.Value().(ccurlinterfaces.Type).Delta().(uint256.Int); diff.Cmp(gasDelta) >= 0 {
+func (this *Result) GenGasTransition(rawTransition ccurlintf.Univalue, gasDelta *uint256.Int, isCredit bool) ccurlintf.Univalue {
+	balanceTransition := rawTransition.Clone().(ccurlintf.Univalue)
+	if diff := balanceTransition.Value().(ccurlintf.Type).Delta().(uint256.Int); diff.Cmp(gasDelta) >= 0 {
 		// transfer := diff.Sub(diff.Clone(), (*uint256.Int)(gasDelta))                            // balance - gas
-		// (balanceTransition).Value().(ccurlinterfaces.Type).SetDelta((*codec.Uint256)(transfer)) // Set the transfer, Won't change the initial value.
-		// (balanceTransition).Value().(ccurlinterfaces.Type).SetDeltaSign(false)
+		// (balanceTransition).Value().(ccurlintf.Type).SetDelta((*codec.Uint256)(transfer)) // Set the transfer, Won't change the initial value.
+		// (balanceTransition).Value().(ccurlintf.Type).SetDeltaSign(false)
 		//
-		newGasTransition := balanceTransition.Clone().(ccurlinterfaces.Univalue)
-		newGasTransition.Value().(ccurlinterfaces.Type).SetDelta(*gasDelta)
-		newGasTransition.Value().(ccurlinterfaces.Type).SetDeltaSign(isCredit)
+		newGasTransition := balanceTransition.Clone().(ccurlintf.Univalue)
+		newGasTransition.Value().(ccurlintf.Type).SetDelta(*gasDelta)
+		newGasTransition.Value().(ccurlintf.Type).SetDeltaSign(isCredit)
 		newGasTransition.GetUnimeta().(*univalue.Unimeta).SetPersistent(true)
 		return newGasTransition
 	}
@@ -53,7 +53,7 @@ func (this *Result) Postprocess() *Result {
 		return this
 	}
 
-	_, senderBalance := common.FindFirstIf(this.rawStateAccesses, func(v ccurlinterfaces.Univalue) bool {
+	_, senderBalance := common.FindFirstIf(this.rawStateAccesses, func(v ccurlintf.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
 
@@ -62,7 +62,7 @@ func (this *Result) Postprocess() *Result {
 		this.immuned = append(this.immuned, senderGasDebit)
 	}
 
-	_, coinbaseBalance := common.FindFirstIf(this.rawStateAccesses, func(v ccurlinterfaces.Univalue) bool {
+	_, coinbaseBalance := common.FindFirstIf(this.rawStateAccesses, func(v ccurlintf.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.Coinbase[:]))
 	})
 
@@ -72,7 +72,7 @@ func (this *Result) Postprocess() *Result {
 		}
 	}
 
-	common.Foreach(this.rawStateAccesses, func(v *ccurlinterfaces.Univalue, _ int) {
+	common.Foreach(this.rawStateAccesses, func(v *ccurlintf.Univalue, _ int) {
 		if v != nil {
 			return
 		}
@@ -87,9 +87,9 @@ func (this *Result) Postprocess() *Result {
 	return this
 }
 
-func (this *Result) Transitions() []ccurlinterfaces.Univalue {
+func (this *Result) Transitions() []ccurlintf.Univalue {
 	if this.Err != nil {
-		return this.immuned //.MoveIf(&this.rawStateAccesses, func(v ccurlinterfaces.Univalue) bool { return v.Persistent() })
+		return this.immuned //.MoveIf(&this.rawStateAccesses, func(v ccurlintf.Univalue) bool { return v.Persistent() })
 	}
 	return this.rawStateAccesses
 }
