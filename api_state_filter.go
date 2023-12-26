@@ -3,6 +3,7 @@ package eu
 import (
 	commonlibcommon "github.com/arcology-network/common-lib/common"
 
+	"github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 	intf "github.com/arcology-network/vm-adaptor/interface"
@@ -21,7 +22,7 @@ func NewExportFilter(api intf.EthApiRouter) *StateFilter {
 }
 
 func (this *StateFilter) RemoveByAddress(addr string) {
-	cache := this.api.Ccurl().WriteCache().Cache()
+	cache := this.api.WriteCache().(*cache.WriteCache).Cache()
 	commonlibcommon.MapRemoveIf(*cache,
 		func(path string, _ interfaces.Univalue) bool {
 			return path[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH:ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH+ccurlcommon.ETH10_ACCOUNT_LENGTH] == addr
@@ -50,12 +51,12 @@ func (this *StateFilter) filterByAddress(transitions *[]interfaces.Univalue) []i
 }
 
 func (this *StateFilter) Raw() []interfaces.Univalue {
-	transitions := this.api.Ccurl().Export()
+	transitions := this.api.WriteCache().(*cache.WriteCache).Export()
 	return this.filterByAddress(&transitions)
 }
 
 func (this *StateFilter) ByType() ([]interfaces.Univalue, []interfaces.Univalue) {
-	accesses, transitions := this.api.Ccurl().ExportAll()
+	accesses, transitions := this.api.WriteCache().(*cache.WriteCache).ExportAll()
 	return this.filterByAddress(&accesses),
 		this.filterByAddress(&transitions)
 }

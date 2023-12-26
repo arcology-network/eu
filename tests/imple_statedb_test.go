@@ -7,6 +7,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	concurrenturl "github.com/arcology-network/concurrenturl"
+	"github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/noncommutative"
@@ -20,20 +21,21 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	// db := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
 	db := chooseDataStore()
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
-	url := concurrenturl.NewConcurrentUrl(db)
 
-	api := eu.NewAPI(url)
+	localCache := cache.NewWriteCache(db)
+	api := eu.NewAPI(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
-	_, transitions := url.ExportAll()
+	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
-	url.Import(transitions)
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer := concurrenturl.NewConcurrentUrl(db)
+	committer.Import(transitions)
+	committer.Sort()
+	committer.Commit([]uint32{1})
 
-	url = concurrenturl.NewConcurrentUrl(db)
+	committer = concurrenturl.NewConcurrentUrl(db)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	balance := ethStatedb.GetBalance(account)
@@ -46,20 +48,22 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	// db := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
 	db := chooseDataStore()
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
-	url := concurrenturl.NewConcurrentUrl(db)
 
-	api := eu.NewAPI(url)
+	localCache := cache.NewWriteCache(db)
+	api := eu.NewAPI(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
-	_, transitions := url.ExportAll()
+	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
-	url.Import(transitions)
-	url.Sort()
-	url.Commit([]uint32{1})
 
-	url = concurrenturl.NewConcurrentUrl(db)
+	committer := concurrenturl.NewConcurrentUrl(db)
+	committer.Import(transitions)
+	committer.Sort()
+	committer.Commit([]uint32{1})
+
+	committer = concurrenturl.NewConcurrentUrl(db)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	code := ethStatedb.GetCode(account)
@@ -73,15 +77,16 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	db := chooseDataStore()
 	meta := commutative.NewPath()
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
-	url := concurrenturl.NewConcurrentUrl(db)
 
-	api := eu.NewAPI(url)
+	localCache := cache.NewWriteCache(db)
+	api := eu.NewAPI(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
-	_, transitions := url.ExportAll()
+	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
+	url := concurrenturl.NewConcurrentUrl(db)
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{1})
@@ -102,12 +107,13 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 	url := concurrenturl.NewConcurrentUrl(db)
 
-	api := eu.NewAPI(url)
+	localCache := cache.NewWriteCache(db)
+	api := eu.NewAPI(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
-	_, transitions := url.ExportAll()
+	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 	url.Import(transitions)
 	url.Sort()
@@ -190,21 +196,21 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-000", noncommutative.NewString("123")); err == nil {
+	if _, err := localCache.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-000", noncommutative.NewString("123")); err == nil {
 		t.Error(err)
 	}
 
-	if _, err := url.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-001", noncommutative.NewString("456")); err == nil {
+	if _, err := localCache.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-001", noncommutative.NewString("456")); err == nil {
 		t.Error(err)
 	}
 
 	// Try to read an nonexistent entry from an nonexistent path, should fail !
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-000", nil); value != nil {
+	if value, _, _ := localCache.Read(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-000", nil); value != nil {
 		t.Error("Error: Shouldn't be not found")
 	}
 
 	// try again
-	if value, _ := url.Read(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-000", nil); value != nil {
+	if value, _, _ := localCache.Read(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-000", nil); value != nil {
 		t.Error("Error: Shouldn't be not found")
 	}
 }

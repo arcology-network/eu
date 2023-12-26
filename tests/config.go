@@ -7,8 +7,9 @@ import (
 
 	commontypes "github.com/arcology-network/common-lib/types"
 	concurrenturl "github.com/arcology-network/concurrenturl"
+	"github.com/arcology-network/concurrenturl/cache"
 	"github.com/arcology-network/concurrenturl/commutative"
-	ccurlintef "github.com/arcology-network/concurrenturl/interfaces"
+	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/eu"
 	"github.com/ethereum/go-ethereum/common"
@@ -55,22 +56,22 @@ func MainTestConfig() *execution.Config {
 }
 
 // Choose which data source to use
-func chooseDataStore() ccurlintef.Datastore {
+func chooseDataStore() ccurlintf.Datastore {
 	return ccurlstorage.NewParallelEthMemDataStore() // Eth trie datastore
 	// return ccurlstorage.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 }
 
-func NewTestEU() (*execution.EU, *execution.Config, ccurlintef.Datastore, *concurrenturl.ConcurrentUrl, []ccurlintef.Univalue) {
+func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.ConcurrentUrl, []ccurlintf.Univalue) {
 	datastore := chooseDataStore()
 	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
-	url := concurrenturl.NewConcurrentUrl(datastore)
+	localCache := cache.NewWriteCache(datastore)
 	// if len(args) > 0 {
 	// 	url = args[0].(*concurrenturl.ConcurrentUrl)
 	// }
-	api := eu.NewAPI(url)
+	api := eu.NewAPI(localCache)
 
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -91,11 +92,11 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintef.Datastore, *concu
 	// fmt.Println("\n" + adaptorcommon.FormatTransitions(transitions))
 
 	// Deploy.
-	url = concurrenturl.NewConcurrentUrl(datastore)
+	url := concurrenturl.NewConcurrentUrl(datastore)
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{0})
-	api = eu.NewAPI(url)
+	api = eu.NewAPI(localCache)
 	statedb = eth.NewImplStateDB(api)
 
 	config := MainTestConfig()
@@ -107,7 +108,7 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintef.Datastore, *concu
 }
 
 func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool) (error, *execution.EU, *evmcoretypes.Receipt) {
-	eu, contractAddress, ccurl, err := AliceDeploy(targetPath, contractFile, version, contractName)
+	eu, contractAddress, db, err := AliceDeploy(targetPath, contractFile, version, contractName)
 	if err != nil {
 		return err, nil, nil
 	}
@@ -115,10 +116,10 @@ func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName 
 	if len(funcName) == 0 {
 		return err, eu, nil
 	}
-	return AliceCall(eu, *contractAddress, funcName, ccurl), eu, nil
+	return AliceCall(eu, *contractAddress, funcName, db), eu, nil
 }
 
-func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*execution.EU, *evmcommon.Address, *concurrenturl.ConcurrentUrl, error) {
+func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*execution.EU, *evmcommon.Address, ccurlintf.Datastore, error) {
 	eu, config, db, url, _ := NewTestEU()
 
 	code, err := compiler.CompileContracts(targetPath, contractFile, compilerVersion, contract, true)
@@ -147,16 +148,17 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{1})
-	return eu, &contractAddress, url, nil
+	return eu, &contractAddress, db, nil
 }
 
-func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcName string, ccurl *concurrenturl.ConcurrentUrl) error {
+func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.Datastore) error {
 	config := MainTestConfig()
 	config.Coinbase = &Coinbase
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
-	api := eu.NewAPI(ccurl)
+	localCache := cache.NewWriteCache(datastore)
+	api := eu.NewAPI(localCache)
 	statedb := eth.NewImplStateDB(api)
 	execution.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
 
@@ -218,7 +220,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 // 	return nil
 // }
 
-func DepolyContract(eu *execution.EU, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
+func DepolyContract(eu *execution.EU, ccurl *concurrenturl.ConcurrentUrl, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	stdMsg := &adaptorcommon.StandardMessage{
 		ID:     1,
@@ -238,7 +240,7 @@ func DepolyContract(eu *execution.EU, config *execution.Config, code string, fun
 	}
 
 	_, transitionsFiltered := eu.Api().StateFilter().ByType()
-	ccurl := eu.Api().Ccurl()
+	// ccurl := eu.Api().Ccurl()
 	ccurl.Import(transitionsFiltered)
 	ccurl.Sort()
 	ccurl.Commit([]uint32{1})

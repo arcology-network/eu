@@ -10,9 +10,6 @@ replace github.com/arcology-network/vm-adaptor => ../vm-adaptor/
 
 replace github.com/arcology-network/concurrenturl => ../concurrenturl/
 
-
-
-
 require (
 	github.com/arcology-network/common-lib v1.9.0
 	github.com/arcology-network/concurrenturl v1.9.0

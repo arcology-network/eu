@@ -7,7 +7,9 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl"
+	"github.com/arcology-network/concurrenturl/cache"
+	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
+
 	eucommon "github.com/arcology-network/eu/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
@@ -15,43 +17,46 @@ import (
 	execution "github.com/arcology-network/eu/execution"
 	apihandler "github.com/arcology-network/vm-adaptor/api"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
-	intf "github.com/arcology-network/vm-adaptor/interface"
+	adaptorintf "github.com/arcology-network/vm-adaptor/interface"
 )
 
 type API struct {
-	logs  []intf.ILog
+	logs  []adaptorintf.ILog
 	depth uint8
 
 	serialNums [4]uint64 // sub-process/container/element/uuid generator,
 
 	schedule interface{}
-	eu       intf.EU
+	eu       adaptorintf.EU
 	// reserved interface{}
 
-	handlerDict map[[20]byte]intf.ApiCallHandler // APIs under the atomic namespace
-	ccurl       *concurrenturl.ConcurrentUrl
+	handlerDict map[[20]byte]adaptorintf.ApiCallHandler // APIs under the atomic namespace
+	// ccurl       *concurrenturl.ConcurrentUrl
+
+	localCache *cache.WriteCache
+	dataReader ccurlintf.ReadOnlyDataStore
 
 	execResult *eucommon.Result
 
-	filter intf.StateFilter
+	filter adaptorintf.StateFilter
 }
 
-func NewAPI(ccurl *concurrenturl.ConcurrentUrl) *API {
+func NewAPI(cache *cache.WriteCache) *API {
 	api := &API{
 		eu:          nil,
-		ccurl:       ccurl,
-		handlerDict: make(map[[20]byte]intf.ApiCallHandler),
+		localCache:  cache,
+		handlerDict: make(map[[20]byte]adaptorintf.ApiCallHandler),
 		depth:       0,
 		execResult:  &eucommon.Result{},
 		serialNums:  [4]uint64{},
 	}
 	api.filter = NewExportFilter(api)
 
-	handlers := []intf.ApiCallHandler{
+	handlers := []adaptorintf.ApiCallHandler{
 		apihandler.NewIoHandlers(api),
 		apihandler.NewMultiprocessHandlers(
 			api,
-			common.To[*execution.JobSequence, intf.JobSequence]([]*execution.JobSequence{}),
+			common.To[*execution.JobSequence, adaptorintf.JobSequence]([]*execution.JobSequence{}),
 			&execution.Generation{}),
 		apihandler.NewBaseHandlers(api, nil),
 		apihandler.NewU256CumulativeHandlers(api),
@@ -73,18 +78,21 @@ func NewAPI(ccurl *concurrenturl.ConcurrentUrl) *API {
 	return api
 }
 
-func (this *API) New(ccurl *concurrenturl.ConcurrentUrl, schedule interface{}) intf.EthApiRouter {
-	api := NewAPI(ccurl)
+func (this *API) New(localCache interface{}, schedule interface{}) adaptorintf.EthApiRouter {
+	api := NewAPI(localCache.(*cache.WriteCache))
 	api.depth = this.depth + 1
 	return api
 }
+
+func (this *API) WriteCache() interface{} { return this.localCache }
+func (this *API) DataReader() interface{} { return this.dataReader }
 
 func (this *API) CheckRuntimeConstrains() bool { // Execeeds the max recursion depth or the max sub processes
 	return this.Depth() < adaptorcommon.MAX_RECURSIION_DEPTH &&
 		atomic.AddUint64(&adaptorcommon.TotalSubProcesses, 1) <= adaptorcommon.MAX_VM_INSTANCES
 }
 
-func (this *API) StateFilter() intf.StateFilter { return this.filter }
+func (this *API) StateFilter() adaptorintf.StateFilter { return this.filter }
 
 func (this *API) DecrementDepth() uint8 {
 	if this.depth > 0 {
@@ -100,17 +108,22 @@ func (this *API) Origin() ethcommon.Address   { return this.eu.Origin() }
 func (this *API) SetSchedule(schedule interface{}) { this.schedule = schedule }
 func (this *API) Schedule() interface{}            { return this.schedule }
 
-func (this *API) HandlerDict() map[[20]byte]intf.ApiCallHandler { return this.handlerDict }
+func (this *API) HandlerDict() map[[20]byte]adaptorintf.ApiCallHandler { return this.handlerDict }
 
 func (this *API) VM() interface{} {
 	return common.IfThenDo1st(this.eu != nil, func() interface{} { return this.eu.VM() }, nil)
 }
 
 func (this *API) GetEU() interface{}   { return this.eu }
-func (this *API) SetEU(eu interface{}) { this.eu = eu.(intf.EU) }
+func (this *API) SetEU(eu interface{}) { this.eu = eu.(adaptorintf.EU) }
 
-func (this *API) Ccurl() *concurrenturl.ConcurrentUrl            { return this.ccurl }
-func (this *API) SetCcurl(newCcurl *concurrenturl.ConcurrentUrl) { this.ccurl = newCcurl }
+// func (this *API) Ccurl() *concurrenturl.ConcurrentUrl            { return this.ccurl }
+
+// func (this *API) LocalCache() *concurrenturl.ConcurrentUrl { return this.ccurl }
+
+func (this *API) SetReadOnlyDataSource(readOnlyDataSource interface{}) {
+	this.dataReader = readOnlyDataSource.(ccurlintf.ReadOnlyDataStore)
+}
 
 func (this *API) GetSerialNum(idx int) uint64 {
 	v := this.serialNums[idx]
@@ -141,7 +154,7 @@ func (this *API) AddLog(key, value string) {
 	})
 }
 
-func (this *API) GetLogs() []intf.ILog {
+func (this *API) GetLogs() []adaptorintf.ILog {
 	return this.logs
 }
 

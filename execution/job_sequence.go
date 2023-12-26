@@ -6,7 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl"
+	cache "github.com/arcology-network/concurrenturl/cache"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
 
@@ -62,24 +62,24 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 // Run executes the job sequence and returns the results.
 func (this *JobSequence) Run(config *Config, mainApi intf.EthApiRouter) ([]uint32, []ccurlintf.Univalue) {
 	this.Results = make([]*Result, len(this.StdMsgs))
-	this.ApiRouter = mainApi.New((&concurrenturl.ConcurrentUrl{}).New(indexer.NewWriteCache(mainApi.Ccurl().WriteCache())), this.ApiRouter.Schedule())
+	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), this.ApiRouter.Schedule()) // cascade the write caches
 
 	for i, msg := range this.StdMsgs {
-		pendingApi := this.ApiRouter.New((&concurrenturl.ConcurrentUrl{}).New(indexer.NewWriteCache(this.ApiRouter.Ccurl().WriteCache())), this.ApiRouter.Schedule())
+		pendingApi := this.ApiRouter.New((cache.NewWriteCache(this.ApiRouter.WriteCache().(*cache.WriteCache))), this.ApiRouter.Schedule())
 		pendingApi.DecrementDepth()
 
 		this.Results[i] = this.execute(msg, config, pendingApi)
-		this.ApiRouter.Ccurl().WriteCache().AddTransitions(this.Results[i].rawStateAccesses)
+		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].rawStateAccesses)
 	}
 
-	accessRecords := indexer.Univalues(this.ApiRouter.Ccurl().Export()).To(indexer.IPCAccess{})
+	accessRecords := indexer.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPCAccess{})
 	return common.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []ccurlintf.Univalue {
 	if idx, _ := common.FindFirstIf(this.Results, func(v *Result) bool { return v.Err != nil }); idx < 0 {
-		return this.ApiRouter.Ccurl().Export()
+		return this.ApiRouter.WriteCache().(*cache.WriteCache).Export()
 	}
 
 	trans := common.Concate(this.Results,
@@ -137,7 +137,7 @@ func (this *JobSequence) execute(stdMsg *adaptorcommon.StandardMessage, config *
 // CalcualteRefund calculates the refund amount for the JobSequence.
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
-	for _, v := range *this.ApiRouter.Ccurl().WriteCache().Cache() {
+	for _, v := range *this.ApiRouter.WriteCache().(*cache.WriteCache).Cache() {
 		typed := v.Value().(ccurlintf.Type)
 		amount += common.IfThen(
 			!v.Preexist(),

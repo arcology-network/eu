@@ -87,7 +87,7 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 	return execution.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, db, url, transitions
 }
 
-func DepolyContract(eu *execution.EU, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
+func DepolyContract(eu *execution.EU, ccurl *concurrenturl.ConcurrentUrl, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(adaptorcommon.Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	stdMsg := &execution.StandardMessage{
 		ID:     1,
@@ -111,9 +111,9 @@ func DepolyContract(eu *execution.EU, config *execution.Config, code string, fun
 	}
 
 	_, transitionsFiltered := eu.Api().StateFilter().ByType()
-	eu.Api().Ccurl().Import(transitionsFiltered)
-	eu.Api().Ccurl().Sort()
-	eu.Api().Ccurl().Commit([]uint32{1})
+	ccurl.Import(transitionsFiltered)
+	ccurl.Sort()
+	ccurl.Commit([]uint32{1})
 
 	return nil, config, eu, receipt
 }

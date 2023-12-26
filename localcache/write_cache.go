@@ -1,4 +1,4 @@
-package execution
+package writecache
 
 import (
 	"bytes"
@@ -13,33 +13,32 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
-	"github.com/arcology-network/concurrenturl/interfaces"
-	ccurlintef "github.com/arcology-network/concurrenturl/interfaces"
+	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	univalue "github.com/arcology-network/concurrenturl/univalue"
 )
 
 type WriteCache struct {
-	store    ccurlintef.DataStoreReader
-	kvDict   map[string]ccurlintef.Univalue // Local KV lookup
-	platform ccurlintef.Platform
-	buffer   []ccurlintef.Univalue // Transition + access record buffer
+	store    ccurlintf.ReadOnlyDataStore
+	kvDict   map[string]ccurlintf.Univalue // Local KV lookup
+	platform ccurlintf.Platform
+	buffer   []ccurlintf.Univalue // Transition + access record buffer
 	uniPool  *mempool.Mempool
 }
 
-func NewWriteCache(store ccurlintef.DataStoreReader, args ...interface{}) *WriteCache {
+func NewWriteCache(store ccurlintf.ReadOnlyDataStore, args ...interface{}) *WriteCache {
 	var writeCache WriteCache
 	writeCache.store = store
-	writeCache.kvDict = make(map[string]ccurlintef.Univalue)
+	writeCache.kvDict = make(map[string]ccurlintf.Univalue)
 	writeCache.platform = ccurlcommon.NewPlatform()
-	writeCache.buffer = make([]ccurlintef.Univalue, 0, 64)
+	writeCache.buffer = make([]ccurlintf.Univalue, 0, 64)
 
 	writeCache.uniPool = mempool.NewMempool("writecache-univalue", func() interface{} { return new(univalue.Univalue) })
 	return &writeCache
 }
 
-func (this *WriteCache) SetStore(store ccurlintef.DataStoreReader) { this.store = store }
-func (this *WriteCache) Store() ccurlintef.DataStoreReader         { return this.store }
-func (this *WriteCache) Cache() *map[string]ccurlintef.Univalue    { return &this.kvDict }
+func (this *WriteCache) SetStore(store ccurlintf.ReadOnlyDataStore) { this.store = store }
+func (this *WriteCache) Store() ccurlintf.ReadOnlyDataStore         { return this.store }
+func (this *WriteCache) Cache() *map[string]ccurlintf.Univalue      { return &this.kvDict }
 
 func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 	v := this.uniPool.Get().(*univalue.Univalue)
@@ -47,11 +46,11 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 }
 
 // If the access has been recorded
-func (this *WriteCache) GetOrInit(tx uint32, path string, T any) ccurlintef.Univalue {
+func (this *WriteCache) GetOrInit(tx uint32, path string, T any) ccurlintf.Univalue {
 	unival := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		unival = this.NewUnivalue()
-		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, common.FilterFirst(this.Store().Retrive(path, T)), this)
+		unival.(*univalue.Univalue).Init(tx, path, 0, 0, 0, common.FilterFirst(this.store.Retrive(path, T)), this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
 	return unival
@@ -62,25 +61,37 @@ func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interf
 	return univalue.Get(tx, path, nil), univalue
 }
 
+func (this *WriteCache) ReadCommitted(tx uint32, key string, T any) (interface{}, uint64) {
+	if v, _ := this.Read(tx, key, this); v != nil { // For conflict detection
+		return v, 0
+	}
+
+	v, _ := this.store.Retrive(key, T)
+	if v == nil {
+		return v, 0 //Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v, nil))
+	}
+	return v, 0 //Fee{}.Reader(univalue.NewUnivalue(tx, key, 1, 0, 0, v.(interfaces.Type), nil))
+}
+
 // Get the value directly, skip the access counting at the univalue level
 func (this *WriteCache) Peek(path string, T any) (interface{}, interface{}) {
 	if univ, ok := this.kvDict[path]; ok {
 		return univ.Value(), univ
 	}
 
-	v, _ := this.Store().Retrive(path, T)
+	v, _ := this.store.Retrive(path, T)
 	univ := univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v, nil)
 	return univ.Value(), univ
 }
 
 func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 	typedv, _ := this.Peek(path, T)
-	if typedv == nil || typedv.(ccurlintef.Type).IsDeltaApplied() {
+	if typedv == nil || typedv.(ccurlintf.Type).IsDeltaApplied() {
 		return typedv, nil
 	}
 
-	rawv, _, _ := typedv.(ccurlintef.Type).Get()
-	return typedv.(ccurlintef.Type).New(rawv, nil, nil, typedv.(ccurlintef.Type).Min(), typedv.(ccurlintef.Type).Max()), nil // Return in a new univalue
+	rawv, _, _ := typedv.(ccurlintf.Type).Get()
+	return typedv.(ccurlintf.Type).New(rawv, nil, nil, typedv.(ccurlintf.Type).Min(), typedv.(ccurlintf.Type).Max()), nil // Return in a new univalue
 }
 
 func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) interface{} {
@@ -116,33 +127,33 @@ func (this *WriteCache) IfExists(path string) bool {
 	return this.store.IfExists(path) //this.RetriveShallow(path, nil) != nil
 }
 
-func (this *WriteCache) AddTransitions(transitions []ccurlintef.Univalue) {
+func (this *WriteCache) AddTransitions(transitions []ccurlintf.Univalue) {
 	if len(transitions) == 0 {
 		return
 	}
 
-	newPathCreations := common.MoveIf(&transitions, func(v ccurlintef.Univalue) bool {
+	newPathCreations := common.MoveIf(&transitions, func(v ccurlintf.Univalue) bool {
 		return common.IsPath(*v.GetPath()) && !v.Preexist()
 	})
 
 	// Remove the changes from the existing paths, as they will be updated automatically when inserting sub elements.
-	transitions = common.RemoveIf(&transitions, func(v ccurlintef.Univalue) bool {
+	transitions = common.RemoveIf(&transitions, func(v ccurlintf.Univalue) bool {
 		return common.IsPath(*v.GetPath())
 	})
 
 	// Not necessary at the moment, but good for the future if multiple level containers are available
-	newPathCreations = indexer.Univalues(indexer.Sorter(newPathCreations))
-	common.Foreach(newPathCreations, func(v *ccurlintef.Univalue, _ int) {
+	newPathCreations = indexer.Univalues(this.Sort(newPathCreations))
+	common.Foreach(newPathCreations, func(v *ccurlintf.Univalue, _ int) {
 		(*v).Merge(this) // Write back to the parent writecache
 	})
 
-	common.Foreach(transitions, func(v *ccurlintef.Univalue, _ int) {
+	common.Foreach(transitions, func(v *ccurlintf.Univalue, _ int) {
 		(*v).Merge(this) // Write back to the parent writecache
 	})
 }
 
 func (this *WriteCache) Clear() {
-	this.kvDict = make(map[string]ccurlintef.Univalue)
+	this.kvDict = make(map[string]ccurlintf.Univalue)
 }
 
 func (this *WriteCache) Equal(other *WriteCache) bool {
@@ -160,7 +171,7 @@ func (this *WriteCache) Equal(other *WriteCache) bool {
 	return cacheFlag
 }
 
-func (*WriteCache) Sort(univals []interfaces.Univalue) []interfaces.Univalue {
+func (*WriteCache) Sort(univals []ccurlintf.Univalue) []ccurlintf.Univalue {
 	sort.SliceStable(univals, func(i, j int) bool {
 		lhs := (*(univals[i].GetPath()))
 		rhs := (*(univals[j].GetPath()))
@@ -169,17 +180,25 @@ func (*WriteCache) Sort(univals []interfaces.Univalue) []interfaces.Univalue {
 	return univals
 }
 
-func (this *WriteCache) Export(preprocessors ...func([]ccurlintef.Univalue) []ccurlintef.Univalue) []ccurlintef.Univalue {
+func (this *WriteCache) Export(preprocessors ...func([]ccurlintf.Univalue) []ccurlintf.Univalue) []ccurlintf.Univalue {
 	this.buffer = common.MapValues(this.kvDict) //this.buffer[:0]
 
 	for _, processor := range preprocessors {
-		this.buffer = common.IfThenDo1st(processor != nil, func() []ccurlintef.Univalue {
+		this.buffer = common.IfThenDo1st(processor != nil, func() []ccurlintf.Univalue {
 			return processor(this.buffer)
 		}, this.buffer)
 	}
 
-	common.RemoveIf(&this.buffer, func(v ccurlintef.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
+	common.RemoveIf(&this.buffer, func(v ccurlintf.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
 	return this.buffer
+}
+
+func (this *WriteCache) ExportAll(preprocessors ...func([]ccurlintf.Univalue) []ccurlintf.Univalue) ([]ccurlintf.Univalue, []ccurlintf.Univalue) {
+	all := this.Export(this.Sort)
+
+	accesses := indexer.Univalues(common.Clone(all)).To(indexer.ITCAccess{})
+	transitions := indexer.Univalues(common.Clone(all)).To(indexer.ITCTransition{})
+	return accesses, transitions
 }
 
 func (this *WriteCache) Print() {
