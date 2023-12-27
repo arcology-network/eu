@@ -5,7 +5,6 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 
 - **[EVM-adaptor](https://github.com/arcology-network/vm-adaptor):** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
 
-
 <p align="center">
 <img src="./img/eu.png" alt="eu">
 </p>
