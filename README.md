@@ -7,7 +7,7 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 
 
 <p align="center">
-<img src="./img/eu.png" alt="eu" width="924">
+<img src="./img/eu.png" alt="eu">
 </p>
 
 ## Input and Output

@@ -15,6 +15,8 @@
  *   limitations under the License.
  */
 
+// This package includes functions for indexing, retrieving, and manipulating data stored in the cache.
+// The cache supports concurrent access and provides methods for reading and writing data at specific paths.
 package cache
 
 import (
@@ -28,6 +30,7 @@ import (
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 )
 
+// Get the index of a given key under a path.
 func (this *WriteCache) IndexOf(tx uint32, path string, key interface{}, T any) (uint64, uint64) {
 	if !common.IsPath(path) {
 		return math.MaxUint64, READ_NONEXIST //, errors.New("Error: Not a path!!!")
@@ -43,6 +46,8 @@ func (this *WriteCache) IndexOf(tx uint32, path string, key interface{}, T any) 
 	return math.MaxUint64, READ_NONEXIST
 }
 
+// KeyAt returns the index of a give key and the the opertion fee under a path.
+// If the path does not exist, it returns an error. The second return value is the operation fee.
 func (this *WriteCache) KeyAt(tx uint32, path string, index interface{}, T any) (string, uint64) {
 	if !common.IsPath(path) {
 		return "", READ_NONEXIST //, errors.New("Error: Not a path!!!")
@@ -58,12 +63,14 @@ func (this *WriteCache) KeyAt(tx uint32, path string, index interface{}, T any) 
 	return "", READ_NONEXIST
 }
 
+// Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
 func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
 	_, univ := this.Find(path, T)
 	v, _, _ := univ.(intf.Univalue).Value().(interfaces.Type).Get()
 	return v, Fee{}.Reader(univ)
 }
 
+// This function looks up the committed value in the DB instead of the cache.
 func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) {
 	v, _ := this.store.Retrive(path, T)
 	return v, READ_COMMITTED_FROM_DB
@@ -74,7 +81,7 @@ func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) (int
 	return univalue.Do(tx, path, doer), nil
 }
 
-// Read th Nth element under a path
+// get the key of the Nth element under a path
 func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
 	if !common.IsPath(path) {
 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
