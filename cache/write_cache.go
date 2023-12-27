@@ -12,7 +12,7 @@ import (
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/importer"
+	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/noncommutative"
@@ -241,7 +241,7 @@ func (this *WriteCache) AddTransitions(transitions []intf.Univalue) {
 	})
 
 	// Not necessary at the moment, but good for the future if multiple level containers are available
-	newPathCreations = indexer.Univalues(indexer.Sorter(newPathCreations))
+	newPathCreations = importer.Univalues(importer.Sorter(newPathCreations))
 	common.Foreach(newPathCreations, func(v *intf.Univalue, _ int) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
@@ -284,11 +284,11 @@ func (this *WriteCache) Export(preprocessors ...func([]intf.Univalue) []intf.Uni
 }
 
 func (this *WriteCache) ExportAll(preprocessors ...func([]interfaces.Univalue) []interfaces.Univalue) ([]interfaces.Univalue, []interfaces.Univalue) {
-	all := this.Export(indexer.Sorter)
-	// indexer.Univalues(all).Print()
+	all := this.Export(importer.Sorter)
+	// importer.Univalues(all).Print()
 
-	accesses := indexer.Univalues(common.Clone(all)).To(indexer.ITCAccess{})
-	transitions := indexer.Univalues(common.Clone(all)).To(indexer.ITCTransition{})
+	accesses := importer.Univalues(common.Clone(all)).To(importer.ITCAccess{})
+	transitions := importer.Univalues(common.Clone(all)).To(importer.ITCTransition{})
 	return accesses, transitions
 }
 
