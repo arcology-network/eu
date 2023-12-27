@@ -7,7 +7,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/concurrenturl/commutative"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	cache "github.com/arcology-network/eu/cache"
 
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"

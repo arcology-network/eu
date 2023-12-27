@@ -63,13 +63,13 @@ func chooseDataStore() ccurlintf.Datastore {
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 }
 
-func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.ConcurrentUrl, []ccurlintf.Univalue) {
+func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.StorageCommitter, []ccurlintf.Univalue) {
 	datastore := chooseDataStore()
 	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
 	localCache := cache.NewWriteCache(datastore)
 	// if len(args) > 0 {
-	// 	url = args[0].(*concurrenturl.ConcurrentUrl)
+	// 	url = args[0].(*concurrenturl.StorageCommitter )
 	// }
 	api := eu.NewAPI(localCache)
 
@@ -92,7 +92,7 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concur
 	// fmt.Println("\n" + adaptorcommon.FormatTransitions(transitions))
 
 	// Deploy.
-	url := concurrenturl.NewConcurrentUrl(datastore)
+	url := concurrenturl.NewStorageCommitter(datastore)
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{0})
@@ -144,7 +144,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	}
 
 	contractAddress := receipt.ContractAddress
-	url = concurrenturl.NewConcurrentUrl(db)
+	url = concurrenturl.NewStorageCommitter(db)
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{1})
@@ -186,7 +186,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 	return nil
 }
 
-// func AliceCall(eu *execution.EU, contractAddress evmcommon.Address, funcName string, ccurl *concurrenturl.ConcurrentUrl) error {
+// func AliceCall(eu *execution.EU, contractAddress evmcommon.Address, funcName string, ccurl *concurrenturl.StorageCommitter ) error {
 // 	api := eu.NewAPI(ccurl)
 // 	eu.SetApi(api)
 
@@ -220,7 +220,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 // 	return nil
 // }
 
-func DepolyContract(eu *execution.EU, ccurl *concurrenturl.ConcurrentUrl, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
+func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	stdMsg := &adaptorcommon.StandardMessage{
 		ID:     1,

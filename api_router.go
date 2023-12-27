@@ -31,7 +31,7 @@ type API struct {
 	// reserved interface{}
 
 	handlerDict map[[20]byte]adaptorintf.ApiCallHandler // APIs under the atomic namespace
-	// ccurl       *concurrenturl.ConcurrentUrl
+	// ccurl       *concurrenturl.StorageCommitter
 
 	localCache *cache.WriteCache
 	dataReader ccurlintf.ReadOnlyDataStore
@@ -117,9 +117,9 @@ func (this *API) VM() interface{} {
 func (this *API) GetEU() interface{}   { return this.eu }
 func (this *API) SetEU(eu interface{}) { this.eu = eu.(adaptorintf.EU) }
 
-// func (this *API) Ccurl() *concurrenturl.ConcurrentUrl            { return this.ccurl }
+// func (this *API) Ccurl() *concurrenturl.StorageCommitter             { return this.ccurl }
 
-// func (this *API) LocalCache() *concurrenturl.ConcurrentUrl { return this.ccurl }
+// func (this *API) LocalCache() *concurrenturl.StorageCommitter  { return this.ccurl }
 
 func (this *API) SetReadOnlyDataSource(readOnlyDataSource interface{}) {
 	this.dataReader = readOnlyDataSource.(ccurlintf.ReadOnlyDataStore)

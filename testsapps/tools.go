@@ -45,12 +45,12 @@ func MainTestConfig() *execution.Config {
 	return cfg
 }
 
-func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concurrenturl.ConcurrentUrl, []interfaces.Univalue) {
+func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concurrenturl.StorageCommitter, []interfaces.Univalue) {
 	persistentDB := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
 	persistentDB.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 	db := ccurlstorage.NewTransientDB(persistentDB)
 
-	url := concurrenturl.NewConcurrentUrl(db)
+	url := concurrenturl.NewStorageCommitter(db)
 	api := eu.NewAPI(url)
 
 	statedb := eth.NewImplStateDB(api)
@@ -72,7 +72,7 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 	// fmt.Println("\n" + adaptorcommon.FormatTransitions(transitions))
 
 	// Deploy.
-	url = concurrenturl.NewConcurrentUrl(db)
+	url = concurrenturl.NewStorageCommitter(db)
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{0})
@@ -87,7 +87,7 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 	return execution.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, db, url, transitions
 }
 
-func DepolyContract(eu *execution.EU, ccurl *concurrenturl.ConcurrentUrl, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
+func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(adaptorcommon.Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	stdMsg := &execution.StandardMessage{
 		ID:     1,

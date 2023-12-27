@@ -74,7 +74,7 @@ func TestGasDebitInFailedTx(t *testing.T) {
 // 	persistentDB.Inject((&concurrenturl.Platform{}).Eth10Account(), meta)
 // 	db := curstorage.NewTransientDB(persistentDB)
 
-// 	url := concurrenturl.NewConcurrentUrl(db)
+// 	url := concurrenturl.NewStorageCommitter (db)
 // 	api := eu.NewAPI(url)
 
 // 	statedb := cceueth.NewImplStateDB(api)
@@ -148,7 +148,7 @@ func TestGasDebitInFailedTx(t *testing.T) {
 // 	persistentDB.Inject((&concurrenturl.Platform{}).Eth10Account(), meta)
 // 	db := curstorage.NewTransientDB(persistentDB)
 
-// 	url := concurrenturl.NewConcurrentUrl(db)
+// 	url := concurrenturl.NewStorageCommitter (db)
 // 	api := eu.NewAPI(url)
 // 	statedb := cceueth.NewImplStateDB(api)
 // 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	indexer "github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/univalue"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"

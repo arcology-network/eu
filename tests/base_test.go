@@ -53,7 +53,7 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	contractAddress := receipt.ContractAddress
-	url = concurrenturl.NewConcurrentUrl(db)
+	url = concurrenturl.NewStorageCommitter(db)
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{1})

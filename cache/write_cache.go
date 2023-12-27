@@ -9,10 +9,10 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	mempool "github.com/arcology-network/common-lib/mempool"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+	committercommon "github.com/arcology-network/concurrenturl/common"
 	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
-	"github.com/arcology-network/concurrenturl/indexer"
+	indexer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/noncommutative"
@@ -44,7 +44,7 @@ func NewWriteCache(store intf.ReadOnlyDataStore, args ...interface{}) *WriteCach
 // CreateNewAccount creates a new account in the write cache.
 // It returns the transitions and an error, if any.
 func (this *WriteCache) CreateNewAccount(tx uint32, acct string) ([]intf.Univalue, error) {
-	paths, typeids := ccurlcommon.NewPlatform().GetBuiltins(acct)
+	paths, typeids := committercommon.NewPlatform().GetBuiltins(acct)
 
 	transitions := []intf.Univalue{}
 	for i, path := range paths {
@@ -179,7 +179,7 @@ func (this *WriteCache) Find(path string, T any) (interface{}, interface{}) {
 	}
 
 	v, _ := this.ReadOnlyDataStore().Retrive(path, T)
-	univ := univalue.NewUnivalue(ccurlcommon.SYSTEM, path, 0, 0, 0, v, nil)
+	univ := univalue.NewUnivalue(committercommon.SYSTEM, path, 0, 0, 0, v, nil)
 	return univ.Value(), univ
 }
 
@@ -200,12 +200,12 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 
 func (this *WriteCache) write(tx uint32, path string, value interface{}) (int64, error) {
 	parentPath := common.GetParentPath(path)
-	if this.IfExists(parentPath) || tx == ccurlcommon.SYSTEM { // The parent path exists or to inject the path directly
+	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue := this.GetOrInit(tx, path, value) // Get a univalue wrapper
 
 		err := univalue.Set(tx, path, value, this)
 		if err == nil {
-			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != ccurlcommon.SYSTEM) { // Don't keep track of the system children
+			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM) { // Don't keep track of the system children
 				parentMeta := this.GetOrInit(tx, parentPath, new(commutative.Path))
 				err = parentMeta.Set(tx, path, univalue.Value(), this)
 			}
@@ -216,7 +216,7 @@ func (this *WriteCache) write(tx uint32, path string, value interface{}) (int64,
 }
 
 func (this *WriteCache) IfExists(path string) bool {
-	if ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
+	if committercommon.ETH10_ACCOUNT_PREFIX_LENGTH == len(path) {
 		return true
 	}
 
