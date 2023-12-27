@@ -6,9 +6,9 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	cache "github.com/arcology-network/concurrenturl/cache"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/indexer"
+	cache "github.com/arcology-network/eu/cache"
 
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"

@@ -7,11 +7,11 @@ import (
 
 	commontypes "github.com/arcology-network/common-lib/types"
 	concurrenturl "github.com/arcology-network/concurrenturl"
-	"github.com/arcology-network/concurrenturl/cache"
 	"github.com/arcology-network/concurrenturl/commutative"
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/eu"
+	"github.com/arcology-network/eu/cache"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"

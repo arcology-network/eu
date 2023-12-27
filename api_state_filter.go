@@ -3,9 +3,9 @@ package eu
 import (
 	commonlibcommon "github.com/arcology-network/common-lib/common"
 
-	"github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/eu/cache"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 )
 

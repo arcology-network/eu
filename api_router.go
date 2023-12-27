@@ -7,8 +7,8 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/cache"
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/eu/cache"
 
 	eucommon "github.com/arcology-network/eu/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"

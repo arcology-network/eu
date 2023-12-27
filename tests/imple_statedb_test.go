@@ -7,11 +7,11 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	concurrenturl "github.com/arcology-network/concurrenturl"
-	"github.com/arcology-network/concurrenturl/cache"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/noncommutative"
 	"github.com/arcology-network/eu"
+	"github.com/arcology-network/eu/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
 	eth "github.com/arcology-network/vm-adaptor/eth"
