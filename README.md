@@ -7,11 +7,15 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 - **[EVM-adaptor](https://github.com/arcology-network/vm-adaptor):** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
 
 - A local Write Cache to temporarily store data before persist them to the stateDB
+<br />
+<br />
 
 <p align="center">
 <img src="./img/eu.png" alt="eu">
 </p>
 
+<br />
+<br />
 <h2> Input and Output  <img align="center" height="40" src="./img/input.svg">  </h2>
 
 - **Input:** Executable messages from either the executor module or the Multiprocessor API calls.
@@ -26,6 +30,7 @@ The Multiprocessor module handles the EVM instances manually initiated using the
 
 The child EVMs have their own storage snapshots and no access to each other's data during execution. The state changes will be merged back into the parent EVM when the execution is finally done, and the child EVMs will be destroyed. The hosting EVM is responsible for **deterministically** merging children's snapshots together.
 
+>> To maintain behaivou consistency with trasaction execution, all the EVM instances causing state access conflicts will be reverted. 
 
 ### Max Depth
 
