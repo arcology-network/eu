@@ -30,7 +30,7 @@ The Multiprocessor module handles the EVM instances manually initiated using the
 
 The child EVMs have their own storage snapshots and no access to each other's data during execution. The state changes will be merged back into the parent EVM when the execution is finally done, and the child EVMs will be destroyed. The hosting EVM is responsible for **deterministically** merging children's snapshots together.
 
->> To maintain behaivou consistency with trasaction execution, all the EVM instances causing state access conflicts will be reverted, just like what will happen at transaction level execution
+>> To maintain behavioral consistency with transaction execution, any EVM instances causing state access conflicts will be reverted.
 
 ### Max Depth
 
