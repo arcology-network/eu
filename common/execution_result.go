@@ -32,7 +32,10 @@ type Result struct {
 	Err              error
 }
 
-// The tx sender has to pay the tx fees regardless the execution status.
+// GenGasTransition generates the gas transition for the sender from the sender's balance change. If the sender's balance deduction is
+// greater than the gas used, it means a transfer has happened, the gas transition contains both the transfer and the gas deduction.
+// In this case, the transition is split into two parts, one for the transfer and the other for the gas deduction. The transfer part is
+// affected by conflicts, while the gas deduction part is not.
 func (this *Result) GenGasTransition(rawTransition *univalue.Univalue, gasDelta *uint256.Int, isCredit bool) *univalue.Univalue {
 	balanceTransition := rawTransition.Clone().(*univalue.Univalue)
 	if diff := balanceTransition.Value().(ccurlintf.Type).Delta().(uint256.Int); diff.Cmp(gasDelta) >= 0 {
@@ -54,22 +57,34 @@ func (this *Result) Postprocess() *Result {
 		return this
 	}
 
+	// Calculate the gas used in wei for the sender.
+	gasUsedInWei := new(uint256.Int).Mul(uint256.NewInt(this.Receipt.GasUsed), uint256.NewInt(this.StdMsg.Native.GasPrice.Uint64()))
+
+	// Find the sender's balance from the state accesses.
 	_, senderBalance := common.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
 
-	gasUsedInWei := uint256.NewInt(1).Mul(uint256.NewInt(this.Receipt.GasUsed), uint256.NewInt(this.StdMsg.Native.GasPrice.Uint64()))
-	if senderGasDebit := this.GenGasTransition(*senderBalance, gasUsedInWei, false); senderGasDebit != nil {
-		this.immuned = append(this.immuned, senderGasDebit)
-	}
-
+	// Find the coinbase's balance from the state accesse records.
 	_, coinbaseBalance := common.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.Coinbase[:]))
 	})
 
-	if *(*senderBalance).GetPath() != *(*coinbaseBalance).GetPath() {
-		if coinbaseGasCredit := this.GenGasTransition(*coinbaseBalance, gasUsedInWei, true); coinbaseGasCredit != nil {
-			this.immuned = append(this.immuned, coinbaseGasCredit)
+	// sender blance and coinbase balance changes should never be nil in a normal transaction. Because the sender needs to pay for the gas anyway,
+	// the system will always check the sender's balance before executing the transaction and deduct the gas fee from the sender's balance.
+	// The only case is where the sender balance and coinbase balance changes are nil is when the transaction is initiated by a cross chain relayer.
+	// The relayer derives the transaction from a transition receipt on a different chain, and wraps it as a new transaction.
+	// In this case, the relayer isn't the real sender of the transaction to pay for the gas.
+	if senderBalance != nil && coinbaseBalance != nil {
+		// Find the sender's balance from the state accesses and generate a transition corresponding to the gas deduction part.
+		if senderGasDebit := this.GenGasTransition(*senderBalance, gasUsedInWei, false); senderGasDebit != nil {
+			this.immuned = append(this.immuned, senderGasDebit)
+		}
+
+		if *(*senderBalance).GetPath() != *(*coinbaseBalance).GetPath() {
+			if coinbaseGasCredit := this.GenGasTransition(*coinbaseBalance, gasUsedInWei, true); coinbaseGasCredit != nil {
+				this.immuned = append(this.immuned, coinbaseGasCredit)
+			}
 		}
 	}
 
