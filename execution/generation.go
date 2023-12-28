@@ -7,7 +7,7 @@ import (
 
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/concurrenturl/univalue"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 )
 
@@ -46,11 +46,11 @@ func (this *Generation) Add(job intf.JobSequence) bool {
 	return true
 }
 
-func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []ccurlintf.Univalue {
+func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []*univalue.Univalue {
 	config := NewConfig().SetCoinbase(parentApiRouter.Coinbase())
 
 	groupIDs := make([][]uint32, len(this.jobSeqs))
-	records := make([][]ccurlintf.Univalue, len(this.jobSeqs))
+	records := make([][]*univalue.Univalue, len(this.jobSeqs))
 	// t0 := time.Now()
 	worker := func(start, end, idx int, args ...interface{}) {
 		// for i := 0; i < len(this.jobSeqs); i++ {
@@ -63,7 +63,7 @@ func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []ccurlintf.Univa
 	// fmt.Println(time.Since(t0))
 
 	txDict, groupDict, _ := this.Detect(groupIDs, records).ToDict()
-	return common.Concate(this.jobSeqs, func(seq *JobSequence) []ccurlintf.Univalue {
+	return common.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
 		if _, ok := (*groupDict)[(*seq).ID]; ok {
 			(*seq).FlagConflict(txDict, errors.New(ccurlcommon.WARN_ACCESS_CONFLICT))
 		}
@@ -71,7 +71,7 @@ func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []ccurlintf.Univa
 	})
 }
 
-func (*Generation) Detect(groupIDs [][]uint32, records [][]ccurlintf.Univalue) arbitrator.Conflicts {
+func (*Generation) Detect(groupIDs [][]uint32, records [][]*univalue.Univalue) arbitrator.Conflicts {
 	if len(records) == 1 {
 		return arbitrator.Conflicts{}
 	}

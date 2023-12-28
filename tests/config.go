@@ -10,6 +10,7 @@ import (
 	"github.com/arcology-network/concurrenturl/commutative"
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
+	"github.com/arcology-network/concurrenturl/univalue"
 	"github.com/arcology-network/eu"
 	"github.com/arcology-network/eu/cache"
 	"github.com/ethereum/go-ethereum/common"
@@ -63,7 +64,7 @@ func chooseDataStore() ccurlintf.Datastore {
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 }
 
-func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.StorageCommitter, []ccurlintf.Univalue) {
+func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.StorageCommitter, []*univalue.Univalue) {
 	datastore := chooseDataStore()
 	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 

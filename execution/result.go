@@ -23,8 +23,8 @@ type Result struct {
 	TxHash           [32]byte
 	From             [20]byte
 	Coinbase         [20]byte
-	rawStateAccesses []ccurlintf.Univalue
-	immuned          []ccurlintf.Univalue
+	rawStateAccesses []*univalue.Univalue
+	immuned          []*univalue.Univalue
 	Receipt          *evmTypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
 	stdMsg           *adaptorcommon.StandardMessage
@@ -32,14 +32,14 @@ type Result struct {
 }
 
 // The tx sender has to pay the tx fees regardless the execution status.
-func (this *Result) GenGasTransition(rawTransition ccurlintf.Univalue, gasDelta *uint256.Int, isCredit bool) ccurlintf.Univalue {
-	balanceTransition := rawTransition.Clone().(ccurlintf.Univalue)
+func (this *Result) GenGasTransition(rawTransition *univalue.Univalue, gasDelta *uint256.Int, isCredit bool) *univalue.Univalue {
+	balanceTransition := rawTransition.Clone().(*univalue.Univalue)
 	if diff := balanceTransition.Value().(ccurlintf.Type).Delta().(uint256.Int); diff.Cmp(gasDelta) >= 0 {
 		// transfer := diff.Sub(diff.Clone(), (*uint256.Int)(gasDelta))                            // balance - gas
 		// (balanceTransition).Value().(ccurlintf.Type).SetDelta((*codec.Uint256)(transfer)) // Set the transfer, Won't change the initial value.
 		// (balanceTransition).Value().(ccurlintf.Type).SetDeltaSign(false)
 		//
-		newGasTransition := balanceTransition.Clone().(ccurlintf.Univalue)
+		newGasTransition := balanceTransition.Clone().(*univalue.Univalue)
 		newGasTransition.Value().(ccurlintf.Type).SetDelta(*gasDelta)
 		newGasTransition.Value().(ccurlintf.Type).SetDeltaSign(isCredit)
 		newGasTransition.GetUnimeta().(*univalue.Unimeta).SetPersistent(true)
@@ -53,7 +53,7 @@ func (this *Result) Postprocess() *Result {
 		return this
 	}
 
-	_, senderBalance := common.FindFirstIf(this.rawStateAccesses, func(v ccurlintf.Univalue) bool {
+	_, senderBalance := common.FindFirstIf(this.rawStateAccesses, func(v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
 
@@ -62,7 +62,7 @@ func (this *Result) Postprocess() *Result {
 		this.immuned = append(this.immuned, senderGasDebit)
 	}
 
-	_, coinbaseBalance := common.FindFirstIf(this.rawStateAccesses, func(v ccurlintf.Univalue) bool {
+	_, coinbaseBalance := common.FindFirstIf(this.rawStateAccesses, func(v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.Coinbase[:]))
 	})
 
@@ -72,7 +72,7 @@ func (this *Result) Postprocess() *Result {
 		}
 	}
 
-	common.Foreach(this.rawStateAccesses, func(v *ccurlintf.Univalue, _ int) {
+	common.Foreach(this.rawStateAccesses, func(v **univalue.Univalue, _ int) {
 		if v != nil {
 			return
 		}
@@ -87,9 +87,9 @@ func (this *Result) Postprocess() *Result {
 	return this
 }
 
-func (this *Result) Transitions() []ccurlintf.Univalue {
+func (this *Result) Transitions() []*univalue.Univalue {
 	if this.Err != nil {
-		return this.immuned //.MoveIf(&this.rawStateAccesses, func(v ccurlintf.Univalue) bool { return v.Persistent() })
+		return this.immuned //.MoveIf(&this.rawStateAccesses, func(v *univalue.Univalue) bool { return v.Persistent() })
 	}
 	return this.rawStateAccesses
 }

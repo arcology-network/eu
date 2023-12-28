@@ -3,6 +3,7 @@ package cache
 import (
 	common "github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/concurrenturl/interfaces"
+	"github.com/arcology-network/concurrenturl/univalue"
 )
 
 const (
@@ -17,10 +18,10 @@ func (Fee) Reader(v interface{}) uint64 { // Call this before setting the value 
 		return READ_NONEXIST
 	}
 
-	typedv := v.(intf.Univalue).Value()
+	typedv := v.(*univalue.Univalue).Value()
 	dataSize := common.IfThenDo1st(typedv != nil, func() uint64 { return uint64(typedv.(intf.Type).MemSize()) }, 0)
 	return common.IfThen(
-		v.(intf.Univalue).Reads() > 1, // Is hot loaded
+		v.(*univalue.Univalue).Reads() > 1, // Is hot loaded
 		common.Max(dataSize/32, 1)*3,
 		(dataSize/32)*5000,
 	)

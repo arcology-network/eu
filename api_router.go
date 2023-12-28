@@ -45,12 +45,13 @@ func NewAPI(cache *cache.WriteCache) *API {
 	api := &API{
 		eu:          nil,
 		localCache:  cache,
+		filter:      NewStateFilter(cache),
 		handlerDict: make(map[[20]byte]adaptorintf.ApiCallHandler),
 		depth:       0,
 		execResult:  &eucommon.Result{},
 		serialNums:  [4]uint64{},
 	}
-	api.filter = NewExportFilter(api)
+	// api.filter = NewStateFilter(api.localCache)
 
 	handlers := []adaptorintf.ApiCallHandler{
 		apihandler.NewIoHandlers(api),

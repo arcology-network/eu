@@ -11,6 +11,7 @@ import (
 	"github.com/arcology-network/concurrenturl/commutative"
 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
+	"github.com/arcology-network/concurrenturl/univalue"
 	"github.com/arcology-network/eu"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -45,7 +46,7 @@ func MainTestConfig() *execution.Config {
 	return cfg
 }
 
-func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concurrenturl.StorageCommitter, []interfaces.Univalue) {
+func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concurrenturl.StorageCommitter, []*univalue.Univalue) {
 	persistentDB := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
 	persistentDB.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 	db := ccurlstorage.NewTransientDB(persistentDB)
