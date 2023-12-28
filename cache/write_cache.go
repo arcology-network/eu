@@ -85,7 +85,6 @@ func (this *WriteCache) CreateNewAccount(tx uint32, acct string) ([]*univalue.Un
 	return transitions, nil
 }
 
-// func (this *WriteCache) SetStore(store intf.ReadOnlyDataStore) { this.store = store }
 func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.store }
 func (this *WriteCache) Cache() map[string]*univalue.Univalue      { return this.kvDict }
 
@@ -110,11 +109,28 @@ func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interf
 	return univalue.Get(tx, path, nil), univalue, 0
 }
 
+func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
+	parentPath := common.GetParentPath(path)
+	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
+		univalue := this.GetOrInit(tx, path, value) // Get a univalue wrapper
+
+		err := univalue.Set(tx, path, value, this)
+		if err == nil {
+			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM) { // Don't keep track of the system children
+				parentMeta := this.GetOrInit(tx, parentPath, new(commutative.Path))
+				err = parentMeta.Set(tx, path, univalue.Value(), this)
+			}
+		}
+		return err
+	}
+	return errors.New("Error: The parent path doesn't exist: " + parentPath)
+}
+
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
 	// fmt.Println("Write: ", path, "|", value)
 	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
-		return fee, common.FilterSecond(this.write(tx, path, value))
+		return fee, this.write(tx, path, value)
 	}
 	return fee, errors.New("Error: Unknown data type !")
 }
@@ -157,23 +173,6 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 
 	rawv, _, _ := typedv.(intf.Type).Get()
 	return typedv.(intf.Type).New(rawv, nil, nil, typedv.(intf.Type).Min(), typedv.(intf.Type).Max()), nil // Return in a new univalue
-}
-
-func (this *WriteCache) write(tx uint32, path string, value interface{}) (int64, error) {
-	parentPath := common.GetParentPath(path)
-	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
-		univalue := this.GetOrInit(tx, path, value) // Get a univalue wrapper
-
-		err := univalue.Set(tx, path, value, this)
-		if err == nil {
-			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM) { // Don't keep track of the system children
-				parentMeta := this.GetOrInit(tx, parentPath, new(commutative.Path))
-				err = parentMeta.Set(tx, path, univalue.Value(), this)
-			}
-		}
-		return 0, err
-	}
-	return 0, errors.New("Error: The parent path doesn't exist: " + parentPath)
 }
 
 func (this *WriteCache) IfExists(path string) bool {

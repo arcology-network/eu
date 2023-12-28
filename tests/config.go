@@ -87,7 +87,8 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concur
 	// statedb.CreateAccount(adaptorcommon.RUNTIME_HANDLER)
 	// statedb.AddBalance(adaptorcommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
 
-	_, transitions := api.StateFilter().ByType()
+	// _, transitions := api.WriteCacheFilter().ByType()
+	_, transitions := cache.NewWriteCacheFilter(api.WriteCache()).ByType()
 	// indexer.Univalues(transitionsFiltered).Print()
 
 	// fmt.Println("\n" + adaptorcommon.FormatTransitions(transitions))
@@ -138,7 +139,8 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	}
 
 	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
-	_, transitions := eu.Api().StateFilter().ByType()
+	// _, transitions := eu.Api().WriteCacheFilter().ByType()
+	_, transitions := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 
 	if receipt.Status != 1 || err != nil || execResult.Err != nil {
 		return nil, nil, nil, errors.New("Error: Deployment failed!!!")
@@ -205,7 +207,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 // 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 // 	config.Time = new(big.Int).SetUint64(10000000)
 // 	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
-// 	// _, transitions : eu.Api().StateFilter().ByType()
+// 	// _, transitions : eu.Api().WriteCacheFilter().ByType()
 
 // 	if err != nil {
 // 		return (err)
@@ -240,7 +242,7 @@ func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, con
 		return errors.New("Error: Deployment failed!!!" + errmsg), config, eu, nil
 	}
 
-	_, transitionsFiltered := eu.Api().StateFilter().ByType()
+	_, transitionsFiltered := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 	// ccurl := eu.Api().Ccurl()
 	ccurl.Import(transitionsFiltered)
 	ccurl.Sort()
@@ -268,11 +270,11 @@ func CallContract(eu *execution.EU, contractAddress common.Address, inputData []
 
 	var execResult *evmcore.ExecutionResult
 	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
-	// _, transitions := eu.Api().StateFilter().ByType()
+	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
 	// msg = core.NewMessage(Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
-	// _, transitions = eu.Api().StateFilter().ByType()
+	// _, transitions = eu.Api().WriteCacheFilter().ByType()
 
 	if err != nil {
 		return nil, nil, execResult, receipt

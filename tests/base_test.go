@@ -9,6 +9,7 @@ import (
 
 	commontypes "github.com/arcology-network/common-lib/types"
 	concurrenturl "github.com/arcology-network/concurrenturl"
+	"github.com/arcology-network/eu/cache"
 	"github.com/arcology-network/eu/execution"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	"github.com/arcology-network/vm-adaptor/compiler"
@@ -39,11 +40,12 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
-	_, transitions := eu.Api().StateFilter().ByType()
+	// _, transitions := eu.Api().WriteCacheFilter().ByType()
+	_, transitions := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 
 	// msg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true) // Build the message
 	// receipt, _, err := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg)) // Execute it
-	// _, transitions := eu.Api().StateFilter().ByType()
+	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
 	//t.Log("\n" + adaptorcommon.FormatTransitions(transitions))
 	// t.Log(receipt)
@@ -75,7 +77,8 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	receipt, execResult, err = eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
-	_, transitions = eu.Api().StateFilter().ByType()
+	// _, transitions = eu.Api().WriteCacheFilter().ByType()
+	_, transitions = cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 
 	if err != nil {
 		t.Error(err)

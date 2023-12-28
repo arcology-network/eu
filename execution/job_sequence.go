@@ -125,7 +125,7 @@ func (this *JobSequence) execute(stdMsg *adaptorcommon.StandardMessage, config *
 	return (&Result{
 		TxIndex:          uint32(stdMsg.ID),
 		TxHash:           common.IfThenDo1st(receipt != nil, func() evmcommon.Hash { return receipt.TxHash }, evmcommon.Hash{}),
-		rawStateAccesses: api.StateFilter().Raw(),
+		rawStateAccesses: cache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),
 		Err:              common.IfThenDo1st(prechkErr == nil, func() error { return evmResult.Err }, prechkErr),
 		From:             stdMsg.Native.From,
 		Coinbase:         *config.Coinbase,

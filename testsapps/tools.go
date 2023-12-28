@@ -67,7 +67,7 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 	// statedb.CreateAccount(adaptorcommon.RUNTIME_HANDLER)
 	// statedb.AddBalance(adaptorcommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
 
-	_, transitions := api.StateFilter().ByType()
+	_, transitions := api.WriteCacheFilter().ByType()
 	// indexer.Univalues(transitionsFiltered).Print()
 
 	// fmt.Println("\n" + adaptorcommon.FormatTransitions(transitions))
@@ -111,7 +111,7 @@ func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, con
 		return errors.New("Error: Deployment failed!!!" + errmsg), config, eu, nil
 	}
 
-	_, transitionsFiltered := eu.Api().StateFilter().ByType()
+	_, transitionsFiltered := eu.Api().WriteCacheFilter().ByType()
 	ccurl.Import(transitionsFiltered)
 	ccurl.Sort()
 	ccurl.Commit([]uint32{1})
@@ -165,11 +165,11 @@ func CallContract(eu *execution.EU, contractAddress common.Address, inputData []
 
 	var execResult *evmcore.ExecutionResult
 	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
-	// _, transitions := eu.Api().StateFilter().ByType()
+	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
 	// msg = core.NewMessage(adaptorcommon.Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
-	// _, transitions = eu.Api().StateFilter().ByType()
+	// _, transitions = eu.Api().WriteCacheFilter().ByType()
 
 	if err != nil {
 		return nil, nil, execResult, receipt

@@ -55,7 +55,7 @@ func TestGasDebitInFailedTx(t *testing.T) {
 // 	// ================================== Deploy the contract ==================================
 // 	msg := core.NewMessage(adaptorcommon.Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true) // Build the message
 // 	receipt, _, err := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, ccEu.NewEVMBlockContext(config), ccEu.NewEVMTxContext(msg))           // Execute it
-// 	_, transitions := eu.Api().StateFilter().ByType()
+// 	_, transitions := eu.Api().WriteCacheFilter().ByType()
 
 // 	// ---------------
 

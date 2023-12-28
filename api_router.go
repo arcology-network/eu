@@ -21,37 +21,31 @@ import (
 )
 
 type API struct {
-	logs  []adaptorintf.ILog
-	depth uint8
-
+	logs       []adaptorintf.ILog
+	depth      uint8
 	serialNums [4]uint64 // sub-process/container/element/uuid generator,
 
 	schedule interface{}
 	eu       adaptorintf.EU
-	// reserved interface{}
 
 	handlerDict map[[20]byte]adaptorintf.ApiCallHandler // APIs under the atomic namespace
-	// ccurl       *concurrenturl.StorageCommitter
 
 	localCache *cache.WriteCache
 	dataReader ccurlintf.ReadOnlyDataStore
 
 	execResult *eucommon.Result
-
-	filter adaptorintf.StateFilter
 }
 
 func NewAPI(cache *cache.WriteCache) *API {
 	api := &API{
-		eu:          nil,
-		localCache:  cache,
-		filter:      NewStateFilter(cache),
+		eu:         nil,
+		localCache: cache,
+		// filter:      *cache.NewWriteCacheFilter(cache),
 		handlerDict: make(map[[20]byte]adaptorintf.ApiCallHandler),
 		depth:       0,
 		execResult:  &eucommon.Result{},
 		serialNums:  [4]uint64{},
 	}
-	// api.filter = NewStateFilter(api.localCache)
 
 	handlers := []adaptorintf.ApiCallHandler{
 		apihandler.NewIoHandlers(api),
@@ -71,11 +65,6 @@ func NewAPI(cache *cache.WriteCache) *API {
 		}
 		api.handlerDict[(handlers)[i].Address()] = v
 	}
-
-	// api.ccurl.NewAccount(
-	// 	ccurlcommon.SYSTEM,
-	// 	hex.EncodeToString(codec.Bytes20(runtime.NewHandler(api).Address()).Encode()),
-	// )
 	return api
 }
 
@@ -86,14 +75,13 @@ func (this *API) New(localCache interface{}, schedule interface{}) adaptorintf.E
 }
 
 func (this *API) WriteCache() interface{} { return this.localCache }
-func (this *API) DataReader() interface{} { return this.dataReader }
+
+// func (this *API) DataReader() interface{} { return this.dataReader }
 
 func (this *API) CheckRuntimeConstrains() bool { // Execeeds the max recursion depth or the max sub processes
 	return this.Depth() < adaptorcommon.MAX_RECURSIION_DEPTH &&
 		atomic.AddUint64(&adaptorcommon.TotalSubProcesses, 1) <= adaptorcommon.MAX_VM_INSTANCES
 }
-
-func (this *API) StateFilter() adaptorintf.StateFilter { return this.filter }
 
 func (this *API) DecrementDepth() uint8 {
 	if this.depth > 0 {
@@ -117,10 +105,6 @@ func (this *API) VM() interface{} {
 
 func (this *API) GetEU() interface{}   { return this.eu }
 func (this *API) SetEU(eu interface{}) { this.eu = eu.(adaptorintf.EU) }
-
-// func (this *API) Ccurl() *concurrenturl.StorageCommitter             { return this.ccurl }
-
-// func (this *API) LocalCache() *concurrenturl.StorageCommitter  { return this.ccurl }
 
 func (this *API) SetReadOnlyDataSource(readOnlyDataSource interface{}) {
 	this.dataReader = readOnlyDataSource.(ccurlintf.ReadOnlyDataStore)
