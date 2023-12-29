@@ -8,7 +8,6 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 
 - A local Write Cache to temporarily store data before persist them to the stateDB
 <br />
-<br />
 
 ![](./img/eu.png)
 
