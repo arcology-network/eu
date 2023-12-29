@@ -13,7 +13,6 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 ![](./img/eu.png)
 
 <br />
-<br />
 <h2> Input and Output  <img align="center" height="32" src="./img/circle-top.svg">  </h2>
 
 - **Input:** Executable messages from either the executor module or the Multiprocessor API calls.
