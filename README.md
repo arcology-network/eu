@@ -10,9 +10,7 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 <br />
 <br />
 
-<p align="center">
-<img src="./img/eu.png" alt="eu">
-</p>
+![](./img/eu.png)
 
 <br />
 <br />
