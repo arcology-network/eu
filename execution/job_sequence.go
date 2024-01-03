@@ -73,7 +73,7 @@ func (this *JobSequence) Run(config *Config, mainApi intf.EthApiRouter) ([]uint3
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].rawStateAccesses)
 	}
 
-	accessRecords := indexer.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
+	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
 	return common.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
 }
 

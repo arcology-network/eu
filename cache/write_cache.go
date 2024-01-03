@@ -201,7 +201,7 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 	})
 
 	// Not necessary at the moment, but good for the future if multiple level containers are available
-	newPathCreations = importer.Univalues(importer.Sorter(newPathCreations))
+	newPathCreations = univalue.Univalues(importer.Sorter(newPathCreations))
 	common.Foreach(newPathCreations, func(v **univalue.Univalue, _ int) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
@@ -245,10 +245,10 @@ func (this *WriteCache) Export(preprocessors ...func([]*univalue.Univalue) []*un
 
 func (this *WriteCache) ExportAll(preprocessors ...func([]*univalue.Univalue) []*univalue.Univalue) ([]*univalue.Univalue, []*univalue.Univalue) {
 	all := this.Export(importer.Sorter)
-	// importer.Univalues(all).Print()
+	// univalue.Univalues(all).Print()
 
-	accesses := importer.Univalues(common.Clone(all)).To(importer.ITAccess{})
-	transitions := importer.Univalues(common.Clone(all)).To(importer.ITTransition{})
+	accesses := univalue.Univalues(common.Clone(all)).To(importer.ITAccess{})
+	transitions := univalue.Univalues(common.Clone(all)).To(importer.ITTransition{})
 	return accesses, transitions
 }
 

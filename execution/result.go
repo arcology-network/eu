@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	indexer "github.com/arcology-network/concurrenturl/importer"
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/univalue"
 	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
@@ -99,7 +98,7 @@ func (this *Result) Print() {
 	fmt.Println("TxIndex: ", this.TxIndex)
 	fmt.Println("TxHash: ", this.TxHash)
 	fmt.Println()
-	indexer.Univalues(this.rawStateAccesses).Print()
+	univalue.Univalues(this.rawStateAccesses).Print()
 	fmt.Println("Error: ", this.Err)
 }
 

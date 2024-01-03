@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	indexer "github.com/arcology-network/concurrenturl/importer"
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/univalue"
 	evmcore "github.com/ethereum/go-ethereum/core"
@@ -115,7 +114,7 @@ func (this *Result) Print() {
 	fmt.Println("TxIndex: ", this.TxIndex)
 	fmt.Println("TxHash: ", this.TxHash)
 	fmt.Println()
-	indexer.Univalues(this.RawStateAccesses).Print()
+	univalue.Univalues(this.RawStateAccesses).Print()
 	fmt.Println("Error: ", this.Err)
 }
 
