@@ -15,7 +15,10 @@ import (
 
 	// eucommon "github.com/arcology-network/eu/common"
 	execution "github.com/arcology-network/eu/execution"
-	apihandler "github.com/arcology-network/vm-adaptor/api"
+	apicontainer "github.com/arcology-network/vm-adaptor/api/container"
+	apicumulative "github.com/arcology-network/vm-adaptor/api/cumulative"
+	apimultiprocess "github.com/arcology-network/vm-adaptor/api/multiprocess"
+	apiio "github.com/arcology-network/vm-adaptor/api/runtime"
 	adaptorintf "github.com/arcology-network/vm-adaptor/interface"
 )
 
@@ -47,15 +50,15 @@ func NewAPIRouter(cache *cache.WriteCache) *APIRouter {
 	}
 
 	handlers := []adaptorintf.ApiCallHandler{
-		apihandler.NewIoHandlers(api),
-		apihandler.NewMultiprocessHandlers(
+		apiio.NewIoHandlers(api),
+		apimultiprocess.NewMultiprocessHandler(
 			api,
 			common.To[*execution.JobSequence, adaptorintf.JobSequence]([]*execution.JobSequence{}),
 			&execution.Generation{}),
-		apihandler.NewBaseHandlers(api, nil),
-		apihandler.NewU256CumulativeHandlers(api),
+		apicontainer.NewBaseHandlers(api, nil),
+		apicumulative.NewU256CumulativeHandler(api),
 		// cumulativei256.NewInt256CumulativeHandlers(api),
-		apihandler.NewRuntimeHandlers(api),
+		apiio.NewRuntimeHandlers(api),
 	}
 
 	for i, v := range handlers {
