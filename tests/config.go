@@ -13,6 +13,7 @@ import (
 	"github.com/arcology-network/concurrenturl/univalue"
 	"github.com/arcology-network/eu"
 	"github.com/arcology-network/eu/cache"
+	eucommon "github.com/arcology-network/eu/common"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -25,7 +26,6 @@ import (
 
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/eu/execution"
-	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	"github.com/arcology-network/vm-adaptor/compiler"
 	"github.com/arcology-network/vm-adaptor/eth"
 )
@@ -84,14 +84,14 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concur
 	statedb.CreateAccount(Bob)
 	statedb.AddBalance(Bob, new(big.Int).SetUint64(1e18))
 
-	// statedb.CreateAccount(adaptorcommon.RUNTIME_HANDLER)
-	// statedb.AddBalance(adaptorcommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
+	// statedb.CreateAccount(eucommon.RUNTIME_HANDLER)
+	// statedb.AddBalance(eucommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
 
 	// _, transitions := api.WriteCacheFilter().ByType()
 	_, transitions := cache.NewWriteCacheFilter(api.WriteCache()).ByType()
 	// indexer.Univalues(transitionsFiltered).Print()
 
-	// fmt.Println("\n" + adaptorcommon.FormatTransitions(transitions))
+	// fmt.Println("\n" + eucommon.FormatTransitions(transitions))
 
 	// Deploy.
 	url := concurrenturl.NewStorageCommitter(datastore)
@@ -131,7 +131,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 
 	// ================================== Deploy the contract ==================================
 	msg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true)
-	stdMsg := &adaptorcommon.StandardMessage{
+	stdMsg := &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
@@ -167,7 +167,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 
 	data := crypto.Keccak256([]byte(funcName))[:4]
 	msg := core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
-	stdMsg := &adaptorcommon.StandardMessage{
+	stdMsg := &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
@@ -225,7 +225,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 
 func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
-	stdMsg := &adaptorcommon.StandardMessage{
+	stdMsg := &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
@@ -256,7 +256,7 @@ func CallContract(eu *execution.EU, contractAddress common.Address, inputData []
 	// inputData = append(data, inputData...)
 
 	msg := core.NewMessage(Alice, &contractAddress, 10+nonceIncrement, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), inputData, nil, false)
-	stdMsg := &adaptorcommon.StandardMessage{
+	stdMsg := &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message

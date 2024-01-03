@@ -12,7 +12,7 @@ import (
 	cache "github.com/arcology-network/eu/cache"
 
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
-	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
+	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/vm-adaptor/eth"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -25,7 +25,7 @@ import (
 type JobSequence struct {
 	ID           uint32 // group id
 	PreTxs       []uint32
-	StdMsgs      []*adaptorcommon.StandardMessage
+	StdMsgs      []*eucommon.StandardMessage
 	Results      []*Result
 	ApiRouter    intf.EthApiRouter
 	RecordBuffer []*univalue.Univalue
@@ -46,7 +46,7 @@ func (*JobSequence) New(id uint32, apiRouter intf.EthApiRouter) intf.JobSequence
 // GetID returns the ID of the JobSequence.
 func (this *JobSequence) GetID() uint32 { return this.ID }
 func (this *JobSequence) AppendMsg(msg interface{}) {
-	this.StdMsgs = append(this.StdMsgs, msg.(*adaptorcommon.StandardMessage))
+	this.StdMsgs = append(this.StdMsgs, msg.(*eucommon.StandardMessage))
 }
 
 // DeriveNewHash derives a new hash based on the original hash and the JobSequence ID.
@@ -104,7 +104,7 @@ func (this *JobSequence) FlagConflict(dict *map[uint32]uint64, err error) {
 }
 
 // execute executes a standard message and returns the result.
-func (this *JobSequence) execute(stdMsg *adaptorcommon.StandardMessage, config *Config, api intf.EthApiRouter) *Result {
+func (this *JobSequence) execute(stdMsg *eucommon.StandardMessage, config *Config, api intf.EthApiRouter) *Result {
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(stdMsg.TxHash, [32]byte{}, uint32(stdMsg.ID))
 

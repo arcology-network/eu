@@ -6,7 +6,7 @@ import (
 	"math"
 	"math/big"
 
-	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
+	eucommon "github.com/arcology-network/eu/common"
 	eth "github.com/arcology-network/vm-adaptor/eth"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 	ethCommon "github.com/ethereum/go-ethereum/common"
@@ -20,7 +20,7 @@ import (
 )
 
 type EU struct {
-	stdMsg      *adaptorcommon.StandardMessage
+	stdMsg      *eucommon.StandardMessage
 	evm         *vm.EVM           // Original ETH EVM
 	statedb     vm.StateDB        // Arcology Implementation of Eth StateDB
 	api         intf.EthApiRouter // Arcology API calls
@@ -62,7 +62,7 @@ func (this *EU) SetRuntimeContext(statedb vm.StateDB, api intf.EthApiRouter) {
 	this.evm.ArcologyNetworkAPIs.APIs = api
 }
 
-func (this *EU) Run(stdmsg *adaptorcommon.StandardMessage, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
+func (this *EU) Run(stdmsg *eucommon.StandardMessage, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
 	this.statedb.(*eth.ImplStateDB).PrepareFormer(stdmsg.TxHash, ethCommon.Hash{}, uint32(stdmsg.ID))
 
 	this.evm.Context = blockContext

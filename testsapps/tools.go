@@ -25,7 +25,6 @@ import (
 
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/eu/execution"
-	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	"github.com/arcology-network/vm-adaptor/compiler"
 	"github.com/arcology-network/vm-adaptor/eth"
 )
@@ -38,7 +37,7 @@ func MainTestConfig() *execution.Config {
 		BlockNumber: big.NewInt(0),
 		ParentHash:  evmcommon.Hash{},
 		Time:        big.NewInt(0),
-		Coinbase:    &adaptorcommon.Coinbase,
+		Coinbase:    &eucommon.Coinbase,
 		GasLimit:    math.MaxUint64, // Should come from the message
 		Difficulty:  big.NewInt(0),
 	}
@@ -56,21 +55,21 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
-	statedb.CreateAccount(adaptorcommon.Coinbase)
+	statedb.CreateAccount(eucommon.Coinbase)
 
-	statedb.CreateAccount(adaptorcommon.Alice)
-	statedb.AddBalance(adaptorcommon.Alice, new(big.Int).SetUint64(1e18))
+	statedb.CreateAccount(eucommon.Alice)
+	statedb.AddBalance(eucommon.Alice, new(big.Int).SetUint64(1e18))
 
-	statedb.CreateAccount(adaptorcommon.Bob)
-	statedb.AddBalance(adaptorcommon.Bob, new(big.Int).SetUint64(1e18))
+	statedb.CreateAccount(eucommon.Bob)
+	statedb.AddBalance(eucommon.Bob, new(big.Int).SetUint64(1e18))
 
-	// statedb.CreateAccount(adaptorcommon.RUNTIME_HANDLER)
-	// statedb.AddBalance(adaptorcommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
+	// statedb.CreateAccount(eucommon.RUNTIME_HANDLER)
+	// statedb.AddBalance(eucommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
 
 	_, transitions := api.WriteCacheFilter().ByType()
 	// indexer.Univalues(transitionsFiltered).Print()
 
-	// fmt.Println("\n" + adaptorcommon.FormatTransitions(transitions))
+	// fmt.Println("\n" + eucommon.FormatTransitions(transitions))
 
 	// Deploy.
 	url = concurrenturl.NewStorageCommitter(db)
@@ -81,7 +80,7 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 	statedb = eth.NewImplStateDB(api)
 
 	config := MainTestConfig()
-	config.Coinbase = &adaptorcommon.Coinbase
+	config.Coinbase = &eucommon.Coinbase
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
@@ -89,7 +88,7 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 }
 
 func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
-	msg := core.NewMessage(adaptorcommon.Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
+	msg := core.NewMessage(eucommon.Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	stdMsg := &execution.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
@@ -150,7 +149,7 @@ func CallContract(eu *execution.EU, contractAddress common.Address, inputData []
 	// data := crypto.Keccak256([]byte(funcName))[:4]
 	// inputData = append(data, inputData...)
 
-	msg := core.NewMessage(adaptorcommon.Alice, &contractAddress, 10+nonceIncrement, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), inputData, nil, false)
+	msg := core.NewMessage(eucommon.Alice, &contractAddress, 10+nonceIncrement, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), inputData, nil, false)
 	stdMsg := &execution.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
@@ -159,7 +158,7 @@ func CallContract(eu *execution.EU, contractAddress common.Address, inputData []
 	}
 
 	config := MainTestConfig()
-	config.Coinbase = &adaptorcommon.Coinbase
+	config.Coinbase = &eucommon.Coinbase
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
@@ -167,7 +166,7 @@ func CallContract(eu *execution.EU, contractAddress common.Address, inputData []
 	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
-	// msg = core.NewMessage(adaptorcommon.Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
+	// msg = core.NewMessage(eucommon.Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
 	// _, transitions = eu.Api().WriteCacheFilter().ByType()
 

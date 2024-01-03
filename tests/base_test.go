@@ -10,8 +10,8 @@ import (
 	commontypes "github.com/arcology-network/common-lib/types"
 	concurrenturl "github.com/arcology-network/concurrenturl"
 	"github.com/arcology-network/eu/cache"
+	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/execution"
-	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	"github.com/arcology-network/vm-adaptor/compiler"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -32,7 +32,7 @@ func TestBaseContainer(t *testing.T) {
 
 	// ================================== Deploy the contract ==================================
 	msg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true)
-	stdMsg := &adaptorcommon.StandardMessage{
+	stdMsg := &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
@@ -47,7 +47,7 @@ func TestBaseContainer(t *testing.T) {
 	// receipt, _, err := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
-	//t.Log("\n" + adaptorcommon.FormatTransitions(transitions))
+	//t.Log("\n" + eucommon.FormatTransitions(transitions))
 	// t.Log(receipt)
 
 	if receipt.Status != 1 || err != nil {
@@ -69,7 +69,7 @@ func TestBaseContainer(t *testing.T) {
 
 	data := crypto.Keccak256([]byte("call()"))[:4]
 	msg = core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
-	stdMsg = &adaptorcommon.StandardMessage{
+	stdMsg = &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message

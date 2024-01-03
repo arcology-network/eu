@@ -19,7 +19,7 @@ package tests
 // 	}
 
 // 	config := tests.MainTestConfig()
-// 	config.Coinbase = &adaptorcommon.Coinbase
+// 	config.Coinbase = &eucommon.Coinbase
 // 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 // 	config.Time = new(big.Int).SetUint64(10000000)
 // 	err, config, eu, receipt = tests.DepolyContract(eu, config, callerCode, "", []byte{}, 2, false)

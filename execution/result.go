@@ -10,7 +10,7 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/univalue"
-	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
+	eucommon "github.com/arcology-network/eu/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -26,7 +26,7 @@ type Result struct {
 	immuned          []*univalue.Univalue
 	Receipt          *evmTypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
-	stdMsg           *adaptorcommon.StandardMessage
+	stdMsg           *eucommon.StandardMessage
 	Err              error
 }
 

@@ -13,8 +13,6 @@ import (
 	evmcore "github.com/ethereum/go-ethereum/core"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
-
-	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 )
 
 type Result struct {
@@ -24,10 +22,10 @@ type Result struct {
 	From             [20]byte
 	Coinbase         [20]byte
 	RawStateAccesses []*univalue.Univalue
-	immuned          []*univalue.Univalue
+	immuned          []*univalue.Univalue // Won't be affect by conflicts
 	Receipt          *evmTypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
-	StdMsg           *adaptorcommon.StandardMessage
+	StdMsg           *StandardMessage
 	Err              error
 }
 

@@ -16,7 +16,6 @@ import (
 	// eucommon "github.com/arcology-network/eu/common"
 	execution "github.com/arcology-network/eu/execution"
 	apihandler "github.com/arcology-network/vm-adaptor/api"
-	adaptorcommon "github.com/arcology-network/vm-adaptor/common"
 	adaptorintf "github.com/arcology-network/vm-adaptor/interface"
 )
 
@@ -79,8 +78,8 @@ func (this *API) WriteCache() interface{} { return this.localCache }
 // func (this *API) DataReader() interface{} { return this.dataReader }
 
 func (this *API) CheckRuntimeConstrains() bool { // Execeeds the max recursion depth or the max sub processes
-	return this.Depth() < adaptorcommon.MAX_RECURSIION_DEPTH &&
-		atomic.AddUint64(&adaptorcommon.TotalSubProcesses, 1) <= adaptorcommon.MAX_VM_INSTANCES
+	return this.Depth() < eucommon.MAX_RECURSIION_DEPTH &&
+		atomic.AddUint64(&eucommon.TotalSubProcesses, 1) <= eucommon.MAX_VM_INSTANCES
 }
 
 func (this *API) DecrementDepth() uint8 {
@@ -122,13 +121,13 @@ func (this *API) Pid() [32]byte {
 
 func (this *API) ElementUID() []byte {
 	instanceID := this.Pid()
-	serial := strconv.Itoa(int(this.GetSerialNum(adaptorcommon.ELEMENT_ID)))
+	serial := strconv.Itoa(int(this.GetSerialNum(eucommon.ELEMENT_ID)))
 	return []byte(append(instanceID[:8], []byte(serial)...))
 }
 
 // Generate an UUID based on transaction hash and the counter
 func (this *API) UUID() []byte {
-	id := codec.Bytes32(this.Pid()).UUID(this.GetSerialNum(adaptorcommon.UUID))
+	id := codec.Bytes32(this.Pid()).UUID(this.GetSerialNum(eucommon.UUID))
 	return id[:8]
 }
 
