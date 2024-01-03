@@ -10,10 +10,10 @@ import (
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
 	"github.com/arcology-network/concurrenturl/noncommutative"
-	"github.com/arcology-network/eu"
 	"github.com/arcology-network/eu/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
+	apihandler "github.com/arcology-network/vm-adaptor/apihandler"
 	eth "github.com/arcology-network/vm-adaptor/eth"
 )
 
@@ -23,7 +23,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
 	localCache := cache.NewWriteCache(db)
-	api := eu.NewAPIRouter(localCache)
+	api := apihandler.NewAPIHandler(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -50,7 +50,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
 	localCache := cache.NewWriteCache(db)
-	api := eu.NewAPIRouter(localCache)
+	api := apihandler.NewAPIHandler(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -79,7 +79,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 
 	localCache := cache.NewWriteCache(db)
-	api := eu.NewAPIRouter(localCache)
+	api := apihandler.NewAPIHandler(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -108,7 +108,7 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	url := concurrenturl.NewStorageCommitter(db)
 
 	localCache := cache.NewWriteCache(db)
-	api := eu.NewAPIRouter(localCache)
+	api := apihandler.NewAPIHandler(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)

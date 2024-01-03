@@ -11,7 +11,6 @@ import (
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
 	"github.com/arcology-network/concurrenturl/univalue"
-	"github.com/arcology-network/eu"
 	"github.com/arcology-network/eu/cache"
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/ethereum/go-ethereum/common"
@@ -26,6 +25,7 @@ import (
 
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/eu/execution"
+	apihandler "github.com/arcology-network/vm-adaptor/apihandler"
 	"github.com/arcology-network/vm-adaptor/compiler"
 	"github.com/arcology-network/vm-adaptor/eth"
 )
@@ -72,7 +72,7 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concur
 	// if len(args) > 0 {
 	// 	url = args[0].(*concurrenturl.StorageCommitter )
 	// }
-	api := eu.NewAPIRouter(localCache)
+	api := apihandler.NewAPIHandler(localCache)
 
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -98,7 +98,7 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concur
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{0})
-	api = eu.NewAPIRouter(localCache)
+	api = apihandler.NewAPIHandler(localCache)
 	statedb = eth.NewImplStateDB(api)
 
 	config := MainTestConfig()
@@ -161,7 +161,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 	config.Time = new(big.Int).SetUint64(10000000)
 
 	localCache := cache.NewWriteCache(datastore)
-	api := eu.NewAPIRouter(localCache)
+	api := apihandler.NewAPIHandler(localCache)
 	statedb := eth.NewImplStateDB(api)
 	execution.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
 
@@ -190,7 +190,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 }
 
 // func AliceCall(eu *execution.EU, contractAddress evmcommon.Address, funcName string, ccurl *concurrenturl.StorageCommitter ) error {
-// 	api := eu.NewAPIRouter(ccurl)
+// 	api := eu.NewAPIHandler(ccurl)
 // 	eu.SetApi(api)
 
 // 	data := crypto.Keccak256([]byte(funcName))[:4]
