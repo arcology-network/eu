@@ -31,8 +31,6 @@ type JobSequence struct {
 	Results      []*execution.Result
 	ApiRouter    intf.EthApiRouter
 	RecordBuffer []*univalue.Univalue
-	// TransitionBuffer []*univalue.Univalue
-	// immunedBuffer    []*univalue.Univalue
 }
 
 func (*JobSequence) T() *JobSequence { return &JobSequence{} }
