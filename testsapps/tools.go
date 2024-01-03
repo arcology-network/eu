@@ -84,19 +84,19 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
-	return execution.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, db, url, transitions
+	return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, db, url, transitions
 }
 
 func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(eucommon.Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
-	stdMsg := &execution.StandardMessage{
+	StdMsg := &execution.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, result, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
+	receipt, result, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 
 	if result.Err != nil {
 		return result.Err, config, eu, nil
@@ -150,7 +150,7 @@ func CallContract(eu *execution.EU, contractAddress common.Address, inputData []
 	// inputData = append(data, inputData...)
 
 	msg := core.NewMessage(eucommon.Alice, &contractAddress, 10+nonceIncrement, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), inputData, nil, false)
-	stdMsg := &execution.StandardMessage{
+	StdMsg := &execution.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
@@ -163,7 +163,7 @@ func CallContract(eu *execution.EU, contractAddress common.Address, inputData []
 	config.Time = new(big.Int).SetUint64(10000000)
 
 	var execResult *evmcore.ExecutionResult
-	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
+	receipt, execResult, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
 	// msg = core.NewMessage(eucommon.Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)

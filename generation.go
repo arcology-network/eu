@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/eu/execution"
 
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
@@ -47,7 +48,7 @@ func (this *Generation) Add(job intf.JobSequence) bool {
 }
 
 func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []*univalue.Univalue {
-	config := NewConfig().SetCoinbase(parentApiRouter.Coinbase())
+	config := execution.NewConfig().SetCoinbase(parentApiRouter.Coinbase())
 
 	groupIDs := make([][]uint32, len(this.jobSeqs))
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))

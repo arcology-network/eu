@@ -32,14 +32,14 @@ func TestBaseContainer(t *testing.T) {
 
 	// ================================== Deploy the contract ==================================
 	msg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true)
-	stdMsg := &eucommon.StandardMessage{
+	StdMsg := &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err := eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
+	receipt, execResult, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 	_, transitions := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 
@@ -69,14 +69,14 @@ func TestBaseContainer(t *testing.T) {
 
 	data := crypto.Keccak256([]byte("call()"))[:4]
 	msg = core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
-	stdMsg = &eucommon.StandardMessage{
+	StdMsg = &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err = eu.Run(stdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*stdMsg.Native)) // Execute it
+	receipt, execResult, err = eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions = eu.Api().WriteCacheFilter().ByType()
 	_, transitions = cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 

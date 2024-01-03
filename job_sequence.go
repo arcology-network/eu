@@ -10,11 +10,13 @@ import (
 	indexer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/univalue"
 	cache "github.com/arcology-network/eu/cache"
+	"github.com/arcology-network/eu/execution"
 
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/vm-adaptor/eth"
 	intf "github.com/arcology-network/vm-adaptor/interface"
+
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	evmparams "github.com/ethereum/go-ethereum/params"
@@ -23,10 +25,10 @@ import (
 
 // JobSequence represents a sequence of jobs to be executed.
 type JobSequence struct {
-	ID           uint32 // group id
-	PreTxs       []uint32
+	ID           uint32   // group id
+	PreTxs       []uint32 ``
 	StdMsgs      []*eucommon.StandardMessage
-	Results      []*Result
+	Results      []*execution.Result
 	ApiRouter    intf.EthApiRouter
 	RecordBuffer []*univalue.Univalue
 	// TransitionBuffer []*univalue.Univalue
@@ -61,8 +63,8 @@ func (this *JobSequence) DeriveNewHash(original [32]byte) [32]byte {
 func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
 // Run executes the job sequence and returns the results.
-func (this *JobSequence) Run(config *Config, mainApi intf.EthApiRouter) ([]uint32, []*univalue.Univalue) {
-	this.Results = make([]*Result, len(this.StdMsgs))
+func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter) ([]uint32, []*univalue.Univalue) {
+	this.Results = make([]*execution.Result, len(this.StdMsgs))
 	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), this.ApiRouter.Schedule()) // cascade the write caches
 
 	for i, msg := range this.StdMsgs {
@@ -70,7 +72,7 @@ func (this *JobSequence) Run(config *Config, mainApi intf.EthApiRouter) ([]uint3
 		pendingApi.DecrementDepth()
 
 		this.Results[i] = this.execute(msg, config, pendingApi)
-		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].rawStateAccesses)
+		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses)
 	}
 
 	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
@@ -79,12 +81,12 @@ func (this *JobSequence) Run(config *Config, mainApi intf.EthApiRouter) ([]uint3
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
-	if idx, _ := common.FindFirstIf(this.Results, func(v *Result) bool { return v.Err != nil }); idx < 0 {
+	if idx, _ := common.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
 		return this.ApiRouter.WriteCache().(*cache.WriteCache).Export()
 	}
 
 	trans := common.Concate(this.Results,
-		func(v *Result) []*univalue.Univalue {
+		func(v *execution.Result) []*univalue.Univalue {
 			return v.Transitions()
 		},
 	)
@@ -93,7 +95,7 @@ func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 
 // FlagConflict flags the JobSequence as conflicting.
 func (this *JobSequence) FlagConflict(dict *map[uint32]uint64, err error) {
-	first, _ := common.FindFirstIf(this.Results, func(r *Result) bool {
+	first, _ := common.FindFirstIf(this.Results, func(r *execution.Result) bool {
 		_, ok := (*dict)[r.TxIndex]
 		return ok
 	})
@@ -104,9 +106,9 @@ func (this *JobSequence) FlagConflict(dict *map[uint32]uint64, err error) {
 }
 
 // execute executes a standard message and returns the result.
-func (this *JobSequence) execute(stdMsg *eucommon.StandardMessage, config *Config, api intf.EthApiRouter) *Result {
+func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *execution.Config, api intf.EthApiRouter) *execution.Result {
 	statedb := eth.NewImplStateDB(api)
-	statedb.PrepareFormer(stdMsg.TxHash, [32]byte{}, uint32(stdMsg.ID))
+	statedb.PrepareFormer(StdMsg.TxHash, [32]byte{}, uint32(StdMsg.ID))
 
 	eu := NewEU(
 		config.ChainConfig,
@@ -117,21 +119,21 @@ func (this *JobSequence) execute(stdMsg *eucommon.StandardMessage, config *Confi
 
 	receipt, evmResult, prechkErr :=
 		eu.Run(
-			stdMsg,
-			NewEVMBlockContext(config),
-			NewEVMTxContext(*stdMsg.Native),
+			StdMsg,
+			execution.NewEVMBlockContext(config),
+			execution.NewEVMTxContext(*StdMsg.Native),
 		)
 
-	return (&Result{
-		TxIndex:          uint32(stdMsg.ID),
+	return (&execution.Result{
+		TxIndex:          uint32(StdMsg.ID),
 		TxHash:           common.IfThenDo1st(receipt != nil, func() evmcommon.Hash { return receipt.TxHash }, evmcommon.Hash{}),
-		rawStateAccesses: cache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),
+		RawStateAccesses: cache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),
 		Err:              common.IfThenDo1st(prechkErr == nil, func() error { return evmResult.Err }, prechkErr),
-		From:             stdMsg.Native.From,
+		From:             StdMsg.Native.From,
 		Coinbase:         *config.Coinbase,
 		Receipt:          receipt,
 		EvmResult:        evmResult,
-		stdMsg:           stdMsg,
+		StdMsg:           StdMsg,
 	}).Postprocess()
 }
 

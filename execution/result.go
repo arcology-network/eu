@@ -22,11 +22,11 @@ type Result struct {
 	TxHash           [32]byte
 	From             [20]byte
 	Coinbase         [20]byte
-	rawStateAccesses []*univalue.Univalue
+	RawStateAccesses []*univalue.Univalue
 	immuned          []*univalue.Univalue
 	Receipt          *evmTypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
-	stdMsg           *eucommon.StandardMessage
+	StdMsg           *eucommon.StandardMessage
 	Err              error
 }
 
@@ -48,20 +48,20 @@ func (this *Result) GenGasTransition(rawTransition *univalue.Univalue, gasDelta 
 }
 
 func (this *Result) Postprocess() *Result {
-	if len(this.rawStateAccesses) == 0 {
+	if len(this.RawStateAccesses) == 0 {
 		return this
 	}
 
-	_, senderBalance := common.FindFirstIf(this.rawStateAccesses, func(v *univalue.Univalue) bool {
+	_, senderBalance := common.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
 
-	gasUsedInWei := uint256.NewInt(1).Mul(uint256.NewInt(this.Receipt.GasUsed), uint256.NewInt(this.stdMsg.Native.GasPrice.Uint64()))
+	gasUsedInWei := uint256.NewInt(1).Mul(uint256.NewInt(this.Receipt.GasUsed), uint256.NewInt(this.StdMsg.Native.GasPrice.Uint64()))
 	if senderGasDebit := this.GenGasTransition(*senderBalance, gasUsedInWei, false); senderGasDebit != nil {
 		this.immuned = append(this.immuned, senderGasDebit)
 	}
 
-	_, coinbaseBalance := common.FindFirstIf(this.rawStateAccesses, func(v *univalue.Univalue) bool {
+	_, coinbaseBalance := common.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.Coinbase[:]))
 	})
 
@@ -71,7 +71,7 @@ func (this *Result) Postprocess() *Result {
 		}
 	}
 
-	common.Foreach(this.rawStateAccesses, func(v **univalue.Univalue, _ int) {
+	common.Foreach(this.RawStateAccesses, func(v **univalue.Univalue, _ int) {
 		if v != nil {
 			return
 		}
@@ -82,15 +82,15 @@ func (this *Result) Postprocess() *Result {
 		}
 	})
 
-	this.rawStateAccesses = this.Transitions() // Return all the successful transitions
+	this.RawStateAccesses = this.Transitions() // Return all the successful transitions
 	return this
 }
 
 func (this *Result) Transitions() []*univalue.Univalue {
 	if this.Err != nil {
-		return this.immuned //.MoveIf(&this.rawStateAccesses, func(v *univalue.Univalue) bool { return v.Persistent() })
+		return this.immuned //.MoveIf(&this.RawStateAccesses, func(v *univalue.Univalue) bool { return v.Persistent() })
 	}
-	return this.rawStateAccesses
+	return this.RawStateAccesses
 }
 
 func (this *Result) Print() {
@@ -98,7 +98,7 @@ func (this *Result) Print() {
 	fmt.Println("TxIndex: ", this.TxIndex)
 	fmt.Println("TxHash: ", this.TxHash)
 	fmt.Println()
-	univalue.Univalues(this.rawStateAccesses).Print()
+	univalue.Univalues(this.RawStateAccesses).Print()
 	fmt.Println("Error: ", this.Err)
 }
 

@@ -20,7 +20,7 @@ import (
 )
 
 type EU struct {
-	stdMsg      *eucommon.StandardMessage
+	StdMsg      *eucommon.StandardMessage
 	evm         *vm.EVM           // Original ETH EVM
 	statedb     vm.StateDB        // Arcology Implementation of Eth StateDB
 	api         intf.EthApiRouter // Arcology API calls
@@ -42,13 +42,13 @@ func NewEU(chainConfig *params.ChainConfig, vmConfig vm.Config, statedb vm.State
 	return eu
 }
 
-func (this *EU) ID() uint32         { return uint32(this.stdMsg.ID) }
-func (this *EU) TxHash() [32]byte   { return this.stdMsg.TxHash }
-func (this *EU) GasPrice() *big.Int { return this.stdMsg.Native.GasPrice }
+func (this *EU) ID() uint32         { return uint32(this.StdMsg.ID) }
+func (this *EU) TxHash() [32]byte   { return this.StdMsg.TxHash }
+func (this *EU) GasPrice() *big.Int { return this.StdMsg.Native.GasPrice }
 func (this *EU) Coinbase() [20]byte { return this.evm.Context.Coinbase }
 func (this *EU) Origin() [20]byte   { return this.evm.TxContext.Origin }
 
-func (this *EU) Message() interface{}            { return this.stdMsg }
+func (this *EU) Message() interface{}            { return this.StdMsg }
 func (this *EU) VM() interface{}                 { return this.evm }
 func (this *EU) Statedb() vm.StateDB             { return this.statedb }
 func (this *EU) Api() intf.EthApiRouter          { return this.api }
@@ -67,10 +67,10 @@ func (this *EU) Run(stdmsg *eucommon.StandardMessage, blockContext vm.BlockConte
 
 	this.evm.Context = blockContext
 	this.evm.TxContext = txContext
-	this.stdMsg = stdmsg
+	this.StdMsg = stdmsg
 
 	gasPool := core.GasPool(math.MaxUint64)
-	result, err := core.ApplyMessage(this.evm, this.stdMsg.Native, &gasPool) // Execute the transcation
+	result, err := core.ApplyMessage(this.evm, this.StdMsg.Native, &gasPool) // Execute the transcation
 
 	if err != nil {
 		result = &core.ExecutionResult{
