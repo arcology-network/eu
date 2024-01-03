@@ -72,7 +72,7 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concur
 	// if len(args) > 0 {
 	// 	url = args[0].(*concurrenturl.StorageCommitter )
 	// }
-	api := eu.NewAPI(localCache)
+	api := eu.NewAPIRouter(localCache)
 
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -98,7 +98,7 @@ func NewTestEU() (*execution.EU, *execution.Config, ccurlintf.Datastore, *concur
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{0})
-	api = eu.NewAPI(localCache)
+	api = eu.NewAPIRouter(localCache)
 	statedb = eth.NewImplStateDB(api)
 
 	config := MainTestConfig()
@@ -161,7 +161,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 	config.Time = new(big.Int).SetUint64(10000000)
 
 	localCache := cache.NewWriteCache(datastore)
-	api := eu.NewAPI(localCache)
+	api := eu.NewAPIRouter(localCache)
 	statedb := eth.NewImplStateDB(api)
 	execution.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
 
@@ -190,7 +190,7 @@ func AliceCall(executor *execution.EU, contractAddress evmcommon.Address, funcNa
 }
 
 // func AliceCall(eu *execution.EU, contractAddress evmcommon.Address, funcName string, ccurl *concurrenturl.StorageCommitter ) error {
-// 	api := eu.NewAPI(ccurl)
+// 	api := eu.NewAPIRouter(ccurl)
 // 	eu.SetApi(api)
 
 // 	data := crypto.Keccak256([]byte(funcName))[:4]

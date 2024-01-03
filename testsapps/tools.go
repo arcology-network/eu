@@ -51,7 +51,7 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 	db := ccurlstorage.NewTransientDB(persistentDB)
 
 	url := concurrenturl.NewStorageCommitter(db)
-	api := eu.NewAPI(url)
+	api := eu.NewAPIRouter(url)
 
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -76,7 +76,7 @@ func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concu
 	url.Import(transitions)
 	url.Sort()
 	url.Commit([]uint32{0})
-	api = eu.NewAPI(url)
+	api = eu.NewAPIRouter(url)
 	statedb = eth.NewImplStateDB(api)
 
 	config := MainTestConfig()

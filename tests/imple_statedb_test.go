@@ -23,7 +23,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
 	localCache := cache.NewWriteCache(db)
-	api := eu.NewAPI(localCache)
+	api := eu.NewAPIRouter(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -50,7 +50,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
 	localCache := cache.NewWriteCache(db)
-	api := eu.NewAPI(localCache)
+	api := eu.NewAPIRouter(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -79,7 +79,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 
 	localCache := cache.NewWriteCache(db)
-	api := eu.NewAPI(localCache)
+	api := eu.NewAPIRouter(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -108,7 +108,7 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	url := concurrenturl.NewStorageCommitter(db)
 
 	localCache := cache.NewWriteCache(db)
-	api := eu.NewAPI(localCache)
+	api := eu.NewAPIRouter(localCache)
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
