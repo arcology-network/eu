@@ -65,7 +65,7 @@ func chooseDataStore() ccurlintf.Datastore {
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 }
 
-func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.StorageCommitter, []*univalue.Univalue) {
+func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.StateCommitter, []*univalue.Univalue) {
 	datastore := chooseDataStore()
 	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
@@ -95,10 +95,12 @@ func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl
 	// fmt.Println("\n" + eucommon.FormatTransitions(transitions))
 
 	// Deploy.
-	url := concurrenturl.NewStorageCommitter(datastore)
-	url.Import(transitions)
-	url.Sort()
-	url.Commit([]uint32{0})
+	committer := concurrenturl.NewStorageCommitter(datastore)
+	committer.Import(transitions)
+	committer.Sort()
+	committer.Precommit([]uint32{0})
+	committer.Commit()
+
 	api = apihandler.NewAPIHandler(localCache)
 	statedb = eth.NewImplStateDB(api)
 
@@ -107,7 +109,7 @@ func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
-	return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, datastore, url, transitions
+	return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, datastore, committer, transitions
 }
 
 func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool) (error, *eu.EU, *evmcoretypes.Receipt) {
@@ -123,7 +125,7 @@ func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName 
 }
 
 func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, ccurlintf.Datastore, error) {
-	eu, config, db, url, _ := NewTestEU()
+	eu, config, db, committer, _ := NewTestEU()
 
 	code, err := compiler.CompileContracts(targetPath, contractFile, compilerVersion, contract, true)
 	if err != nil || len(code) == 0 {
@@ -148,10 +150,12 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	}
 
 	contractAddress := receipt.ContractAddress
-	url = concurrenturl.NewStorageCommitter(db)
-	url.Import(transitions)
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer = concurrenturl.NewStorageCommitter(db)
+	committer.Import(transitions)
+	committer.Sort()
+	committer.Precommit([]uint32{1})
+	committer.Commit()
+
 	return eu, &contractAddress, db, nil
 }
 
@@ -190,8 +194,8 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	return nil
 }
 
-// func AliceCall(eu *execution.EU, contractAddress evmcommon.Address, funcName string, ccurl *concurrenturl.StorageCommitter ) error {
-// 	api := eu.NewAPIHandler(ccurl)
+// func AliceCall(eu *execution.EU, contractAddress evmcommon.Address, funcName string, committer *concurrenturl.StorageCommitter ) error {
+// 	api := eu.NewAPIHandler(committer)
 // 	eu.SetApi(api)
 
 // 	data := crypto.Keccak256([]byte(funcName))[:4]
@@ -224,7 +228,7 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 // 	return nil
 // }
 
-func DepolyContract(eu *eu.EU, ccurl *concurrenturl.StorageCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *eu.EU, *evmcoretypes.Receipt) {
+func DepolyContract(eu *eu.EU, committer *concurrenturl.StateCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *eu.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	StdMsg := &eucommon.StandardMessage{
 		ID:     1,
@@ -244,11 +248,11 @@ func DepolyContract(eu *eu.EU, ccurl *concurrenturl.StorageCommitter, config *ex
 	}
 
 	_, transitionsFiltered := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
-	// ccurl := eu.Api().Ccurl()
-	ccurl.Import(transitionsFiltered)
-	ccurl.Sort()
-	ccurl.Commit([]uint32{1})
-
+	// committer := eu.Api().Ccurl()
+	committer.Import(transitionsFiltered)
+	committer.Sort()
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 	return nil, config, eu, receipt
 }
 

@@ -19,7 +19,7 @@ import (
 )
 
 func TestBaseContainer(t *testing.T) {
-	eu, config, db, url, _ := NewTestEU()
+	eu, config, db, committer, _ := NewTestEU()
 
 	// ================================== Compile the contract ==================================
 	currentPath, _ := os.Getwd()
@@ -55,10 +55,11 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	contractAddress := receipt.ContractAddress
-	url = concurrenturl.NewStorageCommitter(db)
-	url.Import(transitions)
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer = concurrenturl.NewStorageCommitter(db)
+	committer.Import(transitions)
+	committer.Sort()
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	// ================================== Call() ==================================
 	// receipt, _, err = eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))

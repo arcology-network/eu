@@ -33,7 +33,8 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	committer := concurrenturl.NewStorageCommitter(db)
 	committer.Import(transitions)
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	committer = concurrenturl.NewStorageCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
@@ -61,7 +62,8 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	committer := concurrenturl.NewStorageCommitter(db)
 	committer.Import(transitions)
 	committer.Sort()
-	committer.Commit([]uint32{1})
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
 	committer = concurrenturl.NewStorageCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
@@ -86,12 +88,13 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
-	url := concurrenturl.NewStorageCommitter(db)
-	url.Import(transitions)
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer := concurrenturl.NewStorageCommitter(db)
+	committer.Import(transitions)
+	committer.Sort()
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
-	url = concurrenturl.NewStorageCommitter(db)
+	committer = concurrenturl.NewStorageCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	state := ethStatedb.GetState(account, evmcommon.Hash{})
@@ -105,7 +108,7 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	db := chooseDataStore()
 	meta := commutative.NewPath()
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
-	url := concurrenturl.NewStorageCommitter(db)
+	committer := concurrenturl.NewStorageCommitter(db)
 
 	localCache := cache.NewWriteCache(db)
 	api := apihandler.NewAPIHandler(localCache)
@@ -115,11 +118,12 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
-	url.Import(transitions)
-	url.Sort()
-	url.Commit([]uint32{1})
+	committer.Import(transitions)
+	committer.Sort()
+	committer.Precommit([]uint32{1})
+	committer.Commit()
 
-	url = concurrenturl.NewStorageCommitter(db)
+	committer = concurrenturl.NewStorageCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
 
 	alice, bob := evmcommon.Address{}, evmcommon.Address{}
@@ -192,7 +196,7 @@ func TestEthStateDBInterfaces(t *testing.T) {
 		t.Error("Wrong code!")
 	}
 
-	// if _, err := url.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/", noncommutative.NewString("path")); err != nil {
+	// if _, err := committer.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/", noncommutative.NewString("path")); err != nil {
 	// 	t.Error(err)
 	// }
 

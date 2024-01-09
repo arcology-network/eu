@@ -61,6 +61,11 @@ func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []*univalue.Univa
 		}
 	}
 	common.ParallelWorker(len(this.jobSeqs), int(this.numThreads), worker)
+
+	// common.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
+	// 	groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter)
+	// })
+
 	// fmt.Println(time.Since(t0))
 
 	txDict, groupDict, _ := this.Detect(groupIDs, records).ToDict()

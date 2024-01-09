@@ -69,6 +69,7 @@ func (this *WriteCache) CreateNewAccount(tx uint32, acct string) ([]*univalue.Un
 			v = noncommutative.NewBytes([]byte{})
 		}
 
+		// fmt.Println(path)
 		if !this.IfExists(path) {
 			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
 
