@@ -9,6 +9,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	mempool "github.com/arcology-network/common-lib/mempool"
+	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/commutative"
@@ -128,7 +129,6 @@ func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
 }
 
 func (this *WriteCache) Write(tx uint32, path string, value interface{}) (int64, error) {
-	// fmt.Println("Write: ", path, "|", value)
 	fee := int64(0) //Fee{}.Writer(path, value, this.writeCache)
 	if value == nil || (value != nil && value.(interfaces.Type).TypeID() != uint8(reflect.Invalid)) {
 		return fee, this.write(tx, path, value)
@@ -203,11 +203,11 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 
 	// Not necessary at the moment, but good for the future if multiple level containers are available
 	newPathCreations = univalue.Univalues(importer.Sorter(newPathCreations))
-	common.Foreach(newPathCreations, func(v **univalue.Univalue, _ int) {
+	common.Foreach(newPathCreations, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
 
-	common.Foreach(transitions, func(v **univalue.Univalue, _ int) {
+	common.Foreach(transitions, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
 }
@@ -263,4 +263,25 @@ func (this *WriteCache) Print() {
 		fmt.Println("Level : ", i)
 		elem.Print()
 	}
+}
+
+// This function is used to write the cache to the data source directly to bypass all the intermediate steps,
+// including the conflict detection.
+//
+// It's mainly used for TESTING purpose.
+func (this *WriteCache) FlushToDataSource(store interfaces.Datastore) interfaces.Datastore {
+	committer := ccurl.NewStorageCommitter(store)
+	acctTrans := univalue.Univalues(common.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
+
+	txs := common.Append(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
+		return v.GetTx()
+	})
+
+	committer.Import(acctTrans)
+	committer.Sort()
+	committer.Precommit(txs)
+	committer.Commit()
+	this.Clear()
+
+	return store
 }

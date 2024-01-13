@@ -54,11 +54,6 @@ func (this *WriteCacheFilter) filterByAddress(transitions *[]*univalue.Univalue)
 	return out
 }
 
-// func (this *WriteCacheFilter) Raw() []*univalue.Univalue {
-// 	transitions := this.Export()
-// 	return this.filterByAddress(&transitions)
-// }
-
 func (this *WriteCacheFilter) ByType() ([]*univalue.Univalue, []*univalue.Univalue) {
 	accesses, transitions := this.ExportAll()
 	return this.filterByAddress(&accesses),

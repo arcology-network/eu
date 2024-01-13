@@ -85,7 +85,7 @@ func (this *Result) Postprocess() *Result {
 		}
 	}
 
-	common.Foreach(this.RawStateAccesses, func(v **univalue.Univalue, _ int) {
+	common.Foreach(this.RawStateAccesses, func(_ int, v **univalue.Univalue) {
 		if v != nil {
 			return
 		}
