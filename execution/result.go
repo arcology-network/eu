@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	"github.com/arcology-network/concurrenturl/univalue"
 	eucommon "github.com/arcology-network/eu/common"
@@ -52,7 +52,7 @@ func (this *Result) Postprocess() *Result {
 		return this
 	}
 
-	_, senderBalance := common.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
+	_, senderBalance := array.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
 
@@ -61,7 +61,7 @@ func (this *Result) Postprocess() *Result {
 		this.immuned = append(this.immuned, senderGasDebit)
 	}
 
-	_, coinbaseBalance := common.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
+	_, coinbaseBalance := array.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.Coinbase[:]))
 	})
 
@@ -71,7 +71,7 @@ func (this *Result) Postprocess() *Result {
 		}
 	}
 
-	common.Foreach(this.RawStateAccesses, func(_ int, v **univalue.Univalue) {
+	array.Foreach(this.RawStateAccesses, func(_ int, v **univalue.Univalue) {
 		if v != nil {
 			return
 		}

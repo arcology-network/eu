@@ -6,6 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/univalue"
@@ -51,7 +52,7 @@ func (this *JobSequence) AppendMsg(msg interface{}) {
 
 // DeriveNewHash derives a new hash based on the original hash and the JobSequence ID.
 func (this *JobSequence) DeriveNewHash(original [32]byte) [32]byte {
-	return sha256.Sum256(common.Flatten([][]byte{
+	return sha256.Sum256(array.Flatten([][]byte{
 		codec.Bytes32(original).Encode(),
 		codec.Uint32(this.ID).Encode(),
 	}))
@@ -74,16 +75,16 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 	}
 
 	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
-	return common.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
+	return array.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
-	if idx, _ := common.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
+	if idx, _ := array.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
 		return this.ApiRouter.WriteCache().(*cache.WriteCache).Export()
 	}
 
-	trans := common.Concate(this.Results,
+	trans := array.Concate(this.Results,
 		func(v *execution.Result) []*univalue.Univalue {
 			return v.Transitions()
 		},
@@ -93,7 +94,7 @@ func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 
 // FlagConflict flags the JobSequence as conflicting.
 func (this *JobSequence) FlagConflict(dict *map[uint32]uint64, err error) {
-	first, _ := common.FindFirstIf(this.Results, func(r *execution.Result) bool {
+	first, _ := array.FindFirstIf(this.Results, func(r *execution.Result) bool {
 		_, ok := (*dict)[r.TxIndex]
 		return ok
 	})

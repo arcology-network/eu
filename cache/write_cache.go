@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	mempool "github.com/arcology-network/common-lib/exp/mempool"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -193,22 +194,22 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 		return
 	}
 
-	newPathCreations := common.MoveIf(&transitions, func(v *univalue.Univalue) bool {
+	newPathCreations := array.MoveIf(&transitions, func(v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath()) && !v.Preexist()
 	})
 
 	// Remove the changes from the existing paths, as they will be updated automatically when inserting sub elements.
-	transitions = common.RemoveIf(&transitions, func(v *univalue.Univalue) bool {
+	transitions = array.RemoveIf(&transitions, func(v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath())
 	})
 
 	// Not necessary at the moment, but good for the future if multiple level containers are available
 	newPathCreations = univalue.Univalues(importer.Sorter(newPathCreations))
-	common.Foreach(newPathCreations, func(_ int, v **univalue.Univalue) {
+	array.Foreach(newPathCreations, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
 
-	common.Foreach(transitions, func(_ int, v **univalue.Univalue) {
+	array.Foreach(transitions, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
 }
@@ -241,7 +242,7 @@ func (this *WriteCache) Export(preprocessors ...func([]*univalue.Univalue) []*un
 		}, this.buffer)
 	}
 
-	common.RemoveIf(&this.buffer, func(v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
+	array.RemoveIf(&this.buffer, func(v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
 	return this.buffer
 }
 
@@ -249,8 +250,8 @@ func (this *WriteCache) ExportAll(preprocessors ...func([]*univalue.Univalue) []
 	all := this.Export(importer.Sorter)
 	// univalue.Univalues(all).Print()
 
-	accesses := univalue.Univalues(common.Clone(all)).To(importer.ITAccess{})
-	transitions := univalue.Univalues(common.Clone(all)).To(importer.ITTransition{})
+	accesses := univalue.Univalues(array.Clone(all)).To(importer.ITAccess{})
+	transitions := univalue.Univalues(array.Clone(all)).To(importer.ITTransition{})
 	return accesses, transitions
 }
 
@@ -272,9 +273,9 @@ func (this *WriteCache) Print() {
 // It's mainly used for TESTING purpose.
 func (this *WriteCache) FlushToDataSource(store interfaces.Datastore) interfaces.Datastore {
 	committer := ccurl.NewStorageCommitter(store)
-	acctTrans := univalue.Univalues(common.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(array.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
 
-	txs := common.Append(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
+	txs := array.Append(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
 		return v.GetTx()
 	})
 

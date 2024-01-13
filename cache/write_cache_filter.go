@@ -3,6 +3,7 @@ package cache
 import (
 	common "github.com/arcology-network/common-lib/common"
 	commonlibcommon "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/univalue"
@@ -45,7 +46,7 @@ func (this *WriteCacheFilter) filterByAddress(transitions *[]*univalue.Univalue)
 		return *transitions
 	}
 
-	out := commonlibcommon.RemoveIf(transitions, func(v *univalue.Univalue) bool {
+	out := array.RemoveIf(transitions, func(v *univalue.Univalue) bool {
 		address := (*v.GetPath())[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH : ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH+ccurlcommon.ETH10_ACCOUNT_LENGTH]
 		_, ok := this.ignoreAddresses[address]
 		return ok

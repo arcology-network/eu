@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	common "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/eu/execution"
 
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
@@ -31,7 +32,7 @@ func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generat
 func (this *Generation) Length() uint64     { return uint64(len(this.jobSeqs)) }
 func (this *Generation) JobT() *JobSequence { return &JobSequence{} }
 func (this *Generation) JobSeqs() []*JobSequence {
-	return common.To[*JobSequence, *JobSequence](this.jobSeqs)
+	return array.To[*JobSequence, *JobSequence](this.jobSeqs)
 }
 
 func (this *Generation) At(idx uint64) *JobSequence {
@@ -39,7 +40,7 @@ func (this *Generation) At(idx uint64) *JobSequence {
 }
 
 func (this *Generation) New(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
-	return NewGeneration(id, numThreads, common.To[*JobSequence, *JobSequence](jobSeqs))
+	return NewGeneration(id, numThreads, array.To[*JobSequence, *JobSequence](jobSeqs))
 }
 
 func (this *Generation) Add(job *JobSequence) bool {
@@ -69,7 +70,7 @@ func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []*univalue.Univa
 	// fmt.Println(time.Since(t0))
 
 	txDict, groupDict, _ := this.Detect(groupIDs, records).ToDict()
-	return common.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
+	return array.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
 		if _, ok := (*groupDict)[(*seq).ID]; ok {
 			(*seq).FlagConflict(txDict, errors.New(ccurlcommon.WARN_ACCESS_CONFLICT))
 		}
@@ -81,7 +82,7 @@ func (*Generation) Detect(groupIDs [][]uint32, records [][]*univalue.Univalue) a
 	if len(records) == 1 {
 		return arbitrator.Conflicts{}
 	}
-	return arbitrator.Conflicts((&arbitrator.Arbitrator{}).Detect(common.Flatten(groupIDs), common.Flatten(records)))
+	return arbitrator.Conflicts((&arbitrator.Arbitrator{}).Detect(array.Flatten(groupIDs), array.Flatten(records)))
 }
 
 func (this *Generation) Clear() uint64 {
