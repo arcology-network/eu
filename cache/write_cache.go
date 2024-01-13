@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	mempool "github.com/arcology-network/common-lib/mempool"
+	mempool "github.com/arcology-network/common-lib/exp/mempool"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
@@ -26,7 +26,7 @@ type WriteCache struct {
 	kvDict   map[string]*univalue.Univalue // Local KV lookup
 	platform intf.Platform
 	buffer   []*univalue.Univalue // Transition + access record buffer
-	uniPool  *mempool.Mempool
+	uniPool  *mempool.Mempool[*univalue.Univalue]
 }
 
 // NewWriteCache creates a new instance of WriteCache; the store can be another instance of WriteCache,
@@ -38,7 +38,9 @@ func NewWriteCache(store intf.ReadOnlyDataStore, args ...interface{}) *WriteCach
 	writeCache.platform = concurrenturlcommon.NewPlatform()
 	writeCache.buffer = make([]*univalue.Univalue, 0, 64)
 
-	writeCache.uniPool = mempool.NewMempool("writecache-univalue", func() interface{} { return new(univalue.Univalue) })
+	writeCache.uniPool = mempool.NewMempool[*univalue.Univalue](4096, 64, func() *univalue.Univalue {
+		return new(univalue.Univalue)
+	})
 	return &writeCache
 }
 
@@ -91,8 +93,7 @@ func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this
 func (this *WriteCache) Cache() map[string]*univalue.Univalue      { return this.kvDict }
 
 func (this *WriteCache) NewUnivalue() *univalue.Univalue {
-	v := this.uniPool.Get().(*univalue.Univalue)
-	return v
+	return this.uniPool.Get()
 }
 
 // If the access has been recorded
