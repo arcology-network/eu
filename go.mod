@@ -2,7 +2,7 @@ module github.com/arcology-network/eu
 
 go 1.21.3
 
-replace github.com/ethereum/go-ethereum => ../concurrent-evm
+replace github.com/ethereum/go-ethereum v1.13.1 => ../concurrent-evm/
 
 replace github.com/arcology-network/common-lib => ../common-lib/
 
@@ -11,10 +11,7 @@ replace github.com/arcology-network/vm-adaptor => ../vm-adaptor/
 replace github.com/arcology-network/concurrenturl => ../concurrenturl/
 
 require (
-	github.com/arcology-network/common-lib v1.9.0
-	github.com/arcology-network/concurrenturl v1.9.0
-	github.com/arcology-network/vm-adaptor v1.9.0
-	github.com/ethereum/go-ethereum v1.13.7
+	github.com/ethereum/go-ethereum v1.13.1
 	github.com/holiman/uint256 v1.2.4
 )
 
