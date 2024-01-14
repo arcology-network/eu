@@ -5,6 +5,7 @@ import (
 	evmcommon "github.com/ethereum/go-ethereum/common"
 )
 
+// Addresses used in tests.
 var (
 	Coinbase = evmcommon.BytesToAddress([]byte("coinbase"))
 	Owner    = evmcommon.BytesToAddress([]byte("owner"))

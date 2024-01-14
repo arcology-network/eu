@@ -94,7 +94,7 @@ func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this
 func (this *WriteCache) Cache() map[string]*univalue.Univalue      { return this.kvDict }
 
 func (this *WriteCache) NewUnivalue() *univalue.Univalue {
-	return this.uniPool.Get()
+	return this.uniPool.New()
 }
 
 // If the access has been recorded
