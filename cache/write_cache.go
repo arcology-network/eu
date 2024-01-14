@@ -268,7 +268,7 @@ func (this *WriteCache) Print() {
 	}
 }
 
-func (this *WriteCache) KVs(store interfaces.Datastore) ([]string, []intf.Type) {
+func (this *WriteCache) KVs() ([]string, []intf.Type) {
 	transitions := univalue.Univalues(array.Clone(this.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	values := make([]intf.Type, len(transitions))
