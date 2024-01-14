@@ -13,6 +13,7 @@ import (
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
 	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
+
 	"github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/interfaces"
@@ -265,6 +266,17 @@ func (this *WriteCache) Print() {
 		fmt.Println("Level : ", i)
 		elem.Print()
 	}
+}
+
+func (this *WriteCache) KVs(store interfaces.Datastore) ([]string, []intf.Type) {
+	transitions := univalue.Univalues(array.Clone(this.Export(importer.Sorter))).To(importer.ITTransition{})
+
+	values := make([]intf.Type, len(transitions))
+	keys := array.ParallelAppend(transitions, 4, func(i int, v *univalue.Univalue) string {
+		values[i] = v.Value().(intf.Type)
+		return *v.GetPath()
+	})
+	return keys, values
 }
 
 // This function is used to write the cache to the data source directly to bypass all the intermediate steps,
