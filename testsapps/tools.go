@@ -1,185 +1,185 @@
 package tests
 
-import (
-	"errors"
-	"math"
-	"math/big"
+// import (
+// 	"errors"
+// 	"math"
+// 	"math/big"
 
-	"github.com/arcology-network/common-lib/cachedstorage"
-	commontypes "github.com/arcology-network/common-lib/types"
-	concurrenturl "github.com/arcology-network/concurrenturl"
-	"github.com/arcology-network/concurrenturl/commutative"
-	interfaces "github.com/arcology-network/concurrenturl/interfaces"
-	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
-	"github.com/arcology-network/concurrenturl/univalue"
-	"github.com/arcology-network/eu"
-	"github.com/ethereum/go-ethereum/common"
-	evmcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	evmcore "github.com/ethereum/go-ethereum/core"
-	evmcoretypes "github.com/ethereum/go-ethereum/core/types"
+// 	"github.com/arcology-network/common-lib/cachedstorage"
+// 	commontypes "github.com/arcology-network/common-lib/types"
+// 	concurrenturl "github.com/arcology-network/concurrenturl"
+// 	"github.com/arcology-network/concurrenturl/commutative"
+// 	interfaces "github.com/arcology-network/concurrenturl/interfaces"
+// 	ccurlstorage "github.com/arcology-network/concurrenturl/storage"
+// 	"github.com/arcology-network/concurrenturl/univalue"
+// 	"github.com/arcology-network/eu"
+// 	"github.com/ethereum/go-ethereum/common"
+// 	evmcommon "github.com/ethereum/go-ethereum/common"
+// 	"github.com/ethereum/go-ethereum/core"
+// 	evmcore "github.com/ethereum/go-ethereum/core"
+// 	evmcoretypes "github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/params"
+// 	"github.com/ethereum/go-ethereum/core/vm"
+// 	"github.com/ethereum/go-ethereum/crypto"
+// 	"github.com/ethereum/go-ethereum/params"
 
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/eu/execution"
-	"github.com/arcology-network/vm-adaptor/compiler"
-	"github.com/arcology-network/vm-adaptor/eth"
-)
+// 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
+// 	"github.com/arcology-network/eu/execution"
+// 	"github.com/arcology-network/vm-adaptor/compiler"
+// 	"github.com/arcology-network/vm-adaptor/eth"
+// )
 
-func MainTestConfig() *execution.Config {
-	vmConfig := vm.Config{}
-	cfg := &execution.Config{
-		ChainConfig: params.MainnetChainConfig,
-		VMConfig:    &vmConfig,
-		BlockNumber: big.NewInt(0),
-		ParentHash:  evmcommon.Hash{},
-		Time:        big.NewInt(0),
-		Coinbase:    &eucommon.Coinbase,
-		GasLimit:    math.MaxUint64, // Should come from the message
-		Difficulty:  big.NewInt(0),
-	}
-	cfg.Chain = new(execution.DummyChain)
-	return cfg
-}
+// func MainTestConfig() *execution.Config {
+// 	vmConfig := vm.Config{}
+// 	cfg := &execution.Config{
+// 		ChainConfig: params.MainnetChainConfig,
+// 		VMConfig:    &vmConfig,
+// 		BlockNumber: big.NewInt(0),
+// 		ParentHash:  evmcommon.Hash{},
+// 		Time:        big.NewInt(0),
+// 		Coinbase:    &eucommon.Coinbase,
+// 		GasLimit:    math.MaxUint64, // Should come from the message
+// 		Difficulty:  big.NewInt(0),
+// 	}
+// 	cfg.Chain = new(execution.DummyChain)
+// 	return cfg
+// }
 
-func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concurrenturl.StorageCommitter, []*univalue.Univalue) {
-	persistentDB := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
-	persistentDB.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
-	db := ccurlstorage.NewTransientDB(persistentDB)
+// func NewTestEU() (*execution.EU, *execution.Config, interfaces.Datastore, *concurrenturl.StorageCommitter, []*univalue.Univalue) {
+// 	persistentDB := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
+// 	persistentDB.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
+// 	db := ccurlstorage.NewTransientDB(persistentDB)
 
-	url := concurrenturl.NewStorageCommitter(db)
-	api := eu.NewAPIHandler(url)
+// 	url := concurrenturl.NewStorageCommitter(db)
+// 	api := eu.NewAPIHandler(url)
 
-	statedb := eth.NewImplStateDB(api)
-	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
-	statedb.CreateAccount(eucommon.Coinbase)
+// 	statedb := eth.NewImplStateDB(api)
+// 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
+// 	statedb.CreateAccount(eucommon.Coinbase)
 
-	statedb.CreateAccount(eucommon.Alice)
-	statedb.AddBalance(eucommon.Alice, new(big.Int).SetUint64(1e18))
+// 	statedb.CreateAccount(eucommon.Alice)
+// 	statedb.AddBalance(eucommon.Alice, new(big.Int).SetUint64(1e18))
 
-	statedb.CreateAccount(eucommon.Bob)
-	statedb.AddBalance(eucommon.Bob, new(big.Int).SetUint64(1e18))
+// 	statedb.CreateAccount(eucommon.Bob)
+// 	statedb.AddBalance(eucommon.Bob, new(big.Int).SetUint64(1e18))
 
-	// statedb.CreateAccount(eucommon.RUNTIME_HANDLER)
-	// statedb.AddBalance(eucommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
+// 	// statedb.CreateAccount(eucommon.RUNTIME_HANDLER)
+// 	// statedb.AddBalance(eucommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
 
-	_, transitions := api.WriteCacheFilter().ByType()
-	// indexer.Univalues(transitionsFiltered).Print()
+// 	_, transitions := api.WriteCacheFilter().ByType()
+// 	// indexer.Univalues(transitionsFiltered).Print()
 
-	// fmt.Println("\n" + eucommon.FormatTransitions(transitions))
+// 	// fmt.Println("\n" + eucommon.FormatTransitions(transitions))
 
-	// Deploy.
-	url = concurrenturl.NewStorageCommitter(db)
-	url.Import(transitions)
-	url.Sort()
-	url.Commit([]uint32{0})
-	api = eu.NewAPIHandler(url)
-	statedb = eth.NewImplStateDB(api)
+// 	// Deploy.
+// 	url = concurrenturl.NewStorageCommitter(db)
+// 	url.Import(transitions)
+// 	url.Sort()
+// 	url.Commit([]uint32{0})
+// 	api = eu.NewAPIHandler(url)
+// 	statedb = eth.NewImplStateDB(api)
 
-	config := MainTestConfig()
-	config.Coinbase = &eucommon.Coinbase
-	config.BlockNumber = new(big.Int).SetUint64(10000000)
-	config.Time = new(big.Int).SetUint64(10000000)
+// 	config := MainTestConfig()
+// 	config.Coinbase = &eucommon.Coinbase
+// 	config.BlockNumber = new(big.Int).SetUint64(10000000)
+// 	config.Time = new(big.Int).SetUint64(10000000)
 
-	return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, db, url, transitions
-}
+// 	return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, db, url, transitions
+// }
 
-func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
-	msg := core.NewMessage(eucommon.Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
-	StdMsg := &execution.StandardMessage{
-		ID:     1,
-		TxHash: [32]byte{1, 1, 1},
-		Native: &msg, // Build the message
-		Source: commontypes.TX_SOURCE_LOCAL,
-	}
+// func DepolyContract(eu *execution.EU, ccurl *concurrenturl.StorageCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *execution.EU, *evmcoretypes.Receipt) {
+// 	msg := core.NewMessage(eucommon.Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
+// 	StdMsg := &execution.StandardMessage{
+// 		ID:     1,
+// 		TxHash: [32]byte{1, 1, 1},
+// 		Native: &msg, // Build the message
+// 		Source: commontypes.TX_SOURCE_LOCAL,
+// 	}
 
-	receipt, result, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+// 	receipt, result, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 
-	if result.Err != nil {
-		return result.Err, config, eu, nil
-	}
+// 	if result.Err != nil {
+// 		return result.Err, config, eu, nil
+// 	}
 
-	if err != nil || receipt.Status != 1 {
-		errmsg := ""
-		if err != nil {
-			errmsg = err.Error()
-		}
-		return errors.New("Error: Deployment failed!!!" + errmsg), config, eu, nil
-	}
+// 	if err != nil || receipt.Status != 1 {
+// 		errmsg := ""
+// 		if err != nil {
+// 			errmsg = err.Error()
+// 		}
+// 		return errors.New("Error: Deployment failed!!!" + errmsg), config, eu, nil
+// 	}
 
-	_, transitionsFiltered := eu.Api().WriteCacheFilter().ByType()
-	ccurl.Import(transitionsFiltered)
-	ccurl.Sort()
-	ccurl.Commit([]uint32{1})
+// 	_, transitionsFiltered := eu.Api().WriteCacheFilter().ByType()
+// 	ccurl.Import(transitionsFiltered)
+// 	ccurl.Sort()
+// 	ccurl.Commit([]uint32{1})
 
-	return nil, config, eu, receipt
-}
+// 	return nil, config, eu, receipt
+// }
 
-func DeployThenInvoke(targetPath, file, version, contractName, funcName string, inputData []byte, checkNonce bool) (error, *execution.EU, *evmcoretypes.Receipt) {
-	code, err := compiler.CompileContracts(targetPath, file, version, contractName, false)
-	eu, config, _, _, _ := NewTestEU()
-	if err != nil || len(code) == 0 {
-		return err, nil, nil
-	}
+// func DeployThenInvoke(targetPath, file, version, contractName, funcName string, inputData []byte, checkNonce bool) (error, *execution.EU, *evmcoretypes.Receipt) {
+// 	code, err := compiler.CompileContracts(targetPath, file, version, contractName, false)
+// 	eu, config, _, _, _ := NewTestEU()
+// 	if err != nil || len(code) == 0 {
+// 		return err, nil, nil
+// 	}
 
-	err, _, eu, receipt := DepolyContract(eu, config, code, funcName, inputData, 0, checkNonce)
+// 	err, _, eu, receipt := DepolyContract(eu, config, code, funcName, inputData, 0, checkNonce)
 
-	if len(funcName) == 0 || err != nil {
-		return err, eu, receipt
-	}
+// 	if len(funcName) == 0 || err != nil {
+// 		return err, eu, receipt
+// 	}
 
-	data := crypto.Keccak256([]byte(funcName))[:4]
-	data = append(data, inputData...)
-	err, eu, execResult, receipt := CallContract(eu, receipt.ContractAddress, data, 0, checkNonce)
+// 	data := crypto.Keccak256([]byte(funcName))[:4]
+// 	data = append(data, inputData...)
+// 	err, eu, execResult, receipt := CallContract(eu, receipt.ContractAddress, data, 0, checkNonce)
 
-	if err != nil || receipt.Status != 1 {
-		return execResult.Err, eu, receipt
-	}
+// 	if err != nil || receipt.Status != 1 {
+// 		return execResult.Err, eu, receipt
+// 	}
 
-	if execResult != nil && execResult.Err != nil {
-		return execResult.Err, eu, receipt
-	}
-	return nil, eu, receipt
-}
+// 	if execResult != nil && execResult.Err != nil {
+// 		return execResult.Err, eu, receipt
+// 	}
+// 	return nil, eu, receipt
+// }
 
-func CallContract(eu *execution.EU, contractAddress common.Address, inputData []byte, nonceIncrement uint64, checkNonce bool) (error, *execution.EU, *evmcore.ExecutionResult, *evmcoretypes.Receipt) {
-	// data := crypto.Keccak256([]byte(funcName))[:4]
-	// inputData = append(data, inputData...)
+// func CallContract(eu *execution.EU, contractAddress common.Address, inputData []byte, nonceIncrement uint64, checkNonce bool) (error, *execution.EU, *evmcore.ExecutionResult, *evmcoretypes.Receipt) {
+// 	// data := crypto.Keccak256([]byte(funcName))[:4]
+// 	// inputData = append(data, inputData...)
 
-	msg := core.NewMessage(eucommon.Alice, &contractAddress, 10+nonceIncrement, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), inputData, nil, false)
-	StdMsg := &execution.StandardMessage{
-		ID:     1,
-		TxHash: [32]byte{1, 1, 1},
-		Native: &msg, // Build the message
-		Source: commontypes.TX_SOURCE_LOCAL,
-	}
+// 	msg := core.NewMessage(eucommon.Alice, &contractAddress, 10+nonceIncrement, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), inputData, nil, false)
+// 	StdMsg := &execution.StandardMessage{
+// 		ID:     1,
+// 		TxHash: [32]byte{1, 1, 1},
+// 		Native: &msg, // Build the message
+// 		Source: commontypes.TX_SOURCE_LOCAL,
+// 	}
 
-	config := MainTestConfig()
-	config.Coinbase = &eucommon.Coinbase
-	config.BlockNumber = new(big.Int).SetUint64(10000000)
-	config.Time = new(big.Int).SetUint64(10000000)
+// 	config := MainTestConfig()
+// 	config.Coinbase = &eucommon.Coinbase
+// 	config.BlockNumber = new(big.Int).SetUint64(10000000)
+// 	config.Time = new(big.Int).SetUint64(10000000)
 
-	var execResult *evmcore.ExecutionResult
-	receipt, execResult, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
-	// _, transitions := eu.Api().WriteCacheFilter().ByType()
+// 	var execResult *evmcore.ExecutionResult
+// 	receipt, execResult, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+// 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
-	// msg = core.NewMessage(eucommon.Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
-	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
-	// _, transitions = eu.Api().WriteCacheFilter().ByType()
+// 	// msg = core.NewMessage(eucommon.Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
+// 	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
+// 	// _, transitions = eu.Api().WriteCacheFilter().ByType()
 
-	if err != nil {
-		return nil, nil, execResult, receipt
-	}
+// 	if err != nil {
+// 		return nil, nil, execResult, receipt
+// 	}
 
-	if receipt.Status != 1 {
-		return execResult.Err, eu, execResult, receipt
-	}
+// 	if receipt.Status != 1 {
+// 		return execResult.Err, eu, execResult, receipt
+// 	}
 
-	if execResult != nil && execResult.Err != nil {
-		return execResult.Err, eu, execResult, receipt
-	}
-	return nil, eu, execResult, receipt
-}
+// 	if execResult != nil && execResult.Err != nil {
+// 		return execResult.Err, eu, execResult, receipt
+// 	}
+// 	return nil, eu, execResult, receipt
+// }
