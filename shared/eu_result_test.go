@@ -17,7 +17,7 @@ func TestEuresultEncodingWithDefer(t *testing.T) {
 	eu := &EuResult{
 		H:            "0x1234567",
 		ID:           99,
-		Transitions:  [][]byte{[]byte("1"), []byte("2")},
+		Transitions:  []byte{byte(1), byte(2)},
 		TransitTypes: []byte{8, 7},
 		// DC:           in,
 		Status:  12,
@@ -60,7 +60,7 @@ func TestEuResultEncodingWithDefer(t *testing.T) {
 	euresult := EuResult{
 		H:            "1234",
 		ID:           uint32(99),
-		Transitions:  [][]byte{[]byte(fmt.Sprint("xxxxxx")), []byte("+++++")},
+		Transitions:  []byte{byte(2), byte(8)},
 		TransitTypes: []byte{1, 2},
 		// DC:           dc,
 		Status:  0,
@@ -87,7 +87,7 @@ func TestEuResultsEncoding(t *testing.T) {
 		euresults[i] = &EuResult{
 			H:            "0x1234567",
 			ID:           uint32(99),
-			Transitions:  [][]byte{[]byte(fmt.Sprint("++++")), []byte("||||")},
+			Transitions:  []byte{byte(9), byte(11)},
 			TransitTypes: []byte{1, 2},
 			// DC:           dc,
 			Status:  11,
@@ -122,7 +122,7 @@ func BenchmarkEuResultsEncoding(b *testing.B) {
 		euresults[i] = &EuResult{
 			H:           "0x1234567",
 			ID:          uint32(99),
-			Transitions: [][]byte{[]byte(fmt.Sprint("++++")), []byte("||||")},
+			Transitions: []byte{byte(90), byte(110)},
 			// DC:          dc,
 			Status:  11,
 			GasUsed: 99,
