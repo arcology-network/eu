@@ -1,12 +1,5 @@
 package tests
 
-// import (
-// 	"os"
-// 	"path"
-// 	"path/filepath"
-// 	"testing"
-// )
-
 // func TestParaVote(t *testing.T) {
 // 	currentPath, _ := os.Getwd()
 // 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
