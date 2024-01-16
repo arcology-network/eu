@@ -195,12 +195,12 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 		return
 	}
 
-	newPathCreations := array.MoveIf(&transitions, func(v *univalue.Univalue) bool {
+	newPathCreations := array.MoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath()) && !v.Preexist()
 	})
 
 	// Remove the changes from the existing paths, as they will be updated automatically when inserting sub elements.
-	transitions = array.RemoveIf(&transitions, func(v *univalue.Univalue) bool {
+	transitions = array.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath())
 	})
 
@@ -243,7 +243,7 @@ func (this *WriteCache) Export(preprocessors ...func([]*univalue.Univalue) []*un
 		}, this.buffer)
 	}
 
-	array.RemoveIf(&this.buffer, func(v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
+	array.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
 	return this.buffer
 }
 

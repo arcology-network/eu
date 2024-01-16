@@ -46,7 +46,7 @@ func (this *WriteCacheFilter) filterByAddress(transitions *[]*univalue.Univalue)
 		return *transitions
 	}
 
-	out := array.RemoveIf(transitions, func(v *univalue.Univalue) bool {
+	out := array.RemoveIf(transitions, func(_ int, v *univalue.Univalue) bool {
 		address := (*v.GetPath())[ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH : ccurlcommon.ETH10_ACCOUNT_PREFIX_LENGTH+ccurlcommon.ETH10_ACCOUNT_LENGTH]
 		_, ok := this.ignoreAddresses[address]
 		return ok
