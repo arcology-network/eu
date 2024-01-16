@@ -93,9 +93,9 @@ func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 }
 
 // FlagConflict flags the JobSequence as conflicting.
-func (this *JobSequence) FlagConflict(dict *map[uint32]uint64, err error) {
+func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
 	first, _ := array.FindFirstIf(this.Results, func(r *execution.Result) bool {
-		_, ok := (*dict)[r.TxIndex]
+		_, ok := (dict)[r.TxIndex]
 		return ok
 	})
 

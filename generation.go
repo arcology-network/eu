@@ -71,7 +71,7 @@ func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []*univalue.Univa
 
 	txDict, groupDict, _ := this.Detect(groupIDs, records).ToDict()
 	return array.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
-		if _, ok := (*groupDict)[(*seq).ID]; ok {
+		if _, ok := groupDict[(*seq).ID]; ok {
 			(*seq).FlagConflict(txDict, errors.New(ccurlcommon.WARN_ACCESS_CONFLICT))
 		}
 		return (*seq).GetClearedTransition()
