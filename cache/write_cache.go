@@ -12,7 +12,7 @@ import (
 	mempool "github.com/arcology-network/common-lib/exp/mempool"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
-	concurrenturlcommon "github.com/arcology-network/concurrenturl/common"
+	platform "github.com/arcology-network/concurrenturl/platform"
 
 	"github.com/arcology-network/concurrenturl/commutative"
 	importer "github.com/arcology-network/concurrenturl/importer"
@@ -37,7 +37,7 @@ func NewWriteCache(store intf.ReadOnlyDataStore, args ...interface{}) *WriteCach
 	var writeCache WriteCache
 	writeCache.store = store
 	writeCache.kvDict = make(map[string]*univalue.Univalue)
-	writeCache.platform = concurrenturlcommon.NewPlatform()
+	writeCache.platform = platform.NewPlatform()
 	writeCache.buffer = make([]*univalue.Univalue, 0, 64)
 
 	writeCache.uniPool = mempool.NewMempool[*univalue.Univalue](4096, 64, func() *univalue.Univalue {
@@ -49,7 +49,7 @@ func NewWriteCache(store intf.ReadOnlyDataStore, args ...interface{}) *WriteCach
 // CreateNewAccount creates a new account in the write cache.
 // It returns the transitions and an error, if any.
 func (this *WriteCache) CreateNewAccount(tx uint32, acct string) ([]*univalue.Univalue, error) {
-	paths, typeids := committercommon.NewPlatform().GetBuiltins(acct)
+	paths, typeids := platform.NewPlatform().GetBuiltins(acct)
 
 	transitions := []*univalue.Univalue{}
 	for i, path := range paths {
