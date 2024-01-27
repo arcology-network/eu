@@ -2,7 +2,7 @@ module github.com/arcology-network/eu
 
 go 1.21.3
 
-replace github.com/ethereum/go-ethereum v1.13.1 => ../concurrent-evm/
+replace github.com/ethereum/go-ethereum => ../concurrent-evm/
 
 replace github.com/arcology-network/common-lib => ../common-lib/
 
@@ -11,12 +11,15 @@ replace github.com/arcology-network/vm-adaptor => ../vm-adaptor/
 replace github.com/arcology-network/concurrenturl => ../concurrenturl/
 
 require (
-	github.com/ethereum/go-ethereum v1.13.1
+	github.com/arcology-network/common-lib v1.9.0
+	github.com/arcology-network/concurrenturl v1.9.0
+	github.com/arcology-network/vm-adaptor v1.9.0
+	github.com/ethereum/go-ethereum v1.13.7
 	github.com/holiman/uint256 v1.2.4
+	golang.org/x/crypto v0.17.0
 )
 
 require (
-	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
@@ -35,9 +38,6 @@ require (
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
-	github.com/dgraph-io/badger v1.6.2 // indirect
-	github.com/dgraph-io/ristretto v0.1.1 // indirect
-	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/elliotchance/orderedmap v1.5.1 // indirect
 	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20231030223232-e16eae11e492 // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
@@ -46,9 +46,8 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
 	github.com/hashicorp/go-memdb v1.3.4 // indirect
@@ -74,10 +73,8 @@ require (
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

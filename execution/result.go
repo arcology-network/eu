@@ -41,7 +41,7 @@ func (this *Result) GenGasTransition(rawTransition *univalue.Univalue, gasDelta 
 		newGasTransition := balanceTransition.Clone().(*univalue.Univalue)
 		newGasTransition.Value().(ccurlintf.Type).SetDelta(*gasDelta)
 		newGasTransition.Value().(ccurlintf.Type).SetDeltaSign(isCredit)
-		newGasTransition.GetUnimeta().(*univalue.Property).SetPersistent(true)
+		newGasTransition.Property.SetPersistent(true)
 		return newGasTransition
 	}
 	return nil
@@ -78,7 +78,7 @@ func (this *Result) Postprocess() *Result {
 
 		path := (*v).GetPath()
 		if strings.HasSuffix(*path, "/nonce") && strings.Contains(*path, hex.EncodeToString(this.From[:])) {
-			(*v).GetUnimeta().(*univalue.Property).SetPersistent(true) // Won't be affect by conflicts
+			(*v).Property.SetPersistent(true) // Won't be affect by conflicts
 		}
 	})
 
