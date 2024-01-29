@@ -4,7 +4,9 @@ import (
 	"errors"
 	"math"
 	"math/big"
+	"path/filepath"
 
+	commonlibcommon "github.com/arcology-network/common-lib/common"
 	commontypes "github.com/arcology-network/common-lib/types"
 	concurrenturl "github.com/arcology-network/concurrenturl"
 	"github.com/arcology-network/concurrenturl/commutative"
@@ -113,6 +115,10 @@ func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl
 }
 
 func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool) (error, *eu.EU, *evmcoretypes.Receipt) {
+	if !commonlibcommon.FileExists(filepath.Join(targetPath, contractFile)) {
+		return errors.New("Error: The contract is not found!!!"), nil, nil
+	}
+
 	eu, contractAddress, db, err := AliceDeploy(targetPath, contractFile, version, contractName)
 	if err != nil {
 		return err, nil, nil
@@ -128,7 +134,11 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	eu, config, db, committer, _ := NewTestEU()
 
 	code, err := compiler.CompileContracts(targetPath, contractFile, compilerVersion, contract, true)
-	if err != nil || len(code) == 0 {
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	if len(code) == 0 {
 		return nil, nil, nil, errors.New("Error: Failed to generate the byte code")
 	}
 

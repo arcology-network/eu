@@ -7,6 +7,36 @@ import (
 	"testing"
 )
 
+// func TestU256ParallelInitTest(t *testing.T) {
+// 	currentPath, _ := os.Getwd()
+// 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+// 	err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelInitTest", "call()", []byte{}, false)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
+
+func TestU256ParallelPop(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelPopTest", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestU256ParallelPushPopGet(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelTest", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestParallelBasic(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
@@ -72,6 +102,26 @@ func TestParaMultiWithClear(t *testing.T) {
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
 
 	err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiLocalParaTestWithClear", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestMultiParaU256Conflict(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelConflictTest", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestMultiParaU256Array(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ArrayOfU256ParallelTest", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

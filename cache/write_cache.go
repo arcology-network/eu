@@ -9,6 +9,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
+	mapi "github.com/arcology-network/common-lib/exp/map"
 	mempool "github.com/arcology-network/common-lib/exp/mempool"
 	ccurl "github.com/arcology-network/concurrenturl"
 	committercommon "github.com/arcology-network/concurrenturl/common"
@@ -99,31 +100,30 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 }
 
 // If the access has been recorded
-func (this *WriteCache) GetOrInit(tx uint32, path string, T any) *univalue.Univalue {
-	unival := this.kvDict[path]
+func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
+	unival, inCache := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
-		unival = this.NewUnivalue()
-		unival.Init(tx, path, 0, 0, 0, common.FilterFirst(this.ReadOnlyDataStore().Retrive(path, T)), this)
+		unival = this.NewUnivalue().Init(tx, path, 0, 0, 0, common.FilterFirst(this.ReadOnlyDataStore().Retrive(path, T)), this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
-	return unival
+	return unival, inCache // From cache
 }
 
 func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}, uint64) {
-	univalue := this.GetOrInit(tx, path, T)
+	univalue, _ := this.GetOrNew(tx, path, T)
 	return univalue.Get(tx, path, nil), univalue, 0
 }
 
 func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
 	parentPath := common.GetParentPath(path)
 	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
-		univalue := this.GetOrInit(tx, path, value) // Get a univalue wrapper
+		univalue, inCache := this.GetOrNew(tx, path, value) // Get a univalue wrapper
+		err := univalue.Set(tx, path, value, inCache, this)
 
-		err := univalue.Set(tx, path, value, this)
 		if err == nil {
 			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM) { // Don't keep track of the system children
-				parentMeta := this.GetOrInit(tx, parentPath, new(commutative.Path))
-				err = parentMeta.Set(tx, path, univalue.Value(), this)
+				parentMeta, inCache := this.GetOrNew(tx, parentPath, new(commutative.Path))
+				err = parentMeta.Set(tx, path, univalue.Value(), inCache, this)
 			}
 		}
 		return err
@@ -220,12 +220,12 @@ func (this *WriteCache) Clear() {
 }
 
 func (this *WriteCache) Equal(other *WriteCache) bool {
-	thisBuffer := common.MapValues(this.kvDict)
+	thisBuffer := mapi.Values(this.kvDict)
 	sort.SliceStable(thisBuffer, func(i, j int) bool {
 		return *thisBuffer[i].GetPath() < *thisBuffer[j].GetPath()
 	})
 
-	otherBuffer := common.MapValues(other.kvDict)
+	otherBuffer := mapi.Values(other.kvDict)
 	sort.SliceStable(otherBuffer, func(i, j int) bool {
 		return *otherBuffer[i].GetPath() < *otherBuffer[j].GetPath()
 	})
@@ -235,7 +235,7 @@ func (this *WriteCache) Equal(other *WriteCache) bool {
 }
 
 func (this *WriteCache) Export(preprocessors ...func([]*univalue.Univalue) []*univalue.Univalue) []*univalue.Univalue {
-	this.buffer = common.MapValues(this.kvDict) //this.buffer[:0]
+	this.buffer = mapi.Values(this.kvDict) //this.buffer[:0]
 
 	for _, processor := range preprocessors {
 		this.buffer = common.IfThenDo1st(processor != nil, func() []*univalue.Univalue {
@@ -257,7 +257,7 @@ func (this *WriteCache) ExportAll(preprocessors ...func([]*univalue.Univalue) []
 }
 
 func (this *WriteCache) Print() {
-	values := common.MapValues(this.kvDict)
+	values := mapi.Values(this.kvDict)
 	sort.SliceStable(values, func(i, j int) bool {
 		return *values[i].GetPath() < *values[j].GetPath()
 	})

@@ -53,21 +53,14 @@ func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []*univalue.Univa
 
 	groupIDs := make([][]uint32, len(this.jobSeqs))
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))
-	// t0 := time.Now()
-	worker := func(start, end, idx int, args ...interface{}) {
-		// for i := 0; i < len(this.jobSeqs); i++ {
-		for i := start; i < end; i++ {
-			groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter)
-			//	indexer.Univalues(records[i]).Sort(groupIDs[i]) // Debugging only
-		}
-	}
-	common.ParallelWorker(len(this.jobSeqs), int(this.numThreads), worker)
 
-	// common.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
-	// 	groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter)
-	// })
+	array.Foreach(this.jobSeqs, func(i int, _ **JobSequence) {
+		groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter)
+	})
 
-	// fmt.Println(time.Since(t0))
+	// univalue.Univalues(records[0]).Print()
+	// fmt.Println("")
+	// univalue.Univalues(records[1]).Print()
 
 	txDict, groupDict, _ := this.Detect(groupIDs, records).ToDict()
 	return array.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {

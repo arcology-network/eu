@@ -77,7 +77,7 @@ func (this *WriteCache) PeekCommitted(path string, T any) (interface{}, uint64) 
 }
 
 func (this *WriteCache) Do(tx uint32, path string, doer interface{}, T any) (interface{}, error) {
-	univalue := this.GetOrInit(tx, path, T)
+	univalue, _ := this.GetOrNew(tx, path, T)
 	return univalue.Do(tx, path, doer), nil
 }
 
