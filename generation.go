@@ -54,7 +54,7 @@ func (this *Generation) Run(parentApiRouter intf.EthApiRouter) []*univalue.Univa
 	groupIDs := make([][]uint32, len(this.jobSeqs))
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))
 
-	array.Foreach(this.jobSeqs, func(i int, _ **JobSequence) {
+	array.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
 		groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter)
 	})
 
