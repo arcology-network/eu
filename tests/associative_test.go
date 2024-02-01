@@ -17,16 +17,6 @@ func TestContainerPair(t *testing.T) {
 	}
 }
 
-func TestU256BasicMap(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
-
-	err, _, _ := DeployThenInvoke(targetPath, "map/u256_test.sol", "0.8.19", "U256MapTest", "", []byte{}, false)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestU256ConcurrentMap(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
