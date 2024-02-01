@@ -3,10 +3,12 @@ package execution
 
 import (
 	"crypto/sha256"
+	"strings"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
+	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/univalue"
@@ -15,12 +17,11 @@ import (
 
 	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
 	eucommon "github.com/arcology-network/eu/common"
-	"github.com/arcology-network/vm-adaptor/eth"
+	eth "github.com/arcology-network/vm-adaptor/eth"
 	intf "github.com/arcology-network/vm-adaptor/interface"
-
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
-	evmparams "github.com/ethereum/go-ethereum/params"
+	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 )
 
@@ -61,17 +62,61 @@ func (this *JobSequence) DeriveNewHash(original [32]byte) [32]byte {
 // Length returns the number of standard messages in the JobSequence.
 func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
-// Run executes the job sequence and returns the results.
-func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter) ([]uint32, []*univalue.Univalue) {
+// SetNonceOffset sets the nonce offset for the given address. This is used to avoid conflicts when
+// deploying contracts in different child threads. This happens when the child threads create by the multiprocessor
+// are trying to deploy contracts at the same address.
+
+//						 main thread (nonce = n)
+//	     	 		          |
+//						+---------+---------+
+//						|                   |
+//					child thread 0   child thread 1
+//					(nonce = n)      (nonce = n)
+//
+// Both child threads are trying to deploy contracts starting with the nonce value n + 1. This will cause a conflict.
+// So the solution is to give different nonce offsets to different child threads, so they can deploy their contracts at different addresses.
+// This should only be used for transactions spawned by the multiprocessor. The external transactions should not use this.
+func (this *JobSequence) AddRandomeNonce(caller [20]byte, api intf.EthApiRouter, threadId uint64) {
+	if api.Depth() == 0 {
+		return
+	}
+
+	statedb := eth.NewImplStateDB(api) // Read the nonce from the WriteCache
+	buffer := sha256.Sum256(codec.Uint64s([]uint64{statedb.GetNonce(caller), uint64(api.Depth()), threadId}).Encode())
+	randomNonce := new(codec.Uint32).Decode(buffer[:codec.UINT32_LEN]).(codec.Uint32)
+	statedb.SetNonce(caller, uint64(randomNonce))
+}
+
+// RemoveRandomeNonce removes the random nonce from the WriteCache so that it doesn't affect the state of the main thread.
+func (this *JobSequence) RemoveRandomeNonce(caller [20]byte, api intf.EthApiRouter) {
+	if api.Depth() == 0 {
+		return
+	}
+
+	mapi.RemoveIf(api.WriteCache().(*cache.WriteCache).Cache(), func(k string, _ *univalue.Univalue) bool {
+		return strings.Contains(k, "/nonce") // Remove the random nonce from the WriteCache.
+	})
+}
+
+// Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
+// case there is a contract deployment in the sequence.
+func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
-	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), this.ApiRouter.Schedule()) // cascade the write caches
+	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), this.ApiRouter.Schedule())
 
 	for i, msg := range this.StdMsgs {
+		// Create a new write cache for the message.
 		pendingApi := this.ApiRouter.New((cache.NewWriteCache(this.ApiRouter.WriteCache().(*cache.WriteCache))), this.ApiRouter.Schedule())
-		pendingApi.DecrementDepth()
+		this.AddRandomeNonce(*msg.Native.To, this.ApiRouter, threadId)
 
-		this.Results[i] = this.execute(msg, config, pendingApi)
-		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses)
+		// The api router always increments the depth, every time a new write cache is created from another one. But this isn't the case for
+		// executing a sequence of messages. So we need to decrement it here.
+		pendingApi.DecrementDepth()
+		this.Results[i] = this.execute(msg, config, pendingApi) // Execute the message and store the result.
+
+		// Remove the random nonce from the WriteCache, so that it doesn't affect the nonce state of the main thread.
+		this.RemoveRandomeNonce(*msg.Native.To, this.ApiRouter)
+		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the write cache of the pendingApi into the mainApi.
 	}
 
 	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
@@ -143,7 +188,7 @@ func (this *JobSequence) CalcualteRefund() uint64 {
 		typed := v.Value().(ccurlintf.Type)
 		amount += common.IfThen(
 			!v.Preexist(),
-			(uint64(typed.Size())/32)*uint64(v.Writes())*evmparams.SstoreSetGas,
+			(uint64(typed.Size())/32)*uint64(v.Writes())*ethparams.SstoreSetGas,
 			(uint64(typed.Size())/32)*uint64(v.Writes()),
 		)
 	}
