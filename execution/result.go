@@ -65,7 +65,7 @@ func (this *Result) Postprocess() *Result {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.Coinbase[:]))
 	})
 
-	if *(*senderBalance).GetPath() != *(*coinbaseBalance).GetPath() {
+	if coinbaseBalance != nil && *(*senderBalance).GetPath() != *(*coinbaseBalance).GetPath() {
 		if coinbaseGasCredit := this.GenGasTransition(*coinbaseBalance, gasUsedInWei, true); coinbaseGasCredit != nil {
 			this.immuned = append(this.immuned, coinbaseGasCredit)
 		}
