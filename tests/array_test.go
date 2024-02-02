@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,8 +12,7 @@ func TestAddressContainer(t *testing.T) {
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
 	err, _, _ := DeployThenInvoke(targetPath, "array/address_test.sol", "0.8.19", "AddressTest", "", []byte{}, false)
 	if err != nil {
-		fmt.Println(err.Error())
-		// t.Error(err.)
+		t.Error(err)
 	}
 }
 

@@ -103,7 +103,12 @@ func (this *WriteCache) NewUnivalue() *univalue.Univalue {
 func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
 	unival, inCache := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
-		unival = this.NewUnivalue().Init(tx, path, 0, 0, 0, common.FilterFirst(this.ReadOnlyDataStore().Retrive(path, T)), this)
+		var typedv interface{}
+		if store := this.ReadOnlyDataStore(); store != nil {
+			typedv = common.FilterFirst(store.Retrive(path, T))
+		}
+
+		unival = this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
 	return unival, inCache // From cache
@@ -190,6 +195,10 @@ func (this *WriteCache) IfExists(path string) bool {
 
 	if v := this.kvDict[path]; v != nil {
 		return v.Value() != nil // If value == nil means either it's been deleted or never existed.
+	}
+
+	if this.store == nil {
+		return false
 	}
 	return this.store.IfExists(path) //this.RetriveShallow(path, nil) != nil
 }
