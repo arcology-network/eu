@@ -37,6 +37,21 @@ func TestAddressBooleanMap(t *testing.T) {
 	}
 }
 
+func TestAddressUint256Map(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	err, _, _ := DeployThenInvoke(targetPath, "map/addressUint256_test.sol", "0.8.19", "AddressU256MapTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err, _, _ = DeployThenInvoke(targetPath, "map/addressUint256_test.sol", "0.8.19", "AddressU256MapConcurrentTest", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestConcurrentAddressBooleanMap(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
