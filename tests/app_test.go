@@ -24,3 +24,12 @@ func TestParallelSimpleAuction(t *testing.T) {
 		t.Error(err.Error())
 	}
 }
+
+func TestSubcurrency(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
+	err, _, _ := DeployThenInvoke(targetPath, "examples/subcurrency/ParallelSubcurrencyMp_test.sol", "0.8.19", "ParallelSubcurrencyTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err.Error())
+	}
+}

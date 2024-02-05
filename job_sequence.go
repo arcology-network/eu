@@ -3,6 +3,7 @@ package execution
 
 import (
 	"crypto/sha256"
+	"math"
 	"strings"
 
 	"github.com/arcology-network/common-lib/codec"
@@ -77,7 +78,7 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 // So the solution is to give different nonce offsets to different child threads, so they can deploy their contracts at different addresses.
 // This should only be used for transactions spawned by the multiprocessor. The external transactions should not use this.
 func (this *JobSequence) AddRandomeNonce(caller [20]byte, api intf.EthApiRouter, threadId uint64) {
-	if api.Depth() == 0 {
+	if threadId == math.MaxUint64 {
 		return
 	}
 
@@ -88,8 +89,8 @@ func (this *JobSequence) AddRandomeNonce(caller [20]byte, api intf.EthApiRouter,
 }
 
 // RemoveRandomeNonce removes the random nonce from the WriteCache so that it doesn't affect the state of the main thread.
-func (this *JobSequence) RemoveRandomeNonce(caller [20]byte, api intf.EthApiRouter) {
-	if api.Depth() == 0 {
+func (this *JobSequence) RemoveRandomeNonce(caller [20]byte, api intf.EthApiRouter, threadId uint64) {
+	if threadId == math.MaxUint64 {
 		return
 	}
 
@@ -115,7 +116,7 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		this.Results[i] = this.execute(msg, config, pendingApi) // Execute the message and store the result.
 
 		// Remove the random nonce from the WriteCache, so that it doesn't affect the nonce state of the main thread.
-		this.RemoveRandomeNonce(*msg.Native.To, this.ApiRouter)
+		this.RemoveRandomeNonce(*msg.Native.To, this.ApiRouter, threadId)
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the write cache of the pendingApi into the mainApi.
 	}
 
