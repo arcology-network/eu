@@ -108,7 +108,7 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 	for i, msg := range this.StdMsgs {
 		// Create a new write cache for the message.
 		pendingApi := this.ApiRouter.New((cache.NewWriteCache(this.ApiRouter.WriteCache().(*cache.WriteCache))), this.ApiRouter.Schedule())
-		this.AddRandomeNonce(*msg.Native.To, this.ApiRouter, threadId)
+		this.AddRandomeNonce(msg.Native.From, this.ApiRouter, threadId)
 
 		// The api router always increments the depth, every time a new write cache is created from another one. But this isn't the case for
 		// executing a sequence of messages. So we need to decrement it here.
@@ -116,7 +116,7 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		this.Results[i] = this.execute(msg, config, pendingApi) // Execute the message and store the result.
 
 		// Remove the random nonce from the WriteCache, so that it doesn't affect the nonce state of the main thread.
-		this.RemoveRandomeNonce(*msg.Native.To, this.ApiRouter, threadId)
+		this.RemoveRandomeNonce(msg.Native.From, this.ApiRouter, threadId)
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the write cache of the pendingApi into the mainApi.
 	}
 
