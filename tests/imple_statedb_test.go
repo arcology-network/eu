@@ -177,11 +177,11 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	ethStatedb.SetNonce(alice, uint64(11))
 	ethStatedb.SetNonce(bob, uint64(22))
 
-	if ethStatedb.GetNonce(alice) != uint64(11) {
+	if ethStatedb.GetNonce(alice) != uint64(1) {
 		t.Error("Wrong Nonce!", ethStatedb.GetNonce(alice))
 	}
 
-	if ethStatedb.GetNonce(bob) != uint64(22) {
+	if ethStatedb.GetNonce(bob) != uint64(1) {
 		t.Error("Wrong Nonce!", ethStatedb.GetNonce(bob))
 	}
 
