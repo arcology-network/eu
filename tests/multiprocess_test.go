@@ -187,6 +187,16 @@ func TestRecursiveParallelizerOnNativeArray(t *testing.T) {
 	}
 }
 
+func TestRecursiveAssigner(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "RecursiveAssignerTest", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestRecursiveParallelizerOnContainer(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
