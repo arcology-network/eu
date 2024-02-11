@@ -79,11 +79,11 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 // case there is a contract deployment in the sequence.
 func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
-	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), mainApi.GetInitiator(), this.ApiRouter.GetSchedule())
+	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), mainApi.GetDeployer(), this.ApiRouter.GetSchedule())
 
 	for i, msg := range this.StdMsgs {
 		// Create a new write cache for the message.
-		pendingApi := this.ApiRouter.New((cache.NewWriteCache(this.ApiRouter.WriteCache().(*cache.WriteCache))), mainApi.GetInitiator(), this.ApiRouter.GetSchedule())
+		pendingApi := this.ApiRouter.New((cache.NewWriteCache(this.ApiRouter.WriteCache().(*cache.WriteCache))), mainApi.GetDeployer(), this.ApiRouter.GetSchedule())
 
 		// The api router always increments the depth, every time a new write cache is created from another one. But this isn't the case for
 		// executing a sequence of messages. So we need to decrement it here.
