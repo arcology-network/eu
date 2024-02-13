@@ -1,6 +1,6 @@
 module github.com/arcology-network/eu
 
-go 1.21.3
+go 1.22
 
 replace github.com/ethereum/go-ethereum => ../concurrent-evm/
 
