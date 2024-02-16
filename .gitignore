@@ -16,4 +16,5 @@
 
 *.prof
 #go.sum
+tmp
 
