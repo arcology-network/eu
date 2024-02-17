@@ -17,10 +17,12 @@
 package scheduler
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"math/rand"
 	"os"
 	"sort"
+	"strconv"
 	"testing"
 	"time"
 
@@ -114,6 +116,22 @@ func TestScheduler(t *testing.T) {
 	if len(sch.Generations) != 2 {
 		t.Error("Failed to add contracts")
 	}
+
+	// Check that the schedule is correct.
+	msgs := make([]*eucommon.StandardMessage, 10)
+	for i := range msgs {
+		h := sha256.Sum256([]byte(strconv.Itoa(i)))
+		addr := ethcommon.BytesToAddress(h[:])
+		msgs[i] = &eucommon.StandardMessage{
+			ID:     uint64(i),
+			Native: &ethcore.Message{To: &addr, Data: addr[:4]},
+		}
+	}
+	msgs = array.Join(msgs, array.New(1000000, callAlice))
+
+	t0 := time.Now()
+	scheduler.New(msgs)
+	fmt.Println("Scheduler", len(msgs), time.Since(t0))
 }
 
 func TestMapArrayComparison(t *testing.T) {
