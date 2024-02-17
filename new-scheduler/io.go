@@ -45,8 +45,8 @@ func LoadScheduler(filepath string) (*Scheduler, error) {
 		return new(Callee).Decode(contractBytes[i])
 	})
 
-	contractKeys := new(codec.Strings).Decode(buffers[2]).(codec.Strings)
-	contractIdx := new(codec.Uint32s).Decode(buffers[3]).(codec.Uint32s)
+	contractKeys := new(codec.Strings).Decode(buffers[1]).(codec.Strings)
+	contractIdx := new(codec.Uint32s).Decode(buffers[2]).(codec.Uint32s)
 
 	sch.calleeLookup = make(map[string]uint32)
 	for i := range contractKeys {

@@ -116,9 +116,9 @@ func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univa
 
 func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}, uint64) {
 	// fmt.Println(path)
-	if strings.Contains(path, "nonce") {
-		fmt.Println(path)
-	}
+	// if strings.Contains(path, "nonce") {
+	// 	fmt.Println(path)
+	// }
 	univalue, _ := this.GetOrNew(tx, path, T)
 	return univalue.Get(tx, path, nil), univalue, 0
 }

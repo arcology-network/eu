@@ -111,7 +111,7 @@ func TestScheduler(t *testing.T) {
 
 	// Produce a schedule for the given transactions based on the conflicts information.
 	sch := scheduler.New([]*eucommon.StandardMessage{callAlice, callBob, callCarol, callDavid})
-	if len(sch.Sequentials) != 2 {
+	if len(sch.Generations) != 2 {
 		t.Error("Failed to add contracts")
 	}
 }

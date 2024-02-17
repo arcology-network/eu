@@ -27,7 +27,6 @@ type Schedule struct {
 	Unknows      []*eucommon.StandardMessage // Messages with unknown conflicts with others
 	WithConflict []*eucommon.StandardMessage // Messages with conflicts
 	Sequentials  []*eucommon.StandardMessage // Callees that are marked as sequential only
-	Cleared      []*eucommon.StandardMessage // Messages that have been cleared of conflict
 	Generations  [][]*eucommon.StandardMessage
 }
 
