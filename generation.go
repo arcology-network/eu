@@ -6,10 +6,12 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/eu/execution"
+	evmcore "github.com/ethereum/go-ethereum/core"
 
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/univalue"
+	schedule "github.com/arcology-network/eu/new-scheduler"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 )
 
@@ -18,14 +20,26 @@ type Generation struct {
 	ID         uint32
 	numThreads uint8
 	jobSeqs    []*JobSequence // para jobSeqs
+	sch        *schedule.Schedule
 }
 
-func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
+func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence, sch *schedule.Schedule) *Generation {
 	return &Generation{
 		ID:         id,
 		numThreads: numThreads,
 		jobSeqs:    jobSeqs,
+		sch:        sch,
 	}
+}
+
+// This function converts a list of raw calls to a list of parallel job sequences. One job sequence is created for each caller.
+// If there are N callers, there will be N job sequences. There sequences will be later added to a generation and executed in parallel.
+func NewGenerationFromCalls(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter, sch *schedule.Schedule) *Generation {
+	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{}, sch)
+	array.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
+		gen.Add(new(JobSequence).NewFromCall(*msg, api))
+	})
+	return gen
 }
 
 // NEED to inject to the write cache
@@ -41,8 +55,8 @@ func (this *Generation) At(idx uint64) *JobSequence {
 	return common.IfThenDo1st(idx < uint64(len(this.jobSeqs)), func() *JobSequence { return this.jobSeqs[idx] }, nil)
 }
 
-func (this *Generation) New(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
-	return NewGeneration(id, numThreads, array.To[*JobSequence, *JobSequence](jobSeqs))
+func (*Generation) New(id uint32, numThreads uint8, jobSeqs []*JobSequence, sch *schedule.Schedule) *Generation {
+	return NewGeneration(id, numThreads, array.To[*JobSequence, *JobSequence](jobSeqs), sch)
 }
 
 func (this *Generation) Add(job *JobSequence) bool {

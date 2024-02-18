@@ -18,6 +18,7 @@ import (
 	eth "github.com/arcology-network/vm-adaptor/eth"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 	evmcommon "github.com/ethereum/go-ethereum/common"
+	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
@@ -43,10 +44,22 @@ func (*JobSequence) New(id uint32, apiRouter intf.EthApiRouter) *JobSequence {
 	}
 }
 
+// NewFromCall creates a new JobSequence from the given call.
+func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, api intf.EthApiRouter) *JobSequence {
+	newJobSeq := new(JobSequence).New(uint32(api.GetSerialNum(eucommon.SUB_PROCESS)), api)
+
+	return newJobSeq.AppendMsg(&eucommon.StandardMessage{
+		ID:     uint64(newJobSeq.GetID()),
+		Native: evmMsg,
+		TxHash: newJobSeq.DeriveNewHash(api.GetEU().(interface{ TxHash() [32]byte }).TxHash()),
+	})
+}
+
 // GetID returns the ID of the JobSequence.
 func (this *JobSequence) GetID() uint32 { return this.ID }
-func (this *JobSequence) AppendMsg(msg interface{}) {
+func (this *JobSequence) AppendMsg(msg interface{}) *JobSequence {
 	this.StdMsgs = append(this.StdMsgs, msg.(*eucommon.StandardMessage))
+	return this
 }
 
 // DeriveNewHash derives a new hash based on the original hash and the JobSequence ID.
