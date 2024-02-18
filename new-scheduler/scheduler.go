@@ -18,10 +18,8 @@
 package scheduler
 
 import (
-	"fmt"
 	"math"
 	"sort"
-	"time"
 
 	"github.com/arcology-network/common-lib/exp/array"
 	mapi "github.com/arcology-network/common-lib/exp/map"
@@ -78,26 +76,22 @@ func (this *Scheduler) Add(lftAddr [20]byte, lftSig [4]byte, rgtAddr [20]byte, r
 // The schedule will contain the transactions that can be executed in parallel and the ones that have to
 // be executed sequentially.
 func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
-	t0 := time.Now()
 	// Get the static schedule for the given transactions first.
 	sch, msgPairs := this.Prefilter(stdMsgs)
 	if len(msgPairs) == 0 {
 		return sch
 	}
-	fmt.Println("Prefilter", time.Since(t0))
 
-	t0 = time.Now()
 	// Sort the callees by the number of conflicts and the callee index in ascending order.
 	// Need to use pairs not msgPairs
 	sort.Slice(msgPairs, func(i, j int) bool {
-		if len(this.callees[(msgPairs)[i].First].Indices) != len(this.callees[(msgPairs)[j].First].Indices) {
-			return len(this.callees[(msgPairs)[i].First].Indices) < len(this.callees[(msgPairs)[j].First].Indices)
+		lft, rgt := len(this.callees[(msgPairs)[i].First].Indices), len(this.callees[(msgPairs)[j].First].Indices)
+		if lft < rgt {
+			return lft < rgt
 		}
 		return (msgPairs)[i].Second.ID < (msgPairs)[j].Second.ID
 	})
-	fmt.Println("sort.Slice", time.Since(t0))
 
-	t0 = time.Now()
 	// The code below will search for the parallel transaction set from a set of conflicting transactions.
 	// Whataever left is the sequential transaction set after this.
 	for {
@@ -145,18 +139,14 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 			break // Nothing left to process.
 		}
 	}
-	fmt.Println("For", time.Since(t0))
-	t0 = time.Now()
+
 	// Deferred array can be empty, so remove it if it is.
 	array.RemoveIf(&sch.Generations, func(i int, v []*eucommon.StandardMessage) bool {
 		return len(v) == 0
 	})
-	fmt.Println("RemoveIf", time.Since(t0))
 
-	t0 = time.Now()
 	// Whatever is left in the msgPairs array is the sequential transaction set.
 	sch.WithConflict = (*product.Pairs[uint32, *eucommon.StandardMessage])(&msgPairs).Seconds()
-	fmt.Println("Seconds()", time.Since(t0))
 	return sch
 }
 
@@ -172,7 +162,6 @@ func (this *Scheduler) Deferred(paraMsgInfo *product.Pairs[uint32, *eucommon.Sta
 
 	deferredMsgs := product.Pairs[uint32, *eucommon.StandardMessage]{}
 	for i := 0; i < len(*paraMsgInfo); i++ {
-
 		// Find the first and last instance of the same callee.
 		first, _ := array.FindFirstIf(*paraMsgInfo, func(v *product.Pair[uint32, *eucommon.StandardMessage]) bool {
 			return (*paraMsgInfo)[i].First == v.First

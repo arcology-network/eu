@@ -19,6 +19,7 @@ package scheduler
 
 import (
 	"github.com/arcology-network/common-lib/codec"
+	eucommon "github.com/arcology-network/eu/common"
 )
 
 // The callee struct stores the information of a contract that is called by EOA initiated transactions.
@@ -56,6 +57,10 @@ func (this *Callee) Decode(data []byte) *Callee {
 	this.Calls = uint32(new(codec.Uint32).Decode(fields[5]).(codec.Uint32))
 	this.AvgGas = uint32(new(codec.Uint32).Decode(fields[5]).(codec.Uint32))
 	return this
+}
+
+func ToKey(msg *eucommon.StandardMessage) string {
+	return string(append((*msg.Native.To)[:ADDRESS_LENGTH], msg.Native.Data[:4]...))
 }
 
 type Callees []*Callee

@@ -18,6 +18,7 @@
 package scheduler
 
 import (
+	"github.com/arcology-network/common-lib/exp/array"
 	eucommon "github.com/arcology-network/eu/common"
 )
 
@@ -28,8 +29,20 @@ type Schedule struct {
 	WithConflict []*eucommon.StandardMessage // Messages with conflicts
 	Sequentials  []*eucommon.StandardMessage // Callees that are marked as sequential only
 	Generations  [][]*eucommon.StandardMessage
+	CallSums     []map[string]int
 }
 
-func (this *Schedule) Optimize(stdMsgs []*eucommon.StandardMessage) *Schedule {
-	return this
+// The function counts the number of each unique calls within each generation.
+func (this *Schedule) GetCallSums() {
+	this.CallSums = array.Append(this.Generations, func(i int, msgs []*eucommon.StandardMessage) map[string]int {
+		dict := map[string]int{}
+		array.Foreach(msgs, func(_ int, msg **eucommon.StandardMessage) { dict[ToKey(*msg)]++ })
+		return dict
+	})
+}
+
+// The function returns the number of instances of the callee.
+func (this *Schedule) NumInstances(addr [20]byte, signature [4]byte, generation int) int {
+	return 0
+	// return this.CallSums[generation][ToKey(&eucommon.StandardMessage{})]
 }
