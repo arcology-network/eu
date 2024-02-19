@@ -60,6 +60,13 @@ func (this *Callee) Decode(data []byte) *Callee {
 }
 
 func ToKey(msg *eucommon.StandardMessage) string {
+	if (*msg.Native).To == nil {
+		return ""
+	}
+
+	if len(msg.Native.Data) == 0 {
+		return string((*msg.Native.To)[:ADDRESS_LENGTH])
+	}
 	return string(append((*msg.Native.To)[:ADDRESS_LENGTH], msg.Native.Data[:4]...))
 }
 

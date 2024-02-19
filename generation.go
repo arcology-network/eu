@@ -6,45 +6,55 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/eu/execution"
+	scheduler "github.com/arcology-network/eu/new-scheduler"
 	evmcore "github.com/ethereum/go-ethereum/core"
 
 	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/univalue"
-	schedule "github.com/arcology-network/eu/new-scheduler"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 )
 
 // APIs under the concurrency namespace
 type Generation struct {
-	ID         uint32
-	numThreads uint8
-	jobSeqs    []*JobSequence // para jobSeqs
-	sch        *schedule.Schedule
+	ID          uint32
+	numThreads  uint8
+	jobSeqs     []*JobSequence // para jobSeqs
+	occurrences map[string]int
 }
 
-func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence, sch *schedule.Schedule) *Generation {
-	return &Generation{
+func (this *Generation) CountOccurrences(jobSeqs []*JobSequence) map[string]int {
+	occurrences := map[string]int{}
+	for _, seq := range jobSeqs {
+		for _, msg := range seq.StdMsgs {
+			occurrences[scheduler.ToKey(msg)]++ // Only count the first one if found
+			break
+		}
+	}
+	return occurrences
+}
+
+func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
+	gen := &Generation{
 		ID:         id,
 		numThreads: numThreads,
 		jobSeqs:    jobSeqs,
-		sch:        sch,
 	}
+	gen.occurrences = gen.CountOccurrences(jobSeqs)
+	return gen
 }
 
+// This function is used for Multiprocessor execution ONLY !!!.
 // This function converts a list of raw calls to a list of parallel job sequences. One job sequence is created for each caller.
 // If there are N callers, there will be N job sequences. There sequences will be later added to a generation and executed in parallel.
-func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter, sch *schedule.Schedule) *Generation {
-	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{}, sch)
+func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter) *Generation {
+	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{})
 	array.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
 		gen.Add(new(JobSequence).NewFromCall(*msg, api))
 	})
 	return gen
 }
 
-// NEED to inject to the write cache
-
-// func (this *Generation) BranchID() uint32 { return this.branchID }
 func (this *Generation) Length() uint64     { return uint64(len(this.jobSeqs)) }
 func (this *Generation) JobT() *JobSequence { return &JobSequence{} }
 func (this *Generation) JobSeqs() []*JobSequence {
@@ -55,8 +65,8 @@ func (this *Generation) At(idx uint64) *JobSequence {
 	return common.IfThenDo1st(idx < uint64(len(this.jobSeqs)), func() *JobSequence { return this.jobSeqs[idx] }, nil)
 }
 
-func (*Generation) New(id uint32, numThreads uint8, jobSeqs []*JobSequence, sch *schedule.Schedule) *Generation {
-	return NewGeneration(id, numThreads, array.To[*JobSequence, *JobSequence](jobSeqs), sch)
+func (*Generation) New(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
+	return NewGeneration(id, numThreads, array.To[*JobSequence, *JobSequence](jobSeqs))
 }
 
 func (this *Generation) Add(job *JobSequence) bool {
@@ -86,6 +96,7 @@ func (this *Generation) Execute(parentApiRouter intf.EthApiRouter) []*univalue.U
 	groupIDs := make([][]uint32, len(this.jobSeqs))
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))
 
+	// Execute the job sequences in parallel
 	array.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
 		groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter, uint64(i+1))
 	})
