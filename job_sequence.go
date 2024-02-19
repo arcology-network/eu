@@ -93,7 +93,7 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 // case there is a contract deployment in the sequence.
 func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
-	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), mainApi.GetDeployer(), this.ApiRouter.GetSchedule())
+	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), mainApi.GetDeployer(), mainApi.GetSchedule())
 
 	for i, msg := range this.StdMsgs {
 		// Create a new write cache for the message.

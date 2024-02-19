@@ -20,10 +20,10 @@ type Generation struct {
 	ID          uint32
 	numThreads  uint8
 	jobSeqs     []*JobSequence // para jobSeqs
-	occurrences map[string]int
+	occurrences *map[string]int
 }
 
-func (this *Generation) CountOccurrences(jobSeqs []*JobSequence) map[string]int {
+func (this *Generation) CountOccurrences(jobSeqs []*JobSequence) *map[string]int {
 	occurrences := map[string]int{}
 	for _, seq := range jobSeqs {
 		for _, msg := range seq.StdMsgs {
@@ -31,7 +31,7 @@ func (this *Generation) CountOccurrences(jobSeqs []*JobSequence) map[string]int 
 			break
 		}
 	}
-	return occurrences
+	return &occurrences
 }
 
 func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
@@ -52,6 +52,8 @@ func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Messa
 	array.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
 		gen.Add(new(JobSequence).NewFromCall(*msg, api))
 	})
+	gen.occurrences = gen.CountOccurrences(gen.jobSeqs)
+	api.SetSchedule(gen.occurrences)
 	return gen
 }
 

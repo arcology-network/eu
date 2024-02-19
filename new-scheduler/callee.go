@@ -67,7 +67,11 @@ func ToKey(msg *eucommon.StandardMessage) string {
 	if len(msg.Native.Data) == 0 {
 		return string((*msg.Native.To)[:ADDRESS_LENGTH])
 	}
-	return string(append((*msg.Native.To)[:ADDRESS_LENGTH], msg.Native.Data[:4]...))
+	return CallToKey((*msg.Native.To)[:], msg.Native.Data[:4])
+}
+
+func CallToKey(addr []byte, funSign []byte) string {
+	return string(addr[:ADDRESS_LENGTH]) + string(funSign[:4])
 }
 
 type Callees []*Callee
