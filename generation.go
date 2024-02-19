@@ -23,7 +23,7 @@ type Generation struct {
 	occurrences *map[string]int
 }
 
-func (this *Generation) CountOccurrences(jobSeqs []*JobSequence) *map[string]int {
+func (*Generation) OccurrenceDict(jobSeqs []*JobSequence) *map[string]int {
 	occurrences := map[string]int{}
 	for _, seq := range jobSeqs {
 		for _, msg := range seq.StdMsgs {
@@ -40,7 +40,7 @@ func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generat
 		numThreads: numThreads,
 		jobSeqs:    jobSeqs,
 	}
-	gen.occurrences = gen.CountOccurrences(jobSeqs)
+	gen.occurrences = gen.OccurrenceDict(jobSeqs)
 	return gen
 }
 
@@ -52,7 +52,7 @@ func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Messa
 	array.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
 		gen.Add(new(JobSequence).NewFromCall(*msg, api))
 	})
-	gen.occurrences = gen.CountOccurrences(gen.jobSeqs)
+	gen.occurrences = gen.OccurrenceDict(gen.jobSeqs)
 	api.SetSchedule(gen.occurrences)
 	return gen
 }
