@@ -53,6 +53,7 @@ func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, api intf.EthApiRouter) 
 		Native: evmMsg,
 		TxHash: newJobSeq.DeriveNewHash(api.GetEU().(interface{ TxHash() [32]byte }).TxHash()),
 	})
+
 }
 
 // GetID returns the ID of the JobSequence.

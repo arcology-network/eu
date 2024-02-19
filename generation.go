@@ -34,7 +34,7 @@ func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence, sch *sch
 
 // This function converts a list of raw calls to a list of parallel job sequences. One job sequence is created for each caller.
 // If there are N callers, there will be N job sequences. There sequences will be later added to a generation and executed in parallel.
-func NewGenerationFromCalls(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter, sch *schedule.Schedule) *Generation {
+func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter, sch *schedule.Schedule) *Generation {
 	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{}, sch)
 	array.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
 		gen.Add(new(JobSequence).NewFromCall(*msg, api))
