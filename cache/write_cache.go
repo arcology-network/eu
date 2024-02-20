@@ -115,10 +115,6 @@ func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univa
 }
 
 func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interface{}, uint64) {
-	// fmt.Println(path)
-	// if strings.Contains(path, "nonce") {
-	// 	fmt.Println(path)
-	// }
 	univalue, _ := this.GetOrNew(tx, path, T)
 	return univalue.Get(tx, path, nil), univalue, 0
 }
@@ -203,24 +199,28 @@ func (this *WriteCache) IfExists(path string) bool {
 	return this.store.IfExists(path) //this.RetriveShallow(path, nil) != nil
 }
 
+// The function is used to add the transitions to the writecache, which usually comes from
+// the child writecaches. It usually happens with the sub processeses are completed.
 func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 	if len(transitions) == 0 {
 		return
 	}
 
+	// Filter out the path creations transitions as they will treat differently.
 	newPathCreations := array.MoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath()) && !v.Preexist()
 	})
 
-	// Remove the changes from the existing paths, as they will be updated automatically when inserting sub elements.
-	transitions = array.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
-		return common.IsPath(*v.GetPath())
-	})
-
-	// Not necessary at the moment, but good for the future if multiple level containers are available
+	// Not necessary to sort the path creations at the moment,
+	// but it is good for the future if multiple level containers are available
 	newPathCreations = univalue.Univalues(importer.Sorter(newPathCreations))
 	array.Foreach(newPathCreations, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
+	})
+
+	// Remove the changes to the existing path meta, as they will be updated automatically when inserting sub elements.
+	transitions = array.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
+		return common.IsPath(*v.GetPath())
 	})
 
 	array.Foreach(transitions, func(_ int, v **univalue.Univalue) {

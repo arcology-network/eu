@@ -1,9 +1,9 @@
 package cache
 
 import (
-	common "github.com/arcology-network/common-lib/common"
 	commonlibcommon "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
+	mapi "github.com/arcology-network/common-lib/exp/map"
 
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	"github.com/arcology-network/concurrenturl/univalue"
@@ -24,7 +24,7 @@ func NewWriteCacheFilter(writeCache interface{}) *WriteCacheFilter {
 }
 
 func (this *WriteCacheFilter) ToBuffer() []*univalue.Univalue {
-	return common.MapValues(this.WriteCache.Cache())
+	return mapi.Values(this.WriteCache.Cache())
 }
 
 func (this *WriteCacheFilter) RemoveByAddress(addr string) {
@@ -57,6 +57,5 @@ func (this *WriteCacheFilter) filterByAddress(transitions *[]*univalue.Univalue)
 
 func (this *WriteCacheFilter) ByType() ([]*univalue.Univalue, []*univalue.Univalue) {
 	accesses, transitions := this.ExportAll()
-	return this.filterByAddress(&accesses),
-		this.filterByAddress(&transitions)
+	return this.filterByAddress(&accesses), this.filterByAddress(&transitions)
 }

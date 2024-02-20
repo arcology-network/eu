@@ -63,7 +63,8 @@ func (this *JobSequence) AppendMsg(msg interface{}) *JobSequence {
 	return this
 }
 
-// DeriveNewHash derives a new hash based on the original hash and the JobSequence ID.
+// DeriveNewHash derives a pseudo-random transaction hash from the given original hash and the JobSequence ID.
+// It is used to help uniquely identify transactions spawned by the multiprocessor in conflict detection and resolution.
 func (this *JobSequence) DeriveNewHash(original [32]byte) [32]byte {
 	return sha256.Sum256(array.Flatten([][]byte{
 		codec.Bytes32(original).Encode(),
