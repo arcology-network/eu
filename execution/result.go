@@ -88,18 +88,6 @@ func (this *Result) Postprocess() *Result {
 		}
 	}
 
-	// array.Foreach(this.RawStateAccesses, func(_ int, v **univalue.Univalue) {
-	// 	if v == nil {
-	// 		return
-	// 	}
-
-	// 	path := (*v).GetPath()
-	// 	if strings.HasSuffix(*path, "/nonce") && strings.Contains(*path, hex.EncodeToString(this.From[:])) {
-	// 		this.immuned = append(this.immuned, *v) // Add the nonce transition to the immune list even if the execution is unsuccessful.
-	// 		(*v).Property.SetPersistent(true)       // Won't be affect by conflicts
-	// 	}
-	// })
-
 	_, senderNonce := array.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 		return strings.HasSuffix(*v.GetPath(), "/nonce") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
