@@ -7,6 +7,7 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/concurrenturl/commutative"
 	indexer "github.com/arcology-network/concurrenturl/importer"
 	"github.com/arcology-network/concurrenturl/univalue"
@@ -94,18 +95,29 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 // case there is a contract deployment in the sequence.
 func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
-	this.ApiRouter = mainApi.New(cache.NewWriteCache(mainApi.WriteCache().(*cache.WriteCache)), mainApi.GetDeployer(), mainApi.GetSchedule())
 
+	writeCache := mainApi.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New() // Get a new write cache from the shared write cache pool.
+	writeCache.SetReadOnlyDataStore(mainApi.WriteCache().(*cache.WriteCache))          // Use mainapi's cache as the read-only data store.
+	this.ApiRouter = mainApi.New(mainApi.WriteCachePool(), writeCache, mainApi.GetDeployer(), mainApi.GetSchedule())
+
+	// t0 := time.Now()
 	for i, msg := range this.StdMsgs {
-		// Create a new write cache for the message.
-		pendingApi := this.ApiRouter.New((cache.NewWriteCache(this.ApiRouter.WriteCache().(*cache.WriteCache))), mainApi.GetDeployer(), this.ApiRouter.GetSchedule())
+		// Get a new write cache from the shared write cache pool.
+		writeCache := this.ApiRouter.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New()
+
+		// Use its parent's cache as read-only data store. This will create a cascade of caches, each one using the previous one as read-only data store.
+		writeCache.SetReadOnlyDataStore(this.ApiRouter.WriteCache().(*cache.WriteCache))
+
+		// The temporary api router for the message. It's content will be merged into the main api router after the message is executed.
+		tempApi := this.ApiRouter.New(this.ApiRouter.WriteCachePool(), writeCache, mainApi.GetDeployer(), this.ApiRouter.GetSchedule())
 
 		// The api router always increments the depth, every time a new write cache is created from another one. But this isn't the case for
 		// executing a sequence of messages. So we need to decrement it here.
-		pendingApi.DecrementDepth()
-		this.Results[i] = this.execute(msg, config, pendingApi)                                          // Execute the message and store the result.
-		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the write cache of the pendingApi into the mainApi.
+		tempApi.DecrementDepth()
+		this.Results[i] = this.execute(msg, config, tempApi)                                             // Execute the message and store the result.
+		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
 	}
+	// fmt.Println("jobsequence run time:", time.Since(t0))
 
 	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
 	return array.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/array"
+	"github.com/arcology-network/common-lib/exp/mempool"
 	concurrenturl "github.com/arcology-network/concurrenturl"
 	ccurlcommon "github.com/arcology-network/concurrenturl/common"
 	commutative "github.com/arcology-network/concurrenturl/commutative"
@@ -22,8 +23,11 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	db := chooseDataStore()
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
-	localCache := cache.NewWriteCache(db)
-	api := apihandler.NewAPIHandler(localCache)
+	// localCache := cache.NewWriteCache(datastore, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(db, 32, 1)
+	}, (&cache.WriteCache{}).Reset))
+
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -50,8 +54,11 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	db := chooseDataStore()
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
-	localCache := cache.NewWriteCache(db)
-	api := apihandler.NewAPIHandler(localCache)
+	// localCache := cache.NewWriteCache(db, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(db, 32, 1)
+	}, (&cache.WriteCache{}).Reset))
+
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -80,8 +87,11 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	meta := commutative.NewPath()
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 
-	localCache := cache.NewWriteCache(db)
-	api := apihandler.NewAPIHandler(localCache)
+	// localCache := cache.NewWriteCache(db, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(db, 32, 1)
+	}, (&cache.WriteCache{}).Reset))
+
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -110,8 +120,11 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
 	committer := concurrenturl.NewStorageCommitter(db)
 
-	localCache := cache.NewWriteCache(db)
-	api := apihandler.NewAPIHandler(localCache)
+	// localCache := cache.NewWriteCache(db, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(db, 32, 1)
+	}, (&cache.WriteCache{}).Reset))
+
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
@@ -199,6 +212,8 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	// if _, err := committer.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/", noncommutative.NewString("path")); err != nil {
 	// 	t.Error(err)
 	// }
+
+	localCache := api.WriteCache().(*cache.WriteCache)
 
 	if _, err := localCache.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-000", noncommutative.NewString("123")); err == nil {
 		t.Error(err)

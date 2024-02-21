@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	commonlibcommon "github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/exp/mempool"
 	commontypes "github.com/arcology-network/common-lib/types"
 	concurrenturl "github.com/arcology-network/concurrenturl"
 	"github.com/arcology-network/concurrenturl/commutative"
@@ -71,11 +72,17 @@ func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl
 	datastore := chooseDataStore()
 	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
-	localCache := cache.NewWriteCache(datastore)
+	// writeCachePool := mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+	// 	return cache.NewWriteCache(datastore, 32, 1)
+	// }, (&cache.WriteCache{}).Reset)
+
+	// localCache := cache.NewWriteCache(datastore, 32, 1)
 	// if len(args) > 0 {
 	// 	url = args[0].(*concurrenturl.StorageCommitter )
 	// }
-	api := apihandler.NewAPIHandler(localCache)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(datastore, 32, 1)
+	}, (&cache.WriteCache{}).Reset))
 
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -103,7 +110,10 @@ func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl
 	committer.Precommit([]uint32{0})
 	committer.Commit()
 
-	api = apihandler.NewAPIHandler(localCache)
+	api = apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(datastore, 32, 1)
+	}, (&cache.WriteCache{}).Reset))
+
 	statedb = eth.NewImplStateDB(api)
 
 	config := MainTestConfig()
@@ -175,8 +185,11 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
-	localCache := cache.NewWriteCache(datastore)
-	api := apihandler.NewAPIHandler(localCache)
+	// localCache := cache.NewWriteCache(datastore, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(datastore, 32, 1)
+	}, (&cache.WriteCache{}).Reset))
+
 	statedb := eth.NewImplStateDB(api)
 	eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
 

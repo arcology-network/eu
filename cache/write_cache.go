@@ -34,16 +34,18 @@ type WriteCache struct {
 
 // NewWriteCache creates a new instance of WriteCache; the store can be another instance of WriteCache,
 // resulting in a cascading-like structure.
-func NewWriteCache(store intf.ReadOnlyDataStore, args ...interface{}) *WriteCache {
+func NewWriteCache(store intf.ReadOnlyDataStore, perPage int, numPages int, args ...interface{}) *WriteCache {
+	// t0 := time.Now()
 	var writeCache WriteCache
 	writeCache.store = store
 	writeCache.kvDict = make(map[string]*univalue.Univalue)
 	writeCache.platform = platform.NewPlatform()
-	writeCache.buffer = make([]*univalue.Univalue, 0, 64)
+	writeCache.buffer = make([]*univalue.Univalue, 0, perPage*numPages)
 
-	writeCache.uniPool = mempool.NewMempool[*univalue.Univalue](4096, 64, func() *univalue.Univalue {
+	writeCache.uniPool = mempool.NewMempool[*univalue.Univalue](perPage, numPages, func() *univalue.Univalue {
 		return new(univalue.Univalue)
-	})
+	}, (&univalue.Univalue{}).Reset)
+	// fmt.Println("NewWriteCache ------------- ", time.Since(t0))
 	return &writeCache
 }
 
@@ -92,12 +94,11 @@ func (this *WriteCache) CreateNewAccount(tx uint32, acct string) ([]*univalue.Un
 	return transitions, nil
 }
 
-func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.store }
-func (this *WriteCache) Cache() map[string]*univalue.Univalue      { return this.kvDict }
-
-func (this *WriteCache) NewUnivalue() *univalue.Univalue {
-	return this.uniPool.New()
-}
+func (this *WriteCache) SetReadOnlyDataStore(store intf.ReadOnlyDataStore) { this.store = store }
+func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore         { return this.store }
+func (this *WriteCache) Cache() map[string]*univalue.Univalue              { return this.kvDict }
+func (this *WriteCache) MinSize() int                                      { return this.uniPool.MinSize() }
+func (this *WriteCache) NewUnivalue() *univalue.Univalue                   { return this.uniPool.New() }
 
 // If the access has been recorded
 func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {
@@ -228,8 +229,13 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 	})
 }
 
-func (this *WriteCache) Clear() {
-	this.kvDict = make(map[string]*univalue.Univalue)
+// Reset the writecache to the initial state for the next round of processing.
+func (*WriteCache) Reset(this *WriteCache) {
+	if clear(this.buffer); cap(this.buffer) > 3*this.uniPool.MinSize() {
+		this.buffer = make([]*univalue.Univalue, 0, this.uniPool.MinSize())
+	}
+	this.uniPool.Reset()
+	clear(this.kvDict)
 }
 
 func (this *WriteCache) Equal(other *WriteCache) bool {
@@ -308,7 +314,7 @@ func (this *WriteCache) FlushToDataSource(store interfaces.Datastore) interfaces
 	committer.Sort()
 	committer.Precommit(txs)
 	committer.Commit()
-	this.Clear()
+	this.Reset(this)
 
 	return store
 }
