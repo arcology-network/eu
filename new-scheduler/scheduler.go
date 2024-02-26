@@ -100,7 +100,7 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 		calleeDict[(msgPairs)[0].First] = (msgPairs)[0] // Start with the first callee.
 
 		// The conflict dictionary of all the known conflict indices of the current transaction set.
-		conflictDict := mapi.FromArray(this.callees[(msgPairs)[0].First].Indices, func(k uint32) bool { return true })
+		conflictDict := mapi.FromSlice(this.callees[(msgPairs)[0].First].Indices, func(k uint32) bool { return true })
 
 		// The msg to include in the parallel transaction set must not have any conflicts with the other callees in the set.
 		paraMsgs := product.Pairs[uint32, *eucommon.StandardMessage]{(msgPairs)[0]}

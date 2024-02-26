@@ -3,6 +3,8 @@ package execution
 
 import (
 	"crypto/sha256"
+	"fmt"
+	"time"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -94,13 +96,15 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 // Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
 // case there is a contract deployment in the sequence.
 func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
+	t0 := time.Now()
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
 
 	writeCache := mainApi.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New() // Get a new write cache from the shared write cache pool.
 	writeCache.SetReadOnlyDataStore(mainApi.WriteCache().(*cache.WriteCache))          // Use mainapi's cache as the read-only data store.
 	this.ApiRouter = mainApi.New(mainApi.WriteCachePool(), writeCache, mainApi.GetDeployer(), mainApi.GetSchedule())
+	// fmt.Println("Pre run time:", time.Since(t0))
 
-	// t0 := time.Now()
+	// t0 = time.Now()
 	for i, msg := range this.StdMsgs {
 		// Get a new write cache from the shared write cache pool.
 		writeCache := this.ApiRouter.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New()
@@ -117,12 +121,12 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		this.Results[i] = this.execute(msg, config, tempApi)                                             // Execute the message and store the result.
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
 
-		// writeCache.Reset(writeCache) // Return the tempApi write cache back to the shared write cache pool.
+		writeCache.Reset(writeCache) // Return the tempApi write cache back to the shared write cache pool.
 		// this.ApiRouter.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).Reset()
 	}
-	// fmt.Println("jobsequence run time:", time.Since(t0))
 
 	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
+	fmt.Println("jobsequence run time:", time.Since(t0))
 	return array.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
 }
 
