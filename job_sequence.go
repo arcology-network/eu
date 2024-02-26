@@ -116,6 +116,9 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		tempApi.DecrementDepth()
 		this.Results[i] = this.execute(msg, config, tempApi)                                             // Execute the message and store the result.
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
+
+		// writeCache.Reset(writeCache) // Return the tempApi write cache back to the shared write cache pool.
+		// this.ApiRouter.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).Reset()
 	}
 	// fmt.Println("jobsequence run time:", time.Since(t0))
 
