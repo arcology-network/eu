@@ -138,7 +138,7 @@ func TestMapArrayComparison(t *testing.T) {
 	arr := array.NewWith[int](1000000, func(_ int) int { return rand.Intn(1000000) })
 
 	t0 := time.Now()
-	m := mapi.FromArray(arr, func(int) bool { return true })
+	m := mapi.FromSlice(arr, func(int) bool { return true })
 	v := false
 	for i := 0; i < len(arr); i++ {
 		v = m[i]
