@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	mempool "github.com/arcology-network/common-lib/exp/mempool"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	ccurl "github.com/arcology-network/storage-committer"
 	committercommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
@@ -208,23 +208,23 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 	}
 
 	// Filter out the path creations transitions as they will treat differently.
-	newPathCreations := array.MoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
+	newPathCreations := slice.MoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath()) && !v.Preexist()
 	})
 
 	// Not necessary to sort the path creations at the moment,
 	// but it is good for the future if multiple level containers are available
 	newPathCreations = univalue.Univalues(importer.Sorter(newPathCreations))
-	array.Foreach(newPathCreations, func(_ int, v **univalue.Univalue) {
+	slice.Foreach(newPathCreations, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
 
 	// Remove the changes to the existing path meta, as they will be updated automatically when inserting sub elements.
-	transitions = array.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
+	transitions = slice.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath())
 	})
 
-	array.Foreach(transitions, func(_ int, v **univalue.Univalue) {
+	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
 }
@@ -262,7 +262,7 @@ func (this *WriteCache) Export(preprocessors ...func([]*univalue.Univalue) []*un
 		}, this.buffer)
 	}
 
-	array.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
+	slice.RemoveIf(&this.buffer, func(_ int, v *univalue.Univalue) bool { return v.Reads() == 0 && v.IsReadOnly() }) // Remove peeks
 	return this.buffer
 }
 
@@ -270,8 +270,8 @@ func (this *WriteCache) ExportAll(preprocessors ...func([]*univalue.Univalue) []
 	all := this.Export(importer.Sorter)
 	// univalue.Univalues(all).Print()
 
-	accesses := univalue.Univalues(array.Clone(all)).To(importer.ITAccess{})
-	transitions := univalue.Univalues(array.Clone(all)).To(importer.ITTransition{})
+	accesses := univalue.Univalues(slice.Clone(all)).To(importer.ITAccess{})
+	transitions := univalue.Univalues(slice.Clone(all)).To(importer.ITTransition{})
 	return accesses, transitions
 }
 
@@ -288,10 +288,10 @@ func (this *WriteCache) Print() {
 }
 
 func (this *WriteCache) KVs() ([]string, []intf.Type) {
-	transitions := univalue.Univalues(array.Clone(this.Export(importer.Sorter))).To(importer.ITTransition{})
+	transitions := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	values := make([]intf.Type, len(transitions))
-	keys := array.ParallelAppend(transitions, 4, func(i int, v *univalue.Univalue) string {
+	keys := slice.ParallelAppend(transitions, 4, func(i int, v *univalue.Univalue) string {
 		values[i] = v.Value().(intf.Type)
 		return *v.GetPath()
 	})
@@ -304,9 +304,9 @@ func (this *WriteCache) KVs() ([]string, []intf.Type) {
 // It's mainly used for TESTING purpose.
 func (this *WriteCache) FlushToDataSource(store interfaces.Datastore) interfaces.Datastore {
 	committer := ccurl.NewStorageCommitter(store)
-	acctTrans := univalue.Univalues(array.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
 
-	txs := array.Append(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
+	txs := slice.Append(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
 		return v.GetTx()
 	})
 

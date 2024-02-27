@@ -4,15 +4,14 @@ import (
 	"errors"
 
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/execution"
 	scheduler "github.com/arcology-network/eu/new-scheduler"
-	evmcore "github.com/ethereum/go-ethereum/core"
-
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/univalue"
 	intf "github.com/arcology-network/vm-adaptor/interface"
+	evmcore "github.com/ethereum/go-ethereum/core"
 )
 
 // APIs under the concurrency namespace
@@ -49,7 +48,7 @@ func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generat
 // If there are N callers, there will be N job sequences. There sequences will be later added to a generation and executed in parallel.
 func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter) *Generation {
 	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{})
-	array.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
+	slice.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
 		gen.Add(new(JobSequence).NewFromCall(*msg, api))
 	})
 	gen.occurrences = gen.OccurrenceDict(gen.jobSeqs)
@@ -60,7 +59,7 @@ func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Messa
 func (this *Generation) Length() uint64     { return uint64(len(this.jobSeqs)) }
 func (this *Generation) JobT() *JobSequence { return &JobSequence{} }
 func (this *Generation) JobSeqs() []*JobSequence {
-	return array.To[*JobSequence, *JobSequence](this.jobSeqs)
+	return slice.To[*JobSequence, *JobSequence](this.jobSeqs)
 }
 
 func (this *Generation) At(idx uint64) *JobSequence {
@@ -68,7 +67,7 @@ func (this *Generation) At(idx uint64) *JobSequence {
 }
 
 func (*Generation) New(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
-	return NewGeneration(id, numThreads, array.To[*JobSequence, *JobSequence](jobSeqs))
+	return NewGeneration(id, numThreads, slice.To[*JobSequence, *JobSequence](jobSeqs))
 }
 
 func (this *Generation) Add(job *JobSequence) bool {
@@ -76,7 +75,7 @@ func (this *Generation) Add(job *JobSequence) bool {
 	return true
 }
 
-// The run function executes the job sequences in parallel and returns the results in a single array.
+// The run function executes the job sequences in parallel and returns the results in a single slice.
 // The parentApiRouter is used to access the state data. For external transaction execution, the parentApiRouter has
 // all the state data from the last block. For the spawned transaction execution, the parentApiRouter has the state data
 // of it parent thread up to the point of the point of the thread creation. The child thread uses the state data of the parent
@@ -99,7 +98,7 @@ func (this *Generation) Execute(parentApiRouter intf.EthApiRouter) []*univalue.U
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))
 
 	// Execute the job sequences in parallel
-	array.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
+	slice.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
 		groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter, uint64(i+1))
 	})
 
@@ -108,7 +107,7 @@ func (this *Generation) Execute(parentApiRouter intf.EthApiRouter) []*univalue.U
 	// univalue.Univalues(records[1]).Print()
 
 	txDict, groupDict, _ := this.Detect(groupIDs, records).ToDict()
-	return array.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
+	return slice.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
 		if _, ok := groupDict[(*seq).ID]; ok {
 			(*seq).FlagConflict(txDict, errors.New(ccurlcommon.WARN_ACCESS_CONFLICT))
 		}
@@ -120,7 +119,7 @@ func (*Generation) Detect(groupIDs [][]uint32, records [][]*univalue.Univalue) a
 	if len(records) == 1 {
 		return arbitrator.Conflicts{}
 	}
-	return arbitrator.Conflicts((&arbitrator.Arbitrator{}).Detect(array.Flatten(groupIDs), array.Flatten(records)))
+	return arbitrator.Conflicts((&arbitrator.Arbitrator{}).Detect(slice.Flatten(groupIDs), slice.Flatten(records)))
 }
 
 func (this *Generation) Clear() uint64 {

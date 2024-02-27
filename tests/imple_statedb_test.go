@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/common-lib/exp/mempool"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/cache"
 	concurrenturl "github.com/arcology-network/storage-committer"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
@@ -140,8 +140,8 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	ethStatedb = eth.NewImplStateDB(api)
 
 	alice, bob := evmcommon.Address{}, evmcommon.Address{}
-	array.Fill(alice[:], 1)
-	array.Fill(bob[:], 2)
+	slice.Fill(alice[:], 1)
+	slice.Fill(bob[:], 2)
 
 	ethStatedb.CreateAccount(alice)
 	ethStatedb.CreateAccount(bob)

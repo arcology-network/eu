@@ -26,8 +26,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/arcology-network/common-lib/exp/array"
 	mapi "github.com/arcology-network/common-lib/exp/map"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethcore "github.com/ethereum/go-ethereum/core"
@@ -127,7 +127,7 @@ func TestScheduler(t *testing.T) {
 			Native: &ethcore.Message{To: &addr, Data: addr[:4]},
 		}
 	}
-	msgs = array.Join(msgs, array.New(1000000, callAlice))
+	msgs = slice.Join(msgs, slice.New(1000000, callAlice))
 
 	t0 := time.Now()
 	scheduler.New(msgs)
@@ -135,7 +135,7 @@ func TestScheduler(t *testing.T) {
 }
 
 func TestMapArrayComparison(t *testing.T) {
-	arr := array.NewWith[int](1000000, func(_ int) int { return rand.Intn(1000000) })
+	arr := slice.NewWith[int](1000000, func(_ int) int { return rand.Intn(1000000) })
 
 	t0 := time.Now()
 	m := mapi.FromSlice(arr, func(int) bool { return true })

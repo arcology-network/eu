@@ -21,8 +21,8 @@ import (
 	"os"
 
 	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/exp/array"
 	mapi "github.com/arcology-network/common-lib/exp/map"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 )
 
 func NewScheduler(fildb string) (*Scheduler, error) {
@@ -41,7 +41,7 @@ func LoadScheduler(filepath string) (*Scheduler, error) {
 	sch := new(Scheduler)
 	buffers := new(codec.Byteset).Decode(buffer).(codec.Byteset)
 	contractBytes := new(codec.Byteset).Decode(buffers[0]).(codec.Byteset)
-	sch.callees = array.ParallelAppend(contractBytes, 4, func(i int, _ []byte) *Callee {
+	sch.callees = slice.ParallelAppend(contractBytes, 4, func(i int, _ []byte) *Callee {
 		return new(Callee).Decode(contractBytes[i])
 	})
 
@@ -56,7 +56,7 @@ func LoadScheduler(filepath string) (*Scheduler, error) {
 }
 
 func SaveScheduler(this *Scheduler, filepath string) error {
-	buffer := array.ParallelAppend(this.callees, 4, func(i int, _ *Callee) []byte {
+	buffer := slice.ParallelAppend(this.callees, 4, func(i int, _ *Callee) []byte {
 		v, _ := this.callees[i].Encode()
 		return v
 	})

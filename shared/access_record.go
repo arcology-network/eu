@@ -2,7 +2,7 @@ package shared
 
 import (
 	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/exp/array"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 )
 
 type TxAccessRecords struct {
@@ -91,7 +91,7 @@ func (this *TxAccessRecordSet) Encode() []byte {
 		offsets[i+1] = offsets[i] + (*this)[i].Size()
 	}
 
-	array.ParallelForeach(*this, 4, func(i int, _ **TxAccessRecords) {
+	slice.ParallelForeach(*this, 4, func(i int, _ **TxAccessRecords) {
 		(*this)[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
 	})
 	return buffer
@@ -99,7 +99,7 @@ func (this *TxAccessRecordSet) Encode() []byte {
 
 func (this *TxAccessRecordSet) Decode(data []byte) interface{} {
 	bytesset := codec.Byteset{}.Decode(data).(codec.Byteset)
-	records := array.ParallelAppend(bytesset, 6, func(i int, _ []byte) *TxAccessRecords {
+	records := slice.ParallelAppend(bytesset, 6, func(i int, _ []byte) *TxAccessRecords {
 		this := &TxAccessRecords{}
 		this.Decode(bytesset[i])
 		return this

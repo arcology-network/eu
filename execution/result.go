@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/arcology-network/common-lib/exp/array"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -54,11 +54,11 @@ func (this *Result) Postprocess() *Result {
 
 	// The sender isn't the coinbase.
 	if this.From != this.Coinbase {
-		_, senderBalance := array.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool { //It includes the gas fee and possible transfers.
+		_, senderBalance := slice.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool { //It includes the gas fee and possible transfers.
 			return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 		})
 
-		_, coinbaseBalance := array.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
+		_, coinbaseBalance := slice.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 			return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.Coinbase[:]))
 		})
 
@@ -77,7 +77,7 @@ func (this *Result) Postprocess() *Result {
 		}
 	}
 
-	_, senderNonce := array.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
+	_, senderNonce := slice.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
 		return strings.HasSuffix(*v.GetPath(), "/nonce") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
 

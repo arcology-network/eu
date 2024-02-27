@@ -8,16 +8,15 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/array"
 	"github.com/arcology-network/common-lib/exp/mempool"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
+	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/execution"
 	"github.com/arcology-network/storage-committer/commutative"
 	indexer "github.com/arcology-network/storage-committer/importer"
-	"github.com/arcology-network/storage-committer/univalue"
-
-	eucommon "github.com/arcology-network/eu/common"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
+	"github.com/arcology-network/storage-committer/univalue"
 	eth "github.com/arcology-network/vm-adaptor/eth"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -69,7 +68,7 @@ func (this *JobSequence) AppendMsg(msg interface{}) *JobSequence {
 // DeriveNewHash derives a pseudo-random transaction hash from the given original hash and the JobSequence ID.
 // It is used to help uniquely identify transactions spawned by the multiprocessor in conflict detection and resolution.
 func (this *JobSequence) DeriveNewHash(original [32]byte) [32]byte {
-	return sha256.Sum256(array.Flatten([][]byte{
+	return sha256.Sum256(slice.Flatten([][]byte{
 		codec.Bytes32(original).Encode(),
 		codec.Uint32(this.ID).Encode(),
 	}))
@@ -127,16 +126,16 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 
 	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
 	fmt.Println("jobsequence run time:", time.Since(t0))
-	return array.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
+	return slice.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
-	if idx, _ := array.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
+	if idx, _ := slice.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
 		return this.ApiRouter.WriteCache().(*cache.WriteCache).Export()
 	}
 
-	trans := array.Concate(this.Results,
+	trans := slice.Concate(this.Results,
 		func(v *execution.Result) []*univalue.Univalue {
 			return v.Transitions()
 		},
@@ -146,7 +145,7 @@ func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 
 // FlagConflict flags the JobSequence as conflicting.
 func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
-	first, _ := array.FindFirstIf(this.Results, func(r *execution.Result) bool {
+	first, _ := slice.FindFirstIf(this.Results, func(r *execution.Result) bool {
 		_, ok := (dict)[r.TxIndex]
 		return ok
 	})

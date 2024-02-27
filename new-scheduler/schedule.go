@@ -18,7 +18,7 @@
 package scheduler
 
 import (
-	"github.com/arcology-network/common-lib/exp/array"
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 )
 
@@ -34,9 +34,9 @@ type Schedule struct {
 
 // The function counts the number of each unique calls within each generation.
 func (this *Schedule) GetCallSums() {
-	this.CallSums = array.Append(this.Generations, func(i int, msgs []*eucommon.StandardMessage) map[string]int {
+	this.CallSums = slice.Append(this.Generations, func(i int, msgs []*eucommon.StandardMessage) map[string]int {
 		dict := map[string]int{}
-		array.Foreach(msgs, func(_ int, msg **eucommon.StandardMessage) { dict[ToKey(*msg)]++ })
+		slice.Foreach(msgs, func(_ int, msg **eucommon.StandardMessage) { dict[ToKey(*msg)]++ })
 		return dict
 	})
 }
