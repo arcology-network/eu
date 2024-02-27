@@ -37,7 +37,6 @@ The child EVMs have their own storage snapshots and no access to each other's da
 * There is no theoretical limit on how many EVM instances can run simultaneously. However, for practical reasons and to maintain memory usage within a reasonable range, there is a maximum of 2048 EVM instances on a single physical machine. Cluster deployments do not have this limit.
 
 <h2> Usage  <img align="center" height="40" src="./img/code-circle.svg">  </h2>
-
 For details on how to integrate and use the EU project's Multiprocessor module, refer to the documentation.
 Feel free to contribute and report issues in the GitHub repository.
 

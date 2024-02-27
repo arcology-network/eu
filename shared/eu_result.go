@@ -3,7 +3,7 @@ package shared
 import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/concurrenturl/univalue"
+	"github.com/arcology-network/storage-committer/univalue"
 )
 
 type EuResult struct {

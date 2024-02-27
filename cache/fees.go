@@ -2,8 +2,8 @@ package cache
 
 import (
 	common "github.com/arcology-network/common-lib/common"
-	intf "github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/concurrenturl/univalue"
+	intf "github.com/arcology-network/storage-committer/interfaces"
+	"github.com/arcology-network/storage-committer/univalue"
 )
 
 const (

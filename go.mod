@@ -8,11 +8,11 @@ replace github.com/arcology-network/common-lib => ../common-lib/
 
 replace github.com/arcology-network/vm-adaptor => ../vm-adaptor/
 
-replace github.com/arcology-network/concurrenturl => ../concurrenturl/
+replace github.com/arcology-network/storage-committer => ../storage-committer/
 
 require (
 	github.com/arcology-network/common-lib v1.9.0
-	github.com/arcology-network/concurrenturl v1.9.0
+	github.com/arcology-network/storage-committer v1.9.0
 	github.com/arcology-network/vm-adaptor v1.9.0
 	github.com/ethereum/go-ethereum v1.13.7
 	github.com/holiman/uint256 v1.2.4

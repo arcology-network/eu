@@ -5,8 +5,8 @@ import (
 	"github.com/arcology-network/common-lib/exp/array"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/univalue"
+	ccurlcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/univalue"
 )
 
 // WriteCacheFilter is a wrapper of WriteCache and it filters

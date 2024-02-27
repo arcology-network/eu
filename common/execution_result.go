@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/arcology-network/common-lib/exp/array"
-	ccurlintf "github.com/arcology-network/concurrenturl/interfaces"
-	"github.com/arcology-network/concurrenturl/univalue"
+	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
+	"github.com/arcology-network/storage-committer/univalue"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"

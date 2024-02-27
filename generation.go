@@ -9,9 +9,9 @@ import (
 	scheduler "github.com/arcology-network/eu/new-scheduler"
 	evmcore "github.com/ethereum/go-ethereum/core"
 
-	arbitrator "github.com/arcology-network/concurrenturl/arbitrator"
-	ccurlcommon "github.com/arcology-network/concurrenturl/common"
-	"github.com/arcology-network/concurrenturl/univalue"
+	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
+	ccurlcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/univalue"
 	intf "github.com/arcology-network/vm-adaptor/interface"
 )
 
