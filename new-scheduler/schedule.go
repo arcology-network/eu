@@ -25,7 +25,7 @@ type Schedule struct {
 	Transfers    []*eucommon.StandardMessage // Transfers
 	Deployments  []*eucommon.StandardMessage // Contract deployments
 	Unknows      []*eucommon.StandardMessage // Messages with unknown conflicts with others
-	WithConflict []*eucommon.StandardMessage // Messages with conflicts
+	WithConflict []*eucommon.StandardMessage // Messages with some known conflicts
 	Sequentials  []*eucommon.StandardMessage // Callees that are marked as sequential only
 	Generations  [][]*eucommon.StandardMessage
 	CallCounts   []map[string]int

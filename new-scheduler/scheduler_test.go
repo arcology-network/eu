@@ -35,9 +35,10 @@ import (
 
 func TestSchedulerAdd(t *testing.T) {
 	file := "../tmp/history"
-	os.Remove(file)
+	os.Remove(file) // Clean up the file if it exists
 
-	sch, err := NewScheduler(file)
+	// Create a new scheduler with default deferred flag being true
+	sch, err := NewScheduler(file, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -78,7 +79,7 @@ func TestSchedulerAdd(t *testing.T) {
 }
 
 func TestScheduler(t *testing.T) {
-	scheduler, _ := NewScheduler("")
+	scheduler, _ := NewScheduler("", true) // No conflict db file.
 
 	alice := []byte("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 	bob := []byte("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")

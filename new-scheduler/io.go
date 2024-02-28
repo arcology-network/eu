@@ -25,13 +25,6 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 )
 
-func NewScheduler(fildb string) (*Scheduler, error) {
-	return &Scheduler{
-		fildb:        fildb,
-		calleeLookup: make(map[string]uint32),
-	}, nil
-}
-
 func LoadScheduler(filepath string) (*Scheduler, error) {
 	buffer, err := os.ReadFile(filepath)
 	if err != nil {

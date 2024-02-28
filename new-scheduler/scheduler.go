@@ -35,9 +35,20 @@ const (
 )
 
 type Scheduler struct {
-	fildb        string
-	calleeLookup map[string]uint32 // A calleeLookup table to find the index of a calleeLookup by its address + signature.
-	callees      []*Callee
+	fildb          string
+	calleeLookup   map[string]uint32 // A calleeLookup table to find the index of a calleeLookup by its address + signature.
+	callees        []*Callee
+	deferByDefault bool // If the scheduler should schedule the deferred transactions by default.
+}
+
+// Initialize a new scheduler, the fildb is the file path to the scheduler's conflict database and the deferByDefault
+// instructs the scheduler to schedule the deferred transactions if it is true.
+func NewScheduler(fildb string, deferByDefault bool) (*Scheduler, error) {
+	return &Scheduler{
+		fildb:          fildb,
+		calleeLookup:   make(map[string]uint32),
+		deferByDefault: deferByDefault,
+	}, nil
 }
 
 // The function will find the index of the entry by its address and signature.
@@ -99,19 +110,19 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 		calleeDict := map[uint32]*product.Pair[uint32, *eucommon.StandardMessage]{}
 		calleeDict[(msgPairs)[0].First] = (msgPairs)[0] // Start with the first callee.
 
-		// The conflict dictionary of all the known conflict indices of the current transaction set.
+		// Load the conflict dictionary with the conflicts of the first callee.
 		conflictDict := mapi.FromSlice(this.callees[(msgPairs)[0].First].Indices, func(k uint32) bool { return true })
 
 		// The msg to include in the parallel transaction set must not have any conflicts with the other callees in the set.
 		paraMsgs := product.Pairs[uint32, *eucommon.StandardMessage]{(msgPairs)[0]}
 		for i, msgToInclude := range msgPairs {
-			if calleeDict[msgToInclude.First] != nil {
+			calleeInfo := calleeDict[msgToInclude.First]
+			if calleeInfo != nil {
 				continue
 			}
 
 			// The current callee isn't in the conflict idx set or other callees and vice versa.
 			if !conflictDict[msgToInclude.First] && !mapi.ContainsAny(calleeDict, this.callees[msgToInclude.First].Indices) {
-
 				// Add the new callee's conflicts to the conflict dictionary.
 				mapi.Insert(conflictDict, this.callees[msgToInclude.First].Indices, func(_ int, k uint32) (uint32, bool) {
 					return k, true
@@ -119,7 +130,7 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 
 				calleeDict[msgToInclude.First] = msgToInclude // Add the current callee to the set.
 				paraMsgs = append(paraMsgs, msgToInclude)     // Add the current callee to the parallel transaction set.
-				(msgPairs)[i] = nil                           // Remove the current callee.
+				slice.RemoveAt(&msgPairs, i)                  // Remove the current callee, since it is already in the parallel set.
 			}
 		}
 
@@ -131,7 +142,10 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 		// Look for the deferred transactions and add them to the deferred transaction set.
 		deferred := this.Deferred(&paraMsgs)
 		sch.Generations = append(sch.Generations, paraMsgs.Seconds()) // Insert the parallel transaction first
-		sch.Generations = append(sch.Generations, deferred.Seconds()) // Insert the deferred transaction set to the ne
+
+		if len(deferred) > 0 {
+			sch.Generations = append(sch.Generations, deferred.Seconds()) // Insert the deferred transaction set to the next generation.
+		}
 
 		// Remove the first transaction from the msgPairs slice. since it is already in the parallel transaction set.
 		(msgPairs)[0] = nil
@@ -174,7 +188,7 @@ func (this *Scheduler) Deferred(paraMsgInfo *product.Pairs[uint32, *eucommon.Sta
 
 		// If the first and last index of the same callee are different, then
 		// more than one instance of the same callee is there.
-		if first != last {
+		if first != last && this.deferByDefault {
 			deferredMsgs = append(deferredMsgs, *deferred)
 			slice.RemoveAt(paraMsgInfo.Array(), last) // Move the last call to the second generation as a deferred call.
 		}

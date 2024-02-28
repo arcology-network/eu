@@ -33,7 +33,7 @@ type Callee struct {
 	SequentialOnly bool     // A sequential only contract
 	Calls          uint32   // Total number of calls
 	AvgGas         uint32   // Average gas used
-	Deferred       bool     // If one of the calls should be deferred to the second generation. This is used to keep
+	Deferred       bool     // If one of the calls should be deferred to the second generation.
 }
 
 // 10x faster and 2x smaller than json marshal/unmarshal
