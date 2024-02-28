@@ -12,7 +12,7 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/execution"
 	"github.com/arcology-network/evm-adaptor/compiler"
-	concurrenturl "github.com/arcology-network/storage-committer"
+	stgcomm "github.com/arcology-network/storage-committer"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -55,7 +55,7 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	contractAddress := receipt.ContractAddress
-	committer = concurrenturl.NewStorageCommitter(db)
+	committer = stgcomm.NewStorageCommitter(db)
 	committer.Import(transitions)
 	committer.Sort()
 	committer.Precommit([]uint32{1})
