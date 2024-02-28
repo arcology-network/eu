@@ -4,7 +4,7 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 
 - **[Parallelized EVM](https://github.com/arcology-network/concurrent-evm):** A module responsible for parallelizing the Ethereum Virtual Machine (EVM) on Arcology Network.
 
-- **[EVM-adaptor](https://github.com/arcology-network/vm-adaptor):** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
+- **[evm-adaptor](https://github.com/arcology-network/evm-adaptor):** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
 
 - A local Write Cache to temporarily store data before persist them to the stateDB
 <br />
@@ -16,11 +16,11 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 
 - **Input:** Executable messages from either the executor module or the Multiprocessor API calls.
 
-- **Output:** State transitions generated as output from the EVM-adaptor module.
+- **Output:** State transitions generated as output from the evm-adaptor module.
 
 <h2> Nested EUs  <img align="center" height="32" src="./img/layers-minimalistic.svg">  </h2>
 
-As mentioned in the evm-adaptor project, it is possible to start a new EVM within another. The consequence is that nesting EVMs becomes possible. 
+As mentioned in the eevm-adaptor project, it is possible to start a new EVM within another. The consequence is that nesting EVMs becomes possible. 
 
 The Multiprocessor module handles the EVM instances manually initiated using the the [concurrent API](https://github.com/arcology-network/concurrentlib). Once called, the hosting VM will initiates a `Multiprocessor` and specifying the maximum level of parallelism it can expect. The child EVMs will be terminated when all executions are completed.
 

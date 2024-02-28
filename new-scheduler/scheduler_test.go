@@ -50,6 +50,7 @@ func TestSchedulerAdd(t *testing.T) {
 	// eva := []byte("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
 	// frank := []byte("ffffffffffffffffffffffffffffffffffffffff")
 
+	// Add the conflict pairs to the scheduler
 	sch.Add([20]byte(alice), [4]byte{1, 1, 1, 1}, [20]byte(bob), [4]byte{2, 2, 2, 2})
 	sch.Add([20]byte(carol), [4]byte{3, 3, 3, 3}, [20]byte(david), [4]byte{4, 4, 4, 4})
 
@@ -61,7 +62,7 @@ func TestSchedulerAdd(t *testing.T) {
 	}
 	SaveScheduler(sch, file)
 
-	sch, err = LoadScheduler(file)
+	sch, _ = LoadScheduler(file)
 	if len(sch.callees) != 4 {
 		t.Error("Failed to add contracts")
 	}

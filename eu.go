@@ -7,9 +7,9 @@ import (
 	"math/big"
 
 	eucommon "github.com/arcology-network/eu/common"
-	eth "github.com/arcology-network/vm-adaptor/eth"
-	intf "github.com/arcology-network/vm-adaptor/interface"
-	ethCommon "github.com/ethereum/go-ethereum/common"
+	eth "github.com/arcology-network/evm-adaptor/eth"
+	intf "github.com/arcology-network/evm-adaptor/interface"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -63,7 +63,7 @@ func (this *EU) SetRuntimeContext(statedb vm.StateDB, api intf.EthApiRouter) {
 }
 
 func (this *EU) Run(stdmsg *eucommon.StandardMessage, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
-	this.statedb.(*eth.ImplStateDB).PrepareFormer(stdmsg.TxHash, ethCommon.Hash{}, uint32(stdmsg.ID))
+	this.statedb.(*eth.ImplStateDB).PrepareFormer(stdmsg.TxHash, ethcommon.Hash{}, uint32(stdmsg.ID))
 
 	this.evm.Context = blockContext
 	this.evm.TxContext = txContext

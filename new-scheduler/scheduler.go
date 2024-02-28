@@ -44,7 +44,7 @@ type Scheduler struct {
 // If the entry is found, the index will be returned. If the entry is not found, the index will be added to the scheduler.
 // If the entry is new
 func (this *Scheduler) Find(addr [20]byte, sig [4]byte) (uint32, bool) {
-	lftKey := string(append(addr[:ADDRESS_LENGTH], sig[:]...))
+	lftKey := string(append(addr[:ADDRESS_LENGTH], sig[:]...)) // Join the address and signature to create a unique key.
 	idx, ok := this.calleeLookup[lftKey]
 	if !ok {
 		idx = uint32(len(this.callees))

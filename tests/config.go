@@ -28,10 +28,10 @@ import (
 
 	eu "github.com/arcology-network/eu"
 	execution "github.com/arcology-network/eu/execution"
+	apihandler "github.com/arcology-network/evm-adaptor/apihandler"
+	"github.com/arcology-network/evm-adaptor/compiler"
+	"github.com/arcology-network/evm-adaptor/eth"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
-	apihandler "github.com/arcology-network/vm-adaptor/apihandler"
-	"github.com/arcology-network/vm-adaptor/compiler"
-	"github.com/arcology-network/vm-adaptor/eth"
 )
 
 const (

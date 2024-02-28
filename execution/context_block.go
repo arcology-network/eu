@@ -3,7 +3,7 @@ package execution
 import (
 	"math/big"
 
-	intf "github.com/arcology-network/vm-adaptor/interface"
+	intf "github.com/arcology-network/evm-adaptor/interface"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 )

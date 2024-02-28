@@ -14,8 +14,8 @@ import (
 	"github.com/arcology-network/storage-committer/noncommutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
-	apihandler "github.com/arcology-network/vm-adaptor/apihandler"
-	eth "github.com/arcology-network/vm-adaptor/eth"
+	apihandler "github.com/arcology-network/evm-adaptor/apihandler"
+	eth "github.com/arcology-network/evm-adaptor/eth"
 )
 
 func TestStateDBV2GetNonexistBalance(t *testing.T) {
