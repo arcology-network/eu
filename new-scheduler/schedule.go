@@ -28,12 +28,12 @@ type Schedule struct {
 	WithConflict []*eucommon.StandardMessage // Messages with conflicts
 	Sequentials  []*eucommon.StandardMessage // Callees that are marked as sequential only
 	Generations  [][]*eucommon.StandardMessage
-	CallSums     []map[string]int
+	CallCounts   []map[string]int
 }
 
 // // The function counts the total number of each unique calls within each generation.
 // func (this *Schedule) GetCallSums() {
-// 	this.CallSums = slice.Append(this.Generations, func(i int, msgs []*eucommon.StandardMessage) map[string]int {
+// 	this.CallCounts = slice.Append(this.Generations, func(i int, msgs []*eucommon.StandardMessage) map[string]int {
 // 		dict := map[string]int{}
 // 		slice.Foreach(msgs, func(_ int, msg **eucommon.StandardMessage) { dict[ToKey(*msg)]++ })
 // 		return dict

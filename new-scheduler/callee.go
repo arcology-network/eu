@@ -23,15 +23,17 @@ import (
 )
 
 // The callee struct stores the information of a contract that is called by EOA initiated transactions.
-// It is mainly used to optimize the execution of the transactions.
+// It is mainly used to optimize the execution of the transactions. A callee is uniquely identified by a
+// combination of the contract's address and the function signature.
 type Callee struct {
 	Index          uint32   // Index of the contract in the contract list
-	Address        [8]byte  // Short address
+	Address        [8]byte  // Short address, the first 8 bytes of the contract address
 	Signature      [4]byte  // Function signature
 	Indices        []uint32 // Indices of the conflicting callee indices.
 	SequentialOnly bool     // A sequential only contract
 	Calls          uint32   // Total number of calls
 	AvgGas         uint32   // Average gas used
+	Deferred       bool     // If one of the calls should be deferred to the second generation. This is used to keep
 }
 
 // 10x faster and 2x smaller than json marshal/unmarshal
@@ -44,6 +46,7 @@ func (this *Callee) Encode() ([]byte, error) {
 		codec.Bool(this.SequentialOnly).Encode(),
 		codec.Uint32(this.Calls).Encode(),
 		codec.Uint32(this.AvgGas).Encode(),
+		codec.Bool(this.Deferred).Encode(),
 	}).Encode(), nil
 }
 
@@ -55,7 +58,8 @@ func (this *Callee) Decode(data []byte) *Callee {
 	this.Indices = new(codec.Uint32s).Decode(fields[3]).(codec.Uint32s)
 	this.SequentialOnly = bool(new(codec.Bool).Decode(fields[4]).(codec.Bool))
 	this.Calls = uint32(new(codec.Uint32).Decode(fields[5]).(codec.Uint32))
-	this.AvgGas = uint32(new(codec.Uint32).Decode(fields[5]).(codec.Uint32))
+	this.AvgGas = uint32(new(codec.Uint32).Decode(fields[6]).(codec.Uint32))
+	this.Deferred = bool(new(codec.Bool).Decode(fields[7]).(codec.Bool))
 	return this
 }
 

@@ -172,11 +172,11 @@ func (this *Scheduler) Deferred(paraMsgInfo *product.Pairs[uint32, *eucommon.Sta
 			return (*paraMsgInfo)[i].First == v.First
 		})
 
-		// If the first and last instance of the same callee are different, then
+		// If the first and last index of the same callee are different, then
 		// more than one instance of the same callee is there.
 		if first != last {
 			deferredMsgs = append(deferredMsgs, *deferred)
-			slice.RemoveAt(paraMsgInfo.Array(), last)
+			slice.RemoveAt(paraMsgInfo.Array(), last) // Move the last call to the second generation as a deferred call.
 		}
 	}
 	return deferredMsgs
