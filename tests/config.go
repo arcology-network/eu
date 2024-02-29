@@ -124,20 +124,21 @@ func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl
 	return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, datastore, committer, transitions
 }
 
-func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool) (error, *eu.EU, *evmcoretypes.Receipt) {
+func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool) (*evmcore.ExecutionResult, error, *eu.EU, *evmcoretypes.Receipt) {
 	if !commonlibcommon.FileExists(filepath.Join(targetPath, contractFile)) {
-		return errors.New("Error: The contract is not found!!!"), nil, nil
+		return nil, errors.New("Error: The contract is not found!!!"), nil, nil
 	}
 
 	eu, contractAddress, db, err := AliceDeploy(targetPath, contractFile, version, contractName)
 	if err != nil {
-		return err, nil, nil
+		return nil, err, nil, nil
 	}
 
 	if len(funcName) == 0 {
-		return err, eu, nil
+		return nil, err, eu, nil
 	}
-	return AliceCall(eu, *contractAddress, funcName, db), eu, nil
+	result, err := AliceCall(eu, *contractAddress, funcName, db)
+	return result, err, eu, nil
 }
 
 func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, ccurlintf.Datastore, error) {
@@ -179,7 +180,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	return eu, &contractAddress, db, nil
 }
 
-func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.Datastore) error {
+func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.Datastore) (*core.ExecutionResult, error) {
 	config := MainTestConfig()
 	config.Coinbase = &Coinbase
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
@@ -204,17 +205,17 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 
 	receipt, execResult, err := executor.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	if err != nil {
-		return (err)
+		return execResult, err
 	}
 
 	if execResult != nil && execResult.Err != nil {
-		return (execResult.Err)
+		return execResult, (execResult.Err)
 	}
 
 	if receipt.Status != 1 || err != nil {
-		return errors.New("Error: Failed to call!!!")
+		return execResult, errors.New("Error: Failed to call!!!")
 	}
-	return nil
+	return execResult, nil
 }
 
 // func AliceCall(eu *execution.EU, contractAddress evmcommon.Address, funcName string, committer *concurrenturl.StorageCommitter ) error {

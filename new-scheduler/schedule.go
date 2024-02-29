@@ -18,6 +18,7 @@
 package scheduler
 
 import (
+	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 )
 
@@ -31,11 +32,31 @@ type Schedule struct {
 	CallCounts   []map[string]int
 }
 
-// // The function counts the total number of each unique calls within each generation.
-// func (this *Schedule) GetCallSums() {
-// 	this.CallCounts = slice.Append(this.Generations, func(i int, msgs []*eucommon.StandardMessage) map[string]int {
-// 		dict := map[string]int{}
-// 		slice.Foreach(msgs, func(_ int, msg **eucommon.StandardMessage) { dict[ToKey(*msg)]++ })
-// 		return dict
-// 	})
-// }
+// The function outputs the optimized schedule. The shedule is a 3 dimensional array.
+// The first dimension is the generation number. The second dimension is a set of
+// parallel transaction arrays. These arrays are the transactions that can be executed in parallel.
+// The third dimension is the transactions in the sequntial order.
+func (this *Schedule) Optimize() [][][]*eucommon.StandardMessage {
+	sch := [][][]*eucommon.StandardMessage{{ // Transfers and deployments will be executed first
+		append(this.Transfers, this.Deployments...), // Sequential inside
+		append(this.WithConflict, this.Sequentials...),
+	}}
+
+	for i := 0; i < len(this.Generations); i++ {
+		if i == 0 {
+			this.Generations[i] = append(this.Generations[i], this.Unknows...)
+		}
+
+		sch = append(sch, slice.Transform(this.Generations[i], func(_ int, msg *eucommon.StandardMessage) []*eucommon.StandardMessage {
+			return []*eucommon.StandardMessage{msg}
+		}))
+	}
+
+	slice.RemoveIf(&sch, func(i int, gen [][]*eucommon.StandardMessage) bool {
+		slice.RemoveIf(&gen, func(_ int, msgs []*eucommon.StandardMessage) bool {
+			return len(msgs) == 0
+		})
+		return len(gen) == 0
+	})
+	return sch
+}

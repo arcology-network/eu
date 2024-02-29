@@ -19,6 +19,7 @@ package scheduler
 import (
 	"crypto/sha256"
 	"fmt"
+	"math/big"
 	"math/rand"
 	"os"
 	"sort"
@@ -113,10 +114,34 @@ func TestScheduler(t *testing.T) {
 		Native: &ethcore.Message{To: &daddr, Data: []byte{4, 4, 4, 4}},
 	}
 
-	// Produce a schedule for the given transactions based on the conflicts information.
-	sch := scheduler.New([]*eucommon.StandardMessage{callAlice, callBob, callCarol, callDavid})
-	if len(sch.Generations) != 2 {
-		t.Error("Failed to add contracts")
+	// deploy := ethcommon.BytesToAddress([]byte{})
+	deployment0 := &eucommon.StandardMessage{
+		ID:     3,
+		Native: &ethcore.Message{To: nil, Data: []byte{4, 4, 4, 4}},
+	}
+
+	transferAdd := ethcommon.BytesToAddress([]byte{})
+	transfer := &eucommon.StandardMessage{
+		ID:     3,
+		Native: &ethcore.Message{To: &transferAdd, Value: big.NewInt(100), Data: []byte{}},
+	}
+
+	// Produce a new schedule for the given transactions based on the conflicts information.
+	rawSch := scheduler.New([]*eucommon.StandardMessage{
+		callAlice,
+		callBob,
+		callCarol,
+		callDavid,
+		deployment0,
+		transfer,
+	})
+
+	if len(rawSch.Generations) != 2 || len(rawSch.Generations[0]) != 2 || len(rawSch.Generations[1]) != 2 {
+		t.Error("Wrong generation size")
+	}
+
+	if optimized := rawSch.Optimize(); len(optimized) != 3 || len(optimized[0]) != 2 || len(optimized[1]) != 2 {
+		t.Error("Wrong generation size")
 	}
 
 	// Check that the schedule is correct.
@@ -134,6 +159,7 @@ func TestScheduler(t *testing.T) {
 	t0 := time.Now()
 	scheduler.New(msgs)
 	fmt.Println("Scheduler", len(msgs), time.Since(t0))
+
 }
 
 func TestMapArrayComparison(t *testing.T) {

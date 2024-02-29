@@ -23,6 +23,7 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/product"
+	structure "github.com/arcology-network/common-lib/exp/product"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 )
@@ -107,30 +108,28 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 	// Whataever left is the sequential transaction set after this.
 	for {
 		// The conflict dictionary of all indices of the current transaction set.
-		calleeDict := map[uint32]*product.Pair[uint32, *eucommon.StandardMessage]{}
-		calleeDict[(msgPairs)[0].First] = (msgPairs)[0] // Start with the first callee.
+		paraSet := map[uint32]*structure.Pair[uint32, *eucommon.StandardMessage]{} // Para callee set, all are conflict free.
+		paraSet[(msgPairs)[0].First] = (msgPairs)[0]                               // Start with adding the first callee to the set.
+		paraMsgs := structure.Pairs[uint32, *eucommon.StandardMessage]{(msgPairs)[0]}
 
 		// Load the conflict dictionary with the conflicts of the first callee.
 		conflictDict := mapi.FromSlice(this.callees[(msgPairs)[0].First].Indices, func(k uint32) bool { return true })
-
-		// The msg to include in the parallel transaction set must not have any conflicts with the other callees in the set.
-		paraMsgs := product.Pairs[uint32, *eucommon.StandardMessage]{(msgPairs)[0]}
 		for i, msgToInclude := range msgPairs {
-			calleeInfo := calleeDict[msgToInclude.First]
+			calleeInfo := paraSet[msgToInclude.First]
 			if calleeInfo != nil {
 				continue
 			}
 
 			// The current callee isn't in the conflict idx set or other callees and vice versa.
-			if !conflictDict[msgToInclude.First] && !mapi.ContainsAny(calleeDict, this.callees[msgToInclude.First].Indices) {
+			if !conflictDict[msgToInclude.First] && !mapi.ContainsAny(paraSet, this.callees[msgToInclude.First].Indices) {
 				// Add the new callee's conflicts to the conflict dictionary.
 				mapi.Insert(conflictDict, this.callees[msgToInclude.First].Indices, func(_ int, k uint32) (uint32, bool) {
 					return k, true
 				})
 
-				calleeDict[msgToInclude.First] = msgToInclude // Add the current callee to the set.
-				paraMsgs = append(paraMsgs, msgToInclude)     // Add the current callee to the parallel transaction set.
-				slice.RemoveAt(&msgPairs, i)                  // Remove the current callee, since it is already in the parallel set.
+				paraSet[msgToInclude.First] = msgToInclude // Add the current callee to the set.
+				paraMsgs = append(paraMsgs, msgToInclude)  // Add the current callee to the parallel transaction set.
+				slice.RemoveAt(&msgPairs, i)               // Remove the current callee, since it is already in the parallel set.
 			}
 		}
 
