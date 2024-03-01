@@ -19,6 +19,7 @@ package scheduler
 
 import (
 	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 )
 
@@ -26,43 +27,51 @@ import (
 // It is mainly used to optimize the execution of the transactions. A callee is uniquely identified by a
 // combination of the contract's address and the function signature.
 type Callee struct {
-	Index          uint32   // Index of the contract in the contract list
-	Address        [8]byte  // Short address, the first 8 bytes of the contract address
-	Signature      [4]byte  // Function signature
+	Index          uint32   // Index of the Callee in the Callee list
+	AddrAndSign    []byte   // Short address, the first 8 bytes of the contract address + Function signature [4]byte
 	Indices        []uint32 // Indices of the conflicting callee indices.
-	SequentialOnly bool     // A sequential only contract
+	SequentialOnly bool     // A sequential only function
 	Calls          uint32   // Total number of calls
 	AvgGas         uint32   // Average gas used
-	Deferred       bool     // If one of the calls should be deferred to the second generation.
+	Deferrable     bool     // If one of the calls should be Deferrable to the second generation.
 }
 
 // 10x faster and 2x smaller than json marshal/unmarshal
 func (this *Callee) Encode() ([]byte, error) {
 	return codec.Byteset([][]byte{
 		codec.Uint32(this.Index).Encode(),
-		this.Address[:],
-		this.Signature[:],
+		this.AddrAndSign[:],
 		codec.Uint32s(this.Indices).Encode(),
 		codec.Bool(this.SequentialOnly).Encode(),
 		codec.Uint32(this.Calls).Encode(),
 		codec.Uint32(this.AvgGas).Encode(),
-		codec.Bool(this.Deferred).Encode(),
+		codec.Bool(this.Deferrable).Encode(),
 	}).Encode(), nil
 }
 
 func (this *Callee) Decode(data []byte) *Callee {
 	fields, _ := codec.Byteset{}.Decode(data).(codec.Byteset)
 	this.Index = uint32(new(codec.Uint32).Decode(fields[0]).(codec.Uint32))
-	copy(this.Address[:], fields[1])
-	copy(this.Signature[:], fields[2])
-	this.Indices = new(codec.Uint32s).Decode(fields[3]).(codec.Uint32s)
-	this.SequentialOnly = bool(new(codec.Bool).Decode(fields[4]).(codec.Bool))
-	this.Calls = uint32(new(codec.Uint32).Decode(fields[5]).(codec.Uint32))
-	this.AvgGas = uint32(new(codec.Uint32).Decode(fields[6]).(codec.Uint32))
-	this.Deferred = bool(new(codec.Bool).Decode(fields[7]).(codec.Bool))
+	this.AddrAndSign = slice.Clone(fields[1])
+	this.Indices = new(codec.Uint32s).Decode(fields[2]).(codec.Uint32s)
+	this.SequentialOnly = bool(new(codec.Bool).Decode(fields[3]).(codec.Bool))
+	this.Calls = uint32(new(codec.Uint32).Decode(fields[4]).(codec.Uint32))
+	this.AvgGas = uint32(new(codec.Uint32).Decode(fields[5]).(codec.Uint32))
+	this.Deferrable = bool(new(codec.Bool).Decode(fields[6]).(codec.Bool))
 	return this
 }
 
+func (this *Callee) Equal(other *Callee) bool {
+	return this.Index == other.Index &&
+		slice.Equal(this.AddrAndSign, other.AddrAndSign) &&
+		slice.Equal(this.Indices, other.Indices) &&
+		this.SequentialOnly == other.SequentialOnly &&
+		this.Calls == other.Calls &&
+		this.AvgGas == other.AvgGas &&
+		this.Deferrable == other.Deferrable
+}
+
+// Get the callee key from a message
 func ToKey(msg *eucommon.StandardMessage) string {
 	if (*msg.Native).To == nil {
 		return ""

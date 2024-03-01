@@ -28,3 +28,13 @@ func TestInstances(t *testing.T) {
 	}
 	fmt.Println(result.ReturnData)
 }
+
+func TestDeferred(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "DeferredTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}

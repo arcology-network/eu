@@ -61,9 +61,8 @@ func (this *Scheduler) Find(addr [20]byte, sig [4]byte) (uint32, bool) {
 	if !ok {
 		idx = uint32(len(this.callees))
 		this.callees = append(this.callees, &Callee{
-			Index:     uint32(len(this.callees)),
-			Address:   [8]byte(addr[:ADDRESS_LENGTH]),
-			Signature: sig,
+			Index:       uint32(len(this.callees)),
+			AddrAndSign: append(addr[:ADDRESS_LENGTH], sig[:]...),
 		})
 		this.calleeLookup[lftKey] = idx
 	}

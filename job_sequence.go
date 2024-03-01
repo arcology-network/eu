@@ -8,6 +8,7 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
+	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/mempool"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
@@ -55,7 +56,6 @@ func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, api intf.EthApiRouter) 
 		Native: evmMsg,
 		TxHash: newJobSeq.DeriveNewHash(api.GetEU().(interface{ TxHash() [32]byte }).TxHash()),
 	})
-
 }
 
 // GetID returns the ID of the JobSequence.
@@ -104,6 +104,7 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 	// fmt.Println("Pre run time:", time.Since(t0))
 
 	// t0 = time.Now()
+	// parentApi := mainApi
 	for i, msg := range this.StdMsgs {
 		// Get a new write cache from the shared write cache pool.
 		writeCache := this.ApiRouter.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New()
@@ -120,6 +121,8 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		this.Results[i] = this.execute(msg, config, tempApi)                                             // Execute the message and store the result.
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
 
+		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict()) // The tx may generate new aux data, so merge it into the main api router.
+
 		writeCache.Reset(writeCache) // Return the tempApi write cache back to the shared write cache pool.
 		// this.ApiRouter.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).Reset()
 	}
@@ -127,6 +130,15 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
 	fmt.Println("jobsequence run time:", time.Since(t0))
 	return slice.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
+}
+
+// One message needs to be processed.
+func (this *JobSequence) runSingleMsg(config *execution.Config, parentApi intf.EthApiRouter) (*cache.WriteCache, *execution.Result) {
+	writeCache := parentApi.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New() // Get a new write cache from the shared write cache pool.
+	writeCache.SetReadOnlyDataStore(parentApi.WriteCache().(*cache.WriteCache))          // Use mainapi's cache as the read-only data store.
+	this.ApiRouter = parentApi.New(parentApi.WriteCachePool(), writeCache, parentApi.GetDeployer(), parentApi.GetSchedule())
+
+	return writeCache, this.execute(this.StdMsgs[0], config, this.ApiRouter)
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.

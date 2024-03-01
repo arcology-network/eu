@@ -111,11 +111,15 @@ func (this *WriteCache) CreateNewAccount(tx uint32, acct string) ([]*univalue.Un
 	return transitions, nil
 }
 
-func (this *WriteCache) SetReadOnlyDataStore(store intf.ReadOnlyDataStore) { this.store = store }
-func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore         { return this.store }
-func (this *WriteCache) Cache() map[string]*univalue.Univalue              { return this.kvDict }
-func (this *WriteCache) MinSize() int                                      { return this.uniPool.MinSize() }
-func (this *WriteCache) NewUnivalue() *univalue.Univalue                   { return this.uniPool.New() }
+func (this *WriteCache) SetReadOnlyDataStore(store intf.ReadOnlyDataStore) *WriteCache {
+	this.store = store
+	return this
+}
+
+func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.store }
+func (this *WriteCache) Cache() map[string]*univalue.Univalue      { return this.kvDict }
+func (this *WriteCache) MinSize() int                              { return this.uniPool.MinSize() }
+func (this *WriteCache) NewUnivalue() *univalue.Univalue           { return this.uniPool.New() }
 
 // If the access has been recorded
 func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univalue, bool) {

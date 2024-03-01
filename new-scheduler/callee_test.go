@@ -22,14 +22,13 @@ import (
 )
 
 func TestCallee(t *testing.T) {
-	numCalls := 100
+	numCalls := 1000000
 
 	callees := make([]*Callee, numCalls)
 	for i := 0; i < numCalls; i++ {
 		callees[i] = &Callee{
 			Index:          uint32(i),
-			Address:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Signature:      [4]byte{1, 2, 3, 4},
+			AddrAndSign:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4},
 			Indices:        []uint32{1, 2, 3, 4},
 			SequentialOnly: false,
 			Calls:          uint32(i),
@@ -45,7 +44,7 @@ func TestCallee(t *testing.T) {
 		callee2 := &Callee{}
 		callee2.Decode(encoded)
 
-		if callees[i].Index != callee2.Index {
+		if !callees[i].Equal(callee2) {
 			t.Error("Failed to encode/decode")
 		}
 	}
@@ -59,8 +58,7 @@ func BenchmarkTestCallee(t *testing.B) {
 	for i := 0; i < numCalls; i++ {
 		callees[i] = &Callee{
 			Index:          uint32(i),
-			Address:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Signature:      [4]byte{1, 2, 3, 4},
+			AddrAndSign:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4},
 			Indices:        []uint32{1, 2, 3, 4},
 			SequentialOnly: false,
 			Calls:          uint32(i),
