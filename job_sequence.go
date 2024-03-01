@@ -77,54 +77,28 @@ func (this *JobSequence) DeriveNewHash(original [32]byte) [32]byte {
 // Length returns the number of standard messages in the JobSequence.
 func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
-// SetNonceOffset sets the nonce offset for the given address. This is used to avoid conflicts when
-// deploying contracts in different child threads. This happens when the child threads create by the multiprocessor
-// are trying to deploy contracts at the same address.
-
-//						 main thread (nonce = n)
-//	     	 		          |
-//						+---------+---------+
-//						|                   |
-//					child thread 0   child thread 1
-//					(nonce = n)      (nonce = n)
-//
-// Both child threads are trying to deploy contracts starting with the nonce value n + 1. This will cause a conflict.
-// So the solution is to give different nonce offsets to different child threads, so they can deploy their contracts at different addresses.
-// This should only be used for transactions spawned by the multiprocessor. The external transactions should not use this.
-
 // Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
 // case there is a contract deployment in the sequence.
 func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	t0 := time.Now()
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
 
-	writeCache := mainApi.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New() // Get a new write cache from the shared write cache pool.
-	writeCache.SetReadOnlyDataStore(mainApi.WriteCache().(*cache.WriteCache))          // Use mainapi's cache as the read-only data store.
-	this.ApiRouter = mainApi.New(mainApi.WriteCachePool(), writeCache, mainApi.GetDeployer(), mainApi.GetSchedule())
-	// fmt.Println("Pre run time:", time.Since(t0))
-
+	this.ApiRouter = this.replicate(mainApi)
 	// t0 = time.Now()
-	// parentApi := mainApi
 	for i, msg := range this.StdMsgs {
-		// Get a new write cache from the shared write cache pool.
-		writeCache := this.ApiRouter.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New()
+		t0 = time.Now()
+		tempApi := this.replicate(this.ApiRouter)
+		tempApi.DecrementDepth() // The api router always increments the depth.  So we need to decrement it here.
+		fmt.Println("this.replicate:", time.Since(t0))
 
-		// Use its parent's cache as read-only data store. This will create a cascade of caches, each one using the previous one as read-only data store.
-		writeCache.SetReadOnlyDataStore(this.ApiRouter.WriteCache().(*cache.WriteCache))
+		t0 = time.Now()
+		this.Results[i] = this.execute(msg, config, tempApi) // Execute the message and store the result.
+		fmt.Println("this.execute:", time.Since(t0))
 
-		// The temporary api router for the message. It's content will be merged into the main api router after the message is executed.
-		tempApi := this.ApiRouter.New(this.ApiRouter.WriteCachePool(), writeCache, mainApi.GetDeployer(), this.ApiRouter.GetSchedule())
-
-		// The api router always increments the depth, every time a new write cache is created from another one. But this isn't the case for
-		// executing a sequence of messages. So we need to decrement it here.
-		tempApi.DecrementDepth()
-		this.Results[i] = this.execute(msg, config, tempApi)                                             // Execute the message and store the result.
+		t0 = time.Now()
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
-
-		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict()) // The tx may generate new aux data, so merge it into the main api router.
-
-		writeCache.Reset(writeCache) // Return the tempApi write cache back to the shared write cache pool.
-		// this.ApiRouter.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).Reset()
+		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict())                                          // The tx may generate new aux data, so merge it into the main api router.
+		fmt.Println("mapi.Merge:", time.Since(t0))
 	}
 
 	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
@@ -133,12 +107,10 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 }
 
 // One message needs to be processed.
-func (this *JobSequence) runSingleMsg(config *execution.Config, parentApi intf.EthApiRouter) (*cache.WriteCache, *execution.Result) {
+func (this *JobSequence) replicate(parentApi intf.EthApiRouter) intf.EthApiRouter {
 	writeCache := parentApi.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New() // Get a new write cache from the shared write cache pool.
 	writeCache.SetReadOnlyDataStore(parentApi.WriteCache().(*cache.WriteCache))          // Use mainapi's cache as the read-only data store.
-	this.ApiRouter = parentApi.New(parentApi.WriteCachePool(), writeCache, parentApi.GetDeployer(), parentApi.GetSchedule())
-
-	return writeCache, this.execute(this.StdMsgs[0], config, this.ApiRouter)
+	return parentApi.New(parentApi.WriteCachePool(), writeCache, parentApi.GetDeployer(), parentApi.GetSchedule())
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
