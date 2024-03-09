@@ -63,8 +63,8 @@ func (this *Callee) Decode(data []byte) *Callee {
 
 func (this *Callee) Equal(other *Callee) bool {
 	return this.Index == other.Index &&
-		slice.Equal(this.AddrAndSign, other.AddrAndSign) &&
-		slice.Equal(this.Indices, other.Indices) &&
+		slice.EqualSet(this.AddrAndSign, other.AddrAndSign) &&
+		slice.EqualSet(this.Indices, other.Indices) &&
 		this.SequentialOnly == other.SequentialOnly &&
 		this.Calls == other.Calls &&
 		this.AvgGas == other.AvgGas &&

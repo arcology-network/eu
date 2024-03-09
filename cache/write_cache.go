@@ -28,7 +28,7 @@ import (
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	mempool "github.com/arcology-network/common-lib/exp/mempool"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	ccurl "github.com/arcology-network/storage-committer"
+	stgcomm "github.com/arcology-network/storage-committer"
 	committercommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
 
@@ -228,7 +228,7 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 		return
 	}
 
-	// Filter out the path creations transitions as they will treat differently.
+	// Filter out the path creations transitions as they will be treated differently.
 	newPathCreations := slice.MoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath()) && !v.Preexist()
 	})
@@ -245,8 +245,9 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 		return common.IsPath(*v.GetPath())
 	})
 
+	// Write back to the parent writecache
 	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) {
-		(*v).CopyTo(this) // Write back to the parent writecache
+		(*v).CopyTo(this)
 	})
 }
 
@@ -324,7 +325,7 @@ func (this *WriteCache) KVs() ([]string, []intf.Type) {
 //
 // It's mainly used for TESTING purpose.
 func (this *WriteCache) FlushToDataSource(store interfaces.Datastore) interfaces.Datastore {
-	committer := ccurl.NewStorageCommitter(store)
+	committer := stgcomm.NewStorageCommitter(store)
 	acctTrans := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
 
 	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {

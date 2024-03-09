@@ -81,9 +81,10 @@ func (this *Result) Postprocess() *Result {
 		return strings.HasSuffix(*v.GetPath(), "/nonce") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
 
-	(*senderNonce).Property.SetPersistent(true)       // Won't be affect by conflicts either
-	this.immuned = append(this.immuned, *senderNonce) // Add the nonce transition to the immune list even if the execution is unsuccessful.
-
+	if senderNonce != nil {
+		(*senderNonce).Property.SetPersistent(true)       // Won't be affect by conflicts either
+		this.immuned = append(this.immuned, *senderNonce) // Add the nonce transition to the immune list even if the execution is unsuccessful.
+	}
 	this.RawStateAccesses = this.Transitions() // Return all the successful transitions
 	return this
 }

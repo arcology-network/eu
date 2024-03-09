@@ -2,6 +2,13 @@
 package tests
 
 import (
+	"strconv"
+
+	eu "github.com/arcology-network/eu"
+	execution "github.com/arcology-network/eu/execution"
+	concurrenturl "github.com/arcology-network/storage-committer"
+	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
+	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
@@ -23,3 +30,19 @@ var (
 	Banza   = ethcommon.BytesToAddress([]byte("Banza"))
 	Beast   = ethcommon.BytesToAddress([]byte("Beast"))
 )
+
+func GenRandomAccounts(num int) []ethcommon.Address {
+	accounts := make([]ethcommon.Address, num)
+	for i := 0; i < num; i++ {
+		accounts[i] = ethcommon.BytesToAddress([]byte(strconv.Itoa(i)))
+	}
+	return accounts
+}
+
+type TestEu struct {
+	eu          *eu.EU
+	config      *execution.Config
+	db          ccurlintf.Datastore
+	committer   *concurrenturl.StateCommitter
+	transitions []*univalue.Univalue
+}

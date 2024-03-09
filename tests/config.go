@@ -14,8 +14,7 @@ import (
 	concurrenturl "github.com/arcology-network/storage-committer"
 	"github.com/arcology-network/storage-committer/commutative"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
-	ccurlstorage "github.com/arcology-network/storage-committer/storage"
-	"github.com/arcology-network/storage-committer/univalue"
+	stgcommstorage "github.com/arcology-network/storage-committer/storage"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -40,8 +39,8 @@ const (
 )
 
 var (
-	encoder = ccurlstorage.Rlp{}.Encode
-	decoder = ccurlstorage.Rlp{}.Decode
+	encoder = stgcommstorage.Rlp{}.Encode
+	decoder = stgcommstorage.Rlp{}.Decode
 )
 
 func MainTestConfig() *execution.Config {
@@ -62,24 +61,17 @@ func MainTestConfig() *execution.Config {
 
 // Choose which data source to use
 func chooseDataStore() ccurlintf.Datastore {
-	return ccurlstorage.NewParallelEthMemDataStore() // Eth trie datastore
-	// return ccurlstorage.NewLevelDBDataStore("./leveldb") // Eth trie datastore
+	return stgcommstorage.NewParallelEthMemDataStore() // Eth trie datastore
+	// return stgcommstorage.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 }
 
-func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.StateCommitter, []*univalue.Univalue) {
+// func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.StateCommitter, []*univalue.Univalue) {
+func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *TestEu {
 	datastore := chooseDataStore()
 	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
-	// writeCachePool := mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-	// 	return cache.NewWriteCache(datastore, 32, 1)
-	// }, (&cache.WriteCache{}).Reset)
-
-	// localCache := cache.NewWriteCache(datastore, 32, 1)
-	// if len(args) > 0 {
-	// 	url = args[0].(*concurrenturl.StorageCommitter )
-	// }
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
 	}, (&cache.WriteCache{}).Reset))
@@ -88,20 +80,11 @@ func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
 	statedb.CreateAccount(Coinbase)
 
-	statedb.CreateAccount(Alice)
-	statedb.AddBalance(Alice, new(big.Int).SetUint64(1e18))
-
-	statedb.CreateAccount(Bob)
-	statedb.AddBalance(Bob, new(big.Int).SetUint64(1e18))
-
-	// statedb.CreateAccount(eucommon.RUNTIME_HANDLER)
-	// statedb.AddBalance(eucommon.RUNTIME_HANDLER, new(big.Int).SetUint64(1e18))
-
-	// _, transitions := api.WriteCacheFilter().ByType()
+	for i := 0; i < len(genesisAccts); i++ {
+		statedb.CreateAccount(genesisAccts[i])
+		statedb.AddBalance(genesisAccts[i], new(big.Int).SetUint64(1e18))
+	}
 	_, transitions := cache.NewWriteCacheFilter(api.WriteCache()).ByType()
-	// indexer.Univalues(transitionsFiltered).Print()
-
-	// fmt.Println("\n" + eucommon.FormatTransitions(transitions))
 
 	// Deploy.
 	committer := concurrenturl.NewStorageCommitter(datastore)
@@ -121,7 +104,14 @@ func NewTestEU() (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
-	return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, datastore, committer, transitions
+	return &TestEu{
+		eu:          eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api),
+		config:      config,
+		db:          datastore,
+		committer:   committer,
+		transitions: transitions,
+	}
+	// return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, datastore, committer, transitions
 }
 
 func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool) (*evmcore.ExecutionResult, error, *eu.EU, *evmcoretypes.Receipt) {
@@ -129,7 +119,7 @@ func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName 
 		return nil, errors.New("Error: The contract is not found!!!"), nil, nil
 	}
 
-	eu, contractAddress, db, err := AliceDeploy(targetPath, contractFile, version, contractName)
+	eu, contractAddress, db, _, err := AliceDeploy(targetPath, contractFile, version, contractName)
 	if err != nil {
 		return nil, err, nil, nil
 	}
@@ -141,16 +131,14 @@ func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName 
 	return result, err, eu, nil
 }
 
-func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, ccurlintf.Datastore, error) {
-	eu, config, db, committer, _ := NewTestEU()
-
+func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, ccurlintf.Datastore, []byte, error) {
 	code, err := compiler.CompileContracts(targetPath, contractFile, compilerVersion, contract, true)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, []byte{}, err
 	}
 
 	if len(code) == 0 {
-		return nil, nil, nil, errors.New("Error: Failed to generate the byte code")
+		return nil, nil, nil, []byte{}, errors.New("Error: Failed to generate the byte code")
 	}
 
 	// ================================== Deploy the contract ==================================
@@ -162,22 +150,24 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	testEu := NewTestEU(Coinbase, Alice, Bob)
+
+	receipt, execResult, err := testEu.eu.Run(StdMsg, execution.NewEVMBlockContext(testEu.config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
-	_, transitions := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
+	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
 	if receipt.Status != 1 || err != nil || execResult.Err != nil {
-		return nil, nil, nil, errors.New("Error: Deployment failed!!!")
+		return nil, nil, nil, []byte{}, errors.New("Error: Deployment failed!!!")
 	}
 
 	contractAddress := receipt.ContractAddress
-	committer = concurrenturl.NewStorageCommitter(db)
-	committer.Import(transitions)
-	committer.Sort()
-	committer.Precommit([]uint32{1})
-	committer.Commit()
+	testEu.committer = concurrenturl.NewStorageCommitter(testEu.db)
+	testEu.committer.Import(transitions)
+	testEu.committer.Sort()
+	testEu.committer.Precommit([]uint32{1})
+	testEu.committer.Commit()
 
-	return eu, &contractAddress, db, nil
+	return testEu.eu, &contractAddress, testEu.db, evmcommon.Hex2Bytes(code), nil
 }
 
 func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.Datastore) (*core.ExecutionResult, error) {

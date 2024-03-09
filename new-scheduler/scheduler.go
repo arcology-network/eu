@@ -21,9 +21,8 @@ import (
 	"math"
 	"sort"
 
+	associative "github.com/arcology-network/common-lib/exp/associative"
 	mapi "github.com/arcology-network/common-lib/exp/map"
-	"github.com/arcology-network/common-lib/exp/product"
-	structure "github.com/arcology-network/common-lib/exp/product"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 )
@@ -107,9 +106,9 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 	// Whataever left is the sequential transaction set after this.
 	for {
 		// The conflict dictionary of all indices of the current transaction set.
-		paraSet := map[uint32]*structure.Pair[uint32, *eucommon.StandardMessage]{} // Para callee set, all are conflict free.
-		paraSet[(msgPairs)[0].First] = (msgPairs)[0]                               // Start with adding the first callee to the set.
-		paraMsgs := structure.Pairs[uint32, *eucommon.StandardMessage]{(msgPairs)[0]}
+		paraSet := map[uint32]*associative.Pair[uint32, *eucommon.StandardMessage]{} // Para callee set, all are conflict free.
+		paraSet[(msgPairs)[0].First] = (msgPairs)[0]                                 // Start with adding the first callee to the set.
+		paraMsgs := associative.Pairs[uint32, *eucommon.StandardMessage]{(msgPairs)[0]}
 
 		// Load the conflict dictionary with the conflicts of the first callee.
 		conflictDict := mapi.FromSlice(this.callees[(msgPairs)[0].First].Indices, func(k uint32) bool { return true })
@@ -158,13 +157,13 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 	})
 
 	// Whatever is left in the msgPairs array is the sequential transaction set.
-	sch.WithConflict = (*product.Pairs[uint32, *eucommon.StandardMessage])(&msgPairs).Seconds()
+	sch.WithConflict = (*associative.Pairs[uint32, *eucommon.StandardMessage])(&msgPairs).Seconds()
 	return sch
 }
 
 // The scheduler will scan through and look for multipl instances of the same callee and put one of them in the second
 // consecutive set of transactions for deferred execution.
-func (this *Scheduler) Deferred(paraMsgInfo *product.Pairs[uint32, *eucommon.StandardMessage]) product.Pairs[uint32, *eucommon.StandardMessage] {
+func (this *Scheduler) Deferred(paraMsgInfo *associative.Pairs[uint32, *eucommon.StandardMessage]) associative.Pairs[uint32, *eucommon.StandardMessage] {
 	sort.Slice(*paraMsgInfo, func(i, j int) bool {
 		if (*paraMsgInfo)[i].First != (*paraMsgInfo)[j].First {
 			return (*paraMsgInfo)[i].First < (*paraMsgInfo)[j].First
@@ -172,15 +171,15 @@ func (this *Scheduler) Deferred(paraMsgInfo *product.Pairs[uint32, *eucommon.Sta
 		return (*paraMsgInfo)[i].Second.ID < (*paraMsgInfo)[j].Second.ID
 	})
 
-	deferredMsgs := product.Pairs[uint32, *eucommon.StandardMessage]{}
+	deferredMsgs := associative.Pairs[uint32, *eucommon.StandardMessage]{}
 	for i := 0; i < len(*paraMsgInfo); i++ {
 		// Find the first and last instance of the same callee.
-		first, _ := slice.FindFirstIf(*paraMsgInfo, func(v *product.Pair[uint32, *eucommon.StandardMessage]) bool {
+		first, _ := slice.FindFirstIf(*paraMsgInfo, func(v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
 			return (*paraMsgInfo)[i].First == v.First
 		})
 
 		// Find the first and last instance of the same callee.
-		last, deferred := slice.FindLastIf(*paraMsgInfo, func(v *product.Pair[uint32, *eucommon.StandardMessage]) bool {
+		last, deferred := slice.FindLastIf(*paraMsgInfo, func(v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
 			return (*paraMsgInfo)[i].First == v.First
 		})
 
@@ -195,7 +194,7 @@ func (this *Scheduler) Deferred(paraMsgInfo *product.Pairs[uint32, *eucommon.Sta
 }
 
 // The scheduler will optimize the given transactions and look for the ones of specific types and return a schedule.
-func (this *Scheduler) Prefilter(stdMsgs []*eucommon.StandardMessage) (*Schedule, []*product.Pair[uint32, *eucommon.StandardMessage]) {
+func (this *Scheduler) Prefilter(stdMsgs []*eucommon.StandardMessage) (*Schedule, []*associative.Pair[uint32, *eucommon.StandardMessage]) {
 	sch := &Schedule{}
 
 	// Transfers won't have any conflicts, as long as they have enough balances. Deployments are less likely to have conflicts, but it's not guaranteed.
@@ -203,35 +202,35 @@ func (this *Scheduler) Prefilter(stdMsgs []*eucommon.StandardMessage) (*Schedule
 	sch.Deployments = slice.MoveIf(&stdMsgs, func(i int, msg *eucommon.StandardMessage) bool { return msg.Native.To == nil })
 
 	if len(stdMsgs) == 0 {
-		return sch, []*product.Pair[uint32, *eucommon.StandardMessage]{} // All the transactions are transfers.
+		return sch, []*associative.Pair[uint32, *eucommon.StandardMessage]{} // All the transactions are transfers.
 	}
 
 	// Get the IDs for the given addresses and signatures, which will be used to find the callee index.
-	pairs := slice.ParallelAppend(stdMsgs, 8, func(i int, msg *eucommon.StandardMessage) *product.Pair[uint32, *eucommon.StandardMessage] {
+	pairs := slice.ParallelAppend(stdMsgs, 8, func(i int, msg *eucommon.StandardMessage) *associative.Pair[uint32, *eucommon.StandardMessage] {
 		idx, ok := this.calleeLookup[string(append((*msg.Native.To)[:ADDRESS_LENGTH], msg.Native.Data[:4]...))]
 		if !ok {
 			idx = math.MaxUint32 // The callee is new.
 		}
-		return &product.Pair[uint32, *eucommon.StandardMessage]{First: idx, Second: stdMsgs[i]}
+		return &associative.Pair[uint32, *eucommon.StandardMessage]{First: idx, Second: stdMsgs[i]}
 	})
 
-	msgPairs := (*product.Pairs[uint32, *eucommon.StandardMessage])(&pairs)
+	msgPairs := (*associative.Pairs[uint32, *eucommon.StandardMessage])(&pairs)
 	if len(*msgPairs) == 0 {
 		return sch, *msgPairs.Array()
 	}
 
 	// Move the transactions that have no known conflicts to the parallel trasaction array first.
 	// If a callee has no known conflicts with anyone else, it is either a conflict-free implementation or has been fortunate enough to avoid conflicts so far.
-	unknows := slice.MoveIf(msgPairs.Array(), func(_ int, v *product.Pair[uint32, *eucommon.StandardMessage]) bool {
+	unknows := slice.MoveIf(msgPairs.Array(), func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
 		return v.First == math.MaxUint32
 	})
 
 	// Deployments are less likely to have conflicts, but it's not guaranteed.
-	sequentialOnly := slice.MoveIf(msgPairs.Array(), func(_ int, v *product.Pair[uint32, *eucommon.StandardMessage]) bool {
+	sequentialOnly := slice.MoveIf(msgPairs.Array(), func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
 		return this.callees[v.First].SequentialOnly
 	})
 
-	sch.Unknows = (*product.Pairs[uint32, *eucommon.StandardMessage])(&unknows).Seconds()
-	sch.Sequentials = (*product.Pairs[uint32, *eucommon.StandardMessage])(&sequentialOnly).Seconds()
+	sch.Unknows = (*associative.Pairs[uint32, *eucommon.StandardMessage])(&unknows).Seconds()
+	sch.Sequentials = (*associative.Pairs[uint32, *eucommon.StandardMessage])(&sequentialOnly).Seconds()
 	return sch, *msgPairs.Array()
 }

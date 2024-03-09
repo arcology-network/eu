@@ -24,7 +24,7 @@ import (
 	"math"
 
 	common "github.com/arcology-network/common-lib/common"
-	orderedset "github.com/arcology-network/common-lib/container/set"
+	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -40,6 +40,7 @@ func (this *WriteCache) IndexOf(tx uint32, path string, key interface{}, T any) 
 	if v, err := this.Do(tx, path, getter, T); err == nil {
 		pathInfo := v.(*univalue.Univalue).Value()
 		if common.IsType[*commutative.Path](pathInfo) && common.IsType[string](key) {
+			// idx, _ := pathInfo.(*commutative.Path).View().IdxOf(key.(string))
 			return pathInfo.(*commutative.Path).View().IdxOf(key.(string)), 0
 		}
 	}
@@ -88,9 +89,17 @@ func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interfa
 	}
 
 	meta, _, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
+	length := meta.(*deltaset.DeltaSet[string]).Length()
+
+	if meta != nil {
+		return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx), readFee, nil
+	}
+
 	return common.IfThen(meta == nil,
 		meta,
-		common.IfThenDo1st(idx < uint64(len(meta.(*orderedset.OrderedSet).Keys())), func() interface{} { return path + meta.(*orderedset.OrderedSet).Keys()[idx] }, nil),
+		common.IfThenDo1st(idx < length,
+			func() interface{} { return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx) },
+			nil),
 	), readFee, nil
 }
 
@@ -119,18 +128,15 @@ func (this *WriteCache) PopBack(tx uint32, path string, T any) (interface{}, int
 	if !common.IsPath(path) {
 		return nil, int64(READ_NONEXIST), errors.New("Error: Not a path!!!")
 	}
-	pathDecoder := T
 
-	meta, _, Fee := this.Read(tx, path, pathDecoder) // read the container meta
-
-	subkeys := meta.(*orderedset.OrderedSet).Keys()
-	if subkeys == nil || len(subkeys) == 0 {
+	meta, _, Fee := this.Read(tx, path, T) // read the container meta
+	subkey, ok := meta.(*deltaset.DeltaSet[string]).Last()
+	if !ok {
 		return nil, int64(Fee), errors.New("Error: The path is either empty or doesn't exist")
 	}
 
-	key := path + subkeys[len(subkeys)-1]
-
-	value, _, Fee := this.Read(tx, key, pathDecoder)
+	key := path + subkey // Concatenate the path and the subkey
+	value, _, Fee := this.Read(tx, key, T)
 	if value == nil {
 		return nil, int64(Fee), errors.New("Error: Empty container!")
 	}

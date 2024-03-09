@@ -19,8 +19,8 @@ import (
 )
 
 func TestBaseContainer(t *testing.T) {
-	eu, config, db, committer, _ := NewTestEU()
-
+	// eu, config, db, committer, _ := NewTestEU(Coinbase, Alice, Bob)
+	testEu := NewTestEU(Coinbase, Alice, Bob)
 	// ================================== Compile the contract ==================================
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "lib")
@@ -39,9 +39,9 @@ func TestBaseContainer(t *testing.T) {
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err := testEu.eu.Run(StdMsg, execution.NewEVMBlockContext(testEu.config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
-	_, transitions := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
+	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
 	// msg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true) // Build the message
 	// receipt, _, err := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg)) // Execute it
@@ -55,11 +55,11 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	contractAddress := receipt.ContractAddress
-	committer = stgcomm.NewStorageCommitter(db)
-	committer.Import(transitions)
-	committer.Sort()
-	committer.Precommit([]uint32{1})
-	committer.Commit()
+	testEu.committer = stgcomm.NewStorageCommitter(testEu.db)
+	testEu.committer.Import(transitions)
+	testEu.committer.Sort()
+	testEu.committer.Precommit([]uint32{1})
+	testEu.committer.Commit()
 
 	// ================================== Call() ==================================
 	// receipt, _, err = eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
@@ -77,9 +77,9 @@ func TestBaseContainer(t *testing.T) {
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err = eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err = testEu.eu.Run(StdMsg, execution.NewEVMBlockContext(testEu.config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions = eu.Api().WriteCacheFilter().ByType()
-	_, transitions = cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
+	_, transitions = cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
 	if err != nil {
 		t.Error(err)
