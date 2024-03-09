@@ -163,7 +163,7 @@ func TestScheduler(t *testing.T) {
 }
 
 func TestMapArrayComparison(t *testing.T) {
-	arr := slice.NewWith[int](1000000, func(_ int) int { return rand.Intn(1000000) })
+	arr := slice.NewDo[int](1000000, func(_ int) int { return rand.Intn(1000000) })
 
 	t0 := time.Now()
 	m := mapi.FromSlice(arr, func(int) bool { return true })
