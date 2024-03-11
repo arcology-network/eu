@@ -16,6 +16,15 @@ func TestParaVote(t *testing.T) {
 	}
 }
 
+func TestParaVisit(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "examples/visit-counter/visitCounter-Mp_test.sol", "0.8.19", "VisitCounterCaller", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err.Error())
+	}
+}
+
 func TestParallelSimpleAuction(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")

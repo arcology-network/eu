@@ -103,6 +103,21 @@ func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interfa
 	), readFee, nil
 }
 
+// get the key of the Nth element under a path
+// func (this *WriteCache) getKeyByIdx(tx uint32, path string, idx uint64) (interface{}, uint64, error) {
+// 	if !common.IsPath(path) {
+// 		return nil, READ_NONEXIST, errors.New("Error: Not a path!!!")
+// 	}
+
+// 	meta, _, readFee := this.Read(tx, path, new(commutative.Path)) // read the container meta
+// 	if meta != nil {
+// 		if subkey := meta.(*deltaset.DeltaSet[string]).KeyAt(idx); len(subkey) > 0 {
+// 			return path + meta.(*deltaset.DeltaSet[string]).KeyAt(idx), readFee, nil
+// 		}
+// 	}
+// 	return "", readFee, errors.New("Error: Key not found in the path!!!")
+// }
+
 // Read th Nth element under a path
 func (this *WriteCache) ReadAt(tx uint32, path string, idx uint64, T any) (interface{}, uint64, error) {
 	if key, Fee, err := this.getKeyByIdx(tx, path, idx); err == nil && key != nil {
