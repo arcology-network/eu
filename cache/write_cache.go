@@ -23,7 +23,6 @@ import (
 	"reflect"
 	"sort"
 	"strings"
-	"time"
 
 	common "github.com/arcology-network/common-lib/common"
 	mapi "github.com/arcology-network/common-lib/exp/map"
@@ -127,14 +126,10 @@ func (this *WriteCache) GetOrNew(tx uint32, path string, T any) (*univalue.Univa
 	unival, inCache := this.kvDict[path]
 	if unival == nil { // Not in the kvDict, check the datastore
 		var typedv interface{}
-		t0 := time.Now()
 		if store := this.ReadOnlyDataStore(); store != nil {
-			t0 := time.Now()
-			typedv, _ = store.Retrive(path, T)
-			fmt.Println("store.Retrive:", 1, "keys in", time.Since(t0))
 			typedv = common.FilterFirst(store.Retrive(path, T))
 		}
-		fmt.Println("ReadOnlyDataStore:", 1, "keys in", time.Since(t0))
+
 		unival = this.NewUnivalue().Init(tx, path, 0, 0, 0, typedv, this)
 		this.kvDict[path] = unival // Adding to kvDict
 	}
@@ -147,32 +142,18 @@ func (this *WriteCache) Read(tx uint32, path string, T any) (interface{}, interf
 }
 
 func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
-	t0 := time.Now()
 	parentPath := common.GetParentPath(path)
-	fmt.Println("GetParentPath:", 1, "keys in", time.Since(t0))
-
-	t0 = time.Now()
-	flag := this.IfExists(parentPath)
-	fmt.Println("IfExists:", 1, "keys in", time.Since(t0))
-
-	if flag || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
-		t0 = time.Now()
+	if this.IfExists(parentPath) || tx == committercommon.SYSTEM { // The parent path exists or to inject the path directly
 		univalue, inCache := this.GetOrNew(tx, path, value) // Get a univalue wrapper
 		err := univalue.Set(tx, path, value, inCache, this)
-		fmt.Println("GetOrNew:", 1, "keys in", time.Since(t0))
 
+		// Update the parent path meta
 		if err == nil {
 			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM) { // Don't keep track of the system children
-				t0 = time.Now()
 				parentMeta, inCache := this.GetOrNew(tx, parentPath, new(commutative.Path))
-				fmt.Println("GetOrNew.Set:", 1, "keys in", time.Since(t0))
-
-				t0 = time.Now()
 				err = parentMeta.Set(tx, path, univalue.Value(), inCache, this)
-				fmt.Println("parentMeta.Set:", 1, "keys in", time.Since(t0))
 			}
 		}
-
 		return err
 	}
 	return errors.New("Error: The parent path doesn't exist: " + parentPath)
@@ -224,6 +205,10 @@ func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
 
 	rawv, _, _ := typedv.(intf.Type).Get()
 	return typedv.(intf.Type).New(rawv, nil, nil, typedv.(intf.Type).Min(), typedv.(intf.Type).Max()), nil // Return in a new univalue
+}
+
+func (this *WriteCache) RetriveFromStorage(path string, T any) (interface{}, error) {
+	return this.ReadOnlyDataStore().Retrive(path, T)
 }
 
 func (this *WriteCache) IfExists(path string) bool {

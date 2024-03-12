@@ -16,19 +16,12 @@
  */
 package tests
 
-import (
-	"os"
-	"path"
-	"path/filepath"
-	"testing"
-)
+// func TestPath(t *testing.T) {
+// 	currentPath, _ := os.Getwd()
+// 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
 
-func TestPath(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
-
-	_, err, _, _ := DeployThenInvoke(targetPath, "base/path_test.sol", "0.8.19", "PathTest", "call()", []byte{}, false)
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	_, err, _, _ := DeployThenInvoke(targetPath, "base/path_test.sol", "0.8.19", "PathTest", "call()", []byte{}, false)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }

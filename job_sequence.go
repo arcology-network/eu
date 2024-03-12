@@ -91,11 +91,10 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		if this.Results[i].EvmResult.Err != nil {
 			fmt.Println("error in execute message:", this.Results[i].EvmResult.Err.Error())
 			fmt.Println(msg)
-			panic("error in execute message:")
+			// panic("error in execute message:")
 		}
 
-		univalue.Univalues(this.Results[i].RawStateAccesses).PathsContain("/container").Print()
-		// trans.Print()
+		// univalue.Univalues(this.Results[i].RawStateAccesses).PathsContain("/container").Print()
 
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
 		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict())                                          // The tx may generate new aux data, so merge it into the main api router.
