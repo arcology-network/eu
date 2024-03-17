@@ -38,9 +38,13 @@ type Schedule struct {
 // The third dimension is the transactions in the sequntial order.
 func (this *Schedule) Optimize() [][][]*eucommon.StandardMessage {
 	sch := [][][]*eucommon.StandardMessage{{ // Transfers and deployments will be executed first
-		append(this.Transfers, this.Deployments...), // Sequential inside
+		append(this.Transfers, this.Deployments...),
 		append(this.WithConflict, this.Sequentials...),
 	}}
+
+	sch = append(sch, slice.Transform(this.Unknows, func(_ int, msg *eucommon.StandardMessage) []*eucommon.StandardMessage {
+		return []*eucommon.StandardMessage{msg}
+	}))
 
 	for i := 0; i < len(this.Generations); i++ {
 		if i == 0 {

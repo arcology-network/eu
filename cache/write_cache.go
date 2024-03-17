@@ -149,7 +149,7 @@ func (this *WriteCache) write(tx uint32, path string, value interface{}) error {
 
 		// Update the parent path meta
 		if err == nil {
-			if strings.HasSuffix(parentPath, "/container/") || (!this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM) { // Don't keep track of the system children
+			if strings.HasSuffix(parentPath, "/container/") || !this.platform.IsSysPath(parentPath) && tx != committercommon.SYSTEM { // Don't keep track of the system children
 				parentMeta, inCache := this.GetOrNew(tx, parentPath, new(commutative.Path))
 				err = parentMeta.Set(tx, path, univalue.Value(), inCache, this)
 			}
@@ -257,7 +257,7 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 }
 
 // Reset the writecache to the initial state for the next round of processing.
-func (*WriteCache) Reset(this *WriteCache) {
+func (this *WriteCache) Reset() {
 	if clear(this.buffer); cap(this.buffer) > 3*this.uniPool.MinSize() {
 		this.buffer = make([]*univalue.Univalue, 0, this.uniPool.MinSize())
 	}
@@ -329,19 +329,17 @@ func (this *WriteCache) KVs() ([]string, []intf.Type) {
 // including the conflict detection.
 //
 // It's mainly used for TESTING purpose.
-func (this *WriteCache) FlushToDataSource(store interfaces.Datastore) interfaces.Datastore {
-	committer := stgcomm.NewStorageCommitter(store)
+func (this *WriteCache) FlushToEthStore(store interfaces.Datastore) interfaces.Datastore {
 	acctTrans := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
-
 	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
 		return v.GetTx()
 	})
 
+	committer := stgcomm.NewStorageCommitter(store)
 	committer.Import(acctTrans)
-	committer.Sort()
-	committer.Precommit(txs)
-	committer.Commit()
-	this.Reset(this)
+	committer.Precommit(txs) // Write all the transitions to the store
+	committer.Commit(0)
+	this.Reset()
 
 	return store
 }

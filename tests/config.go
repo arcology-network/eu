@@ -14,6 +14,7 @@ import (
 	concurrenturl "github.com/arcology-network/storage-committer"
 	"github.com/arcology-network/storage-committer/commutative"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
+	"github.com/arcology-network/storage-committer/storage"
 	stgcommstorage "github.com/arcology-network/storage-committer/storage"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -61,7 +62,8 @@ func MainTestConfig() *execution.Config {
 
 // Choose which data source to use
 func chooseDataStore() ccurlintf.Datastore {
-	return stgcommstorage.NewParallelEthMemDataStore() // Eth trie datastore
+	// return stgcommstorage.NewParallelEthMemDataStore() // Eth trie datastore
+	return storage.NewHybirdStore() // Eth trie datastore
 	// return stgcommstorage.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
@@ -74,7 +76,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
-	}, (&cache.WriteCache{}).Reset))
+	}, func(cache *cache.WriteCache) { cache.Reset() }))
 
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -89,13 +91,12 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	// Deploy.
 	committer := concurrenturl.NewStorageCommitter(datastore)
 	committer.Import(transitions)
-	committer.Sort()
 	committer.Precommit([]uint32{0})
-	committer.Commit()
+	committer.Commit(0)
 
 	api = apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
-	}, (&cache.WriteCache{}).Reset))
+	}, func(cache *cache.WriteCache) { cache.Reset() }))
 
 	statedb = eth.NewImplStateDB(api)
 
@@ -163,9 +164,8 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	contractAddress := receipt.ContractAddress
 	testEu.committer = concurrenturl.NewStorageCommitter(testEu.db)
 	testEu.committer.Import(transitions)
-	testEu.committer.Sort()
 	testEu.committer.Precommit([]uint32{1})
-	testEu.committer.Commit()
+	testEu.committer.Commit(0)
 
 	return testEu.eu, &contractAddress, testEu.db, evmcommon.Hex2Bytes(code), nil
 }
@@ -179,7 +179,7 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	// localCache := cache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
-	}, (&cache.WriteCache{}).Reset))
+	}, func(cache *cache.WriteCache) { cache.Reset() }))
 
 	statedb := eth.NewImplStateDB(api)
 	eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
@@ -264,9 +264,8 @@ func DepolyContract(eu *eu.EU, committer *concurrenturl.StateCommitter, config *
 	_, transitionsFiltered := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 	// committer := eu.Api().Ccurl()
 	committer.Import(transitionsFiltered)
-	committer.Sort()
 	committer.Precommit([]uint32{1})
-	committer.Commit()
+	committer.Commit(0)
 	return nil, config, eu, receipt
 }
 
