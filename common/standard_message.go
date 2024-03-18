@@ -4,7 +4,14 @@ import (
 	"bytes"
 	"sort"
 
+	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
+	"github.com/arcology-network/common-lib/types"
 	evmcore "github.com/ethereum/go-ethereum/core"
+)
+
+const (
+	Concurrency = 4
 )
 
 type StandardMessage struct {
@@ -40,122 +47,62 @@ func (this StandardMessages) Count(value *StandardMessage) int {
 	return counter
 }
 
-// func (this StandardMessages) FromSequence(baseApiRouter eucommon.EthApiRouter) []*StandardMessage {
-// 	jobs := make([]*Job, len(this.Msgs))
-// 	for i, msg := range this.Msgs {
-// 		jobs[i].Predecessors = this.Predecessors
-// 		jobs[i].Message = msg.Native
-// 		jobs[i].ApiRouter = baseApiRouter
-// 	}
-// 	return jobs
-// }
+func (this StandardMessages) Encode() ([]byte, error) {
+	if this == nil {
+		return []byte{}, nil
+	}
+	data := make([][]byte, len(this))
+	worker := func(start, end, idx int, args ...interface{}) {
+		this := args[0].([]interface{})[0].(StandardMessages)
+		data := args[0].([]interface{})[1].([][]byte)
 
-// func (this StandardMessages) Hashes() []evmcommon.Hash {
-// 	hashes := make([]evmcommon.Hash, len(this))
-// 	for i := range this {
-// 		hashes[i] = this[i].TxHash
-// 	}
-// 	return hashes
-// }
+		for i := start; i < end; i++ {
+			encodedMsg := []byte{}
+			if encoded, err := types.MsgEncode(this[i].Native); err == nil {
+				encodedMsg = encoded
+			}
 
-// func (this StandardMessages) QuickSort(less func(this *StandardMessage, rgt *StandardMessage) bool) {
-// 	if len(this) < 2 {
-// 		return
-// 	}
-// 	left, right := 0, len(this)-1
-// 	pivotIndex := rand.Int() % len(this)
+			tmpData := [][]byte{
+				codec.Uint64(this[i].ID).Encode(),
+				this[i].TxHash[:],
+				encodedMsg,
+				[]byte{this[i].Source},
+			}
+			data[i] = codec.Byteset(tmpData).Encode()
+		}
+	}
+	common.ParallelWorker(len(this), Concurrency, worker, this, data)
+	return codec.Byteset(data).Encode(), nil
+}
 
-// 	this[pivotIndex], this[right] = this[right], this[pivotIndex]
-// 	for i := range this {
-// 		if less(this[i], this[right]) {
-// 			this[i], this[left] = this[left], this[i]
-// 			left++
-// 		}
-// 	}
-// 	this[left], this[right] = this[right], this[left]
+func (this *StandardMessages) Decode(data []byte) ([]*StandardMessage, error) {
+	fields := codec.Byteset{}.Decode(data).(codec.Byteset)
+	msgs := make([]*StandardMessage, len(fields))
 
-// 	StandardMessages(this[:left]).QuickSort(less)
-// 	StandardMessages(this[left+1:]).QuickSort(less)
-// }
+	worker := func(start, end, idx int, args ...interface{}) {
+		data := args[0].([]interface{})[0].([][]byte)
+		messages := args[0].([]interface{})[1].([]*StandardMessage)
 
-// func (this StandardMessages) EncodeToBytes() [][]byte {
-// 	if this == nil {
-// 		return [][]byte{}
-// 	}
-// 	data := make([][]byte, len(this))
-// 	worker := func(start, end, idx int, args ...interface{}) {
-// 		this := args[0].([]interface{})[0].(StandardMessages)
-// 		data := args[0].([]interface{})[1].([][]byte)
+		for i := start; i < end; i++ {
+			standredMessage := new(StandardMessage)
 
-// 		for i := start; i < end; i++ {
-// 			if encoded, err := this[i].Native.GobEncode(); err == nil {
-// 				tmpData := [][]byte{
-// 					this[i].TxHash.Bytes(),
-// 					[]byte{this[i].Source},
-// 					encoded,
-// 					//this[i].TxRawData,
-// 					[]byte{}, //remove TxRawData
-// 				}
-// 				data[i] = encoding.Byteset(tmpData).Encode()
-// 			}
-// 		}
-// 	}
-// 	common.ParallelWorker(len(this), concurrency, worker, this, data)
-// 	return data
-// }
+			fields := codec.Byteset{}.Decode(data[i]).(codec.Byteset)
 
-// func (this StandardMessages) Encode() ([]byte, error) {
-// 	if this == nil {
-// 		return []byte{}, nil
-// 	}
-// 	data := make([][]byte, len(this))
-// 	worker := func(start, end, idx int, args ...interface{}) {
-// 		this := args[0].([]interface{})[0].(StandardMessages)
-// 		data := args[0].([]interface{})[1].([][]byte)
+			standredMessage.ID = uint64(codec.Uint64(0).Decode(fields[0]).(codec.Uint64))
+			standredMessage.TxHash = [32]byte(fields[1])
 
-// 		for i := start; i < end; i++ {
-// 			if encoded, err := this[i].Native.GobEncode(); err == nil {
-// 				//data[i] = encoding.Byteset([][]byte{this[i].TxHash.Bytes()[:], {this[i].Source}, encoded}).Flatten()
-// 				tmpData := [][]byte{
-// 					this[i].TxHash.Bytes(),
-// 					[]byte{this[i].Source},
-// 					encoded,
-// 					this[i].TxRawData,
-// 				}
-// 				data[i] = encoding.Byteset(tmpData).Encode()
-// 			}
-// 		}
-// 	}
-// 	common.ParallelWorker(len(this), concurrency, worker, this, data)
-// 	return encoding.Byteset(data).Encode(), nil
-// }
+			if len(fields[2]) > 0 {
+				msg, err := types.MsgDecode(fields[2])
+				if err != nil {
+					return
+				}
+				standredMessage.Native = msg
+			}
+			standredMessage.Source = uint8(fields[3][0])
+			messages[i] = standredMessage
+		}
+	}
+	common.ParallelWorker(len(fields), Concurrency, worker, fields, msgs)
 
-// func (this *StandardMessages) Decode(data []byte) ([]*StandardMessage, error) {
-// 	fields := encoding.Byteset{}.Decode(data)
-// 	msgs := make([]*StandardMessage, len(fields))
-
-// 	worker := func(start, end, idx int, args ...interface{}) {
-// 		data := args[0].([]interface{})[0].([][]byte)
-// 		messages := args[0].([]interface{})[1].([]*StandardMessage)
-
-// 		for i := start; i < end; i++ {
-// 			standredMessage := new(StandardMessage)
-
-// 			fields := encoding.Byteset{}.Decode(data[i])
-// 			standredMessage.TxHash = evmcommon.BytesToHash(fields[0])
-// 			standredMessage.Source = uint8(fields[1][0])
-// 			msg := new(ethTypes.Message)
-// 			err := msg.GobDecode(fields[2])
-// 			if err != nil {
-// 				return
-// 			}
-// 			standredMessage.Native = msg
-// 			standredMessage.TxRawData = fields[3]
-
-// 			messages[i] = standredMessage
-// 		}
-// 	}
-// 	common.ParallelWorker(len(fields), concurrency, worker, fields, msgs)
-
-// 	return msgs, nil
-// }
+	return msgs, nil
+}

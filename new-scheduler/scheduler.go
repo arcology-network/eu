@@ -207,7 +207,8 @@ func (this *Scheduler) Prefilter(stdMsgs []*eucommon.StandardMessage) (*Schedule
 
 	// Get the IDs for the given addresses and signatures, which will be used to find the callee index.
 	pairs := slice.ParallelAppend(stdMsgs, 8, func(i int, msg *eucommon.StandardMessage) *associative.Pair[uint32, *eucommon.StandardMessage] {
-		idx, ok := this.calleeLookup[string(append((*msg.Native.To)[:ADDRESS_LENGTH], msg.Native.Data[:4]...))]
+		addr := *msg.Native.To
+		idx, ok := this.calleeLookup[string(append(addr[:ADDRESS_LENGTH], msg.Native.Data[:4]...))]
 		if !ok {
 			idx = math.MaxUint32 // The callee is new.
 		}

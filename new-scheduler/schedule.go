@@ -42,6 +42,10 @@ func (this *Schedule) Optimize() [][][]*eucommon.StandardMessage {
 		append(this.WithConflict, this.Sequentials...),
 	}}
 
+	sch = append(sch, slice.Transform(this.Unknows, func(_ int, msg *eucommon.StandardMessage) []*eucommon.StandardMessage {
+		return []*eucommon.StandardMessage{msg}
+	}))
+
 	for i := 0; i < len(this.Generations); i++ {
 		if i == 0 {
 			this.Generations[i] = append(this.Generations[i], this.Unknows...)
