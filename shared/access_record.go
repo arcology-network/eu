@@ -99,7 +99,7 @@ func (this *TxAccessRecordSet) Encode() []byte {
 
 func (this *TxAccessRecordSet) Decode(data []byte) interface{} {
 	bytesset := codec.Byteset{}.Decode(data).(codec.Byteset)
-	records := slice.ParallelAppend(bytesset, 6, func(i int, _ []byte) *TxAccessRecords {
+	records := slice.ParallelTransform(bytesset, 6, func(i int, _ []byte) *TxAccessRecords {
 		this := &TxAccessRecords{}
 		this.Decode(bytesset[i])
 		return this

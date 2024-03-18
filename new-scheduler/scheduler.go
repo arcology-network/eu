@@ -187,7 +187,7 @@ func (this *Scheduler) Deferred(paraMsgInfo *associative.Pairs[uint32, *eucommon
 		// more than one instance of the same callee is there.
 		if first != last && this.deferByDefault {
 			deferredMsgs = append(deferredMsgs, *deferred)
-			slice.RemoveAt(paraMsgInfo.Array(), last) // Move the last call to the second generation as a deferred call.
+			slice.RemoveAt(paraMsgInfo.Slice(), last) // Move the last call to the second generation as a deferred call.
 		}
 	}
 	return deferredMsgs
@@ -206,7 +206,7 @@ func (this *Scheduler) Prefilter(stdMsgs []*eucommon.StandardMessage) (*Schedule
 	}
 
 	// Get the IDs for the given addresses and signatures, which will be used to find the callee index.
-	pairs := slice.ParallelAppend(stdMsgs, 8, func(i int, msg *eucommon.StandardMessage) *associative.Pair[uint32, *eucommon.StandardMessage] {
+	pairs := slice.ParallelTransform(stdMsgs, 8, func(i int, msg *eucommon.StandardMessage) *associative.Pair[uint32, *eucommon.StandardMessage] {
 		addr := *msg.Native.To
 		idx, ok := this.calleeLookup[string(append(addr[:ADDRESS_LENGTH], msg.Native.Data[:4]...))]
 		if !ok {
@@ -217,21 +217,21 @@ func (this *Scheduler) Prefilter(stdMsgs []*eucommon.StandardMessage) (*Schedule
 
 	msgPairs := (*associative.Pairs[uint32, *eucommon.StandardMessage])(&pairs)
 	if len(*msgPairs) == 0 {
-		return sch, *msgPairs.Array()
+		return sch, *msgPairs.Slice()
 	}
 
 	// Move the transactions that have no known conflicts to the parallel trasaction array first.
 	// If a callee has no known conflicts with anyone else, it is either a conflict-free implementation or has been fortunate enough to avoid conflicts so far.
-	unknows := slice.MoveIf(msgPairs.Array(), func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
+	unknows := slice.MoveIf(msgPairs.Slice(), func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
 		return v.First == math.MaxUint32
 	})
 
 	// Deployments are less likely to have conflicts, but it's not guaranteed.
-	sequentialOnly := slice.MoveIf(msgPairs.Array(), func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
+	sequentialOnly := slice.MoveIf(msgPairs.Slice(), func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
 		return this.callees[v.First].SequentialOnly
 	})
 
 	sch.Unknows = (*associative.Pairs[uint32, *eucommon.StandardMessage])(&unknows).Seconds()
 	sch.Sequentials = (*associative.Pairs[uint32, *eucommon.StandardMessage])(&sequentialOnly).Seconds()
-	return sch, *msgPairs.Array()
+	return sch, *msgPairs.Slice()
 }

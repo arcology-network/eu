@@ -26,7 +26,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	// localCache := cache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(db, 32, 1)
-	}, (&cache.WriteCache{}).Reset))
+	}, func(cache *cache.WriteCache) { cache.Reset() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
@@ -36,9 +36,8 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 	committer := concurrenturl.NewStorageCommitter(db)
 	committer.Import(transitions)
-	committer.Sort()
 	committer.Precommit([]uint32{1})
-	committer.Commit()
+	committer.Commit(0)
 
 	committer = concurrenturl.NewStorageCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
@@ -57,7 +56,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	// localCache := cache.NewWriteCache(db, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(db, 32, 1)
-	}, (&cache.WriteCache{}).Reset))
+	}, func(cache *cache.WriteCache) { cache.Reset() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
 	ethStatedb := eth.NewImplStateDB(api)
@@ -68,9 +67,8 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 
 	committer := concurrenturl.NewStorageCommitter(db)
 	committer.Import(transitions)
-	committer.Sort()
 	committer.Precommit([]uint32{1})
-	committer.Commit()
+	committer.Commit(0)
 
 	committer = concurrenturl.NewStorageCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
@@ -90,7 +88,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	// localCache := cache.NewWriteCache(db, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(db, 32, 1)
-	}, (&cache.WriteCache{}).Reset))
+	}, func(cache *cache.WriteCache) { cache.Reset() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
@@ -100,9 +98,8 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 	committer := concurrenturl.NewStorageCommitter(db)
 	committer.Import(transitions)
-	committer.Sort()
 	committer.Precommit([]uint32{1})
-	committer.Commit()
+	committer.Commit(0)
 
 	committer = concurrenturl.NewStorageCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
@@ -123,7 +120,7 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	// localCache := cache.NewWriteCache(db, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(db, 32, 1)
-	}, (&cache.WriteCache{}).Reset))
+	}, func(cache *cache.WriteCache) { cache.Reset() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
@@ -132,9 +129,8 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 	committer.Import(transitions)
-	committer.Sort()
 	committer.Precommit([]uint32{1})
-	committer.Commit()
+	committer.Commit(0)
 
 	committer = concurrenturl.NewStorageCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
