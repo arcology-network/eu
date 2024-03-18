@@ -318,7 +318,7 @@ func (this *WriteCache) KVs() ([]string, []intf.Type) {
 	transitions := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.ITTransition{})
 
 	values := make([]intf.Type, len(transitions))
-	keys := slice.ParallelAppend(transitions, 4, func(i int, v *univalue.Univalue) string {
+	keys := slice.ParallelTransform(transitions, 4, func(i int, v *univalue.Univalue) string {
 		values[i] = v.Value().(intf.Type)
 		return *v.GetPath()
 	})
