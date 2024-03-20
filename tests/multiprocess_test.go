@@ -27,6 +27,7 @@ func TestU256ParallelInitTest(t *testing.T) {
 	}
 }
 
+// //434343
 func TestU256ParallelPop(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
@@ -117,6 +118,7 @@ func TestParaMultiWithClear(t *testing.T) {
 	}
 }
 
+// func TestParaVote(t *testing.T) {
 func TestMultiParaU256Conflict(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")

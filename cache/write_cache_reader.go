@@ -25,6 +25,7 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
+	committercommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -66,7 +67,7 @@ func (this *WriteCache) KeyAt(tx uint32, path string, index interface{}, T any) 
 
 // Peek the value under a path. The difference between Peek and Read is that Peek does not have access metadata attached.
 func (this *WriteCache) Peek(path string, T any) (interface{}, uint64) {
-	_, univ := this.Find(path, T)
+	_, univ := this.Find(committercommon.SYSTEM, path, T)
 	v, _, _ := univ.(*univalue.Univalue).Value().(interfaces.Type).Get()
 	return v, Fee{}.Reader(univ)
 }
@@ -160,7 +161,11 @@ func (this *WriteCache) PopBack(tx uint32, path string, T any) (interface{}, int
 	return value, writeFee, err
 }
 
-// // Read th Nth element under a path
+// Read th Nth element under a path
+// The way to do this is to use the keys in in the path first and then use the index to get the key.
+// Eventually, the key is used to read or write the data. This solution has some issues.
+// To get the key by index, the keys in container must be finalized first. If the path
+// has any update at this moment, this operation will generate a path read with will conflict with the path write.
 func (this *WriteCache) WriteAt(tx uint32, path string, idx uint64, T any) (int64, error) {
 	if !common.IsPath(path) {
 		return int64(READ_NONEXIST), errors.New("Error: Not a path!!!")

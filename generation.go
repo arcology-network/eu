@@ -49,7 +49,7 @@ func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generat
 func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter) *Generation {
 	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{})
 	slice.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
-		gen.Add(new(JobSequence).NewFromCall(*msg, api))
+		gen.Add(new(JobSequence).NewFromCall(*msg, api.GetEU().(interface{ TxHash() [32]byte }).TxHash(), api))
 	})
 	gen.occurrences = gen.OccurrenceDict(gen.jobSeqs)
 	api.SetSchedule(gen.occurrences)
@@ -101,10 +101,6 @@ func (this *Generation) Execute(parentApiRouter intf.EthApiRouter) []*univalue.U
 	slice.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
 		groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter, uint64(i+1))
 	})
-
-	// univalue.Univalues(records[0]).Print()
-	// fmt.Println("")
-	// univalue.Univalues(records[1]).Print()
 
 	txDict, groupDict, _ := this.Detect(groupIDs, records).ToDict()
 	return slice.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {

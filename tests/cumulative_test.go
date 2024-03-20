@@ -23,10 +23,10 @@ import (
 	"testing"
 )
 
-func TestEmptyCumulativeU256(t *testing.T) {
+func TestCumulativeU256InMapping(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "commutative/u256Cum_test.sol", "0.8.19", "EmptyCumulativeU256Test", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "commutative/u256Cum_test.sol", "0.8.19", "CumulativeU256InMappingTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
