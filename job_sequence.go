@@ -36,6 +36,19 @@ type JobSequence struct {
 	RecordBuffer []*univalue.Univalue
 }
 
+func NewJobSequence(seqID uint32, tx uint64, txHash [32]byte, evmMsg *evmcore.Message, api intf.EthApiRouter) *JobSequence {
+	newJobSeq := &JobSequence{
+		ID:        seqID,
+		ApiRouter: api,
+	}
+
+	return newJobSeq.AppendMsg(&eucommon.StandardMessage{
+		ID:     tx,
+		Native: evmMsg,
+		TxHash: txHash,
+	})
+}
+
 func (*JobSequence) T() *JobSequence { return &JobSequence{} }
 
 // New creates a new JobSequence with the given ID and API router.
@@ -47,13 +60,13 @@ func (*JobSequence) New(id uint32, apiRouter intf.EthApiRouter) *JobSequence {
 }
 
 // NewFromCall creates a new JobSequence from the given call.
-func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, api intf.EthApiRouter) *JobSequence {
+func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, baseTxHash [32]byte, api intf.EthApiRouter) *JobSequence {
 	newJobSeq := new(JobSequence).New(uint32(api.GetSerialNum(eucommon.SUB_PROCESS)), api)
 
 	return newJobSeq.AppendMsg(&eucommon.StandardMessage{
 		ID:     uint64(newJobSeq.GetID()),
 		Native: evmMsg,
-		TxHash: newJobSeq.DeriveNewHash(api.GetEU().(interface{ TxHash() [32]byte }).TxHash()),
+		TxHash: newJobSeq.DeriveNewHash(baseTxHash), //api.GetEU().(interface{ TxHash() [32]byte }).TxHash()
 	})
 }
 
@@ -88,13 +101,15 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		tempApi.DecrementDepth() // The api router always increments the depth.  So we need to decrement it here.
 
 		this.Results[i] = this.execute(msg, config, tempApi) // Execute the message and store the result.
+		// univalue.Univalues(this.Results[i].RawStateAccesses).Print(func(v *univalue.Univalue) bool {
+		// 	return strings.Contains(*v.GetPath(), "/container")
+		// })
+
 		if this.Results[i].EvmResult.Err != nil {
 			fmt.Println("error in execute message:", this.Results[i].EvmResult.Err.Error())
 			fmt.Println(msg)
 			// panic("error in execute message:")
 		}
-
-		// univalue.Univalues(this.Results[i].RawStateAccesses).PathsContain("/container").Print()
 
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
 		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict())                                          // The tx may generate new aux data, so merge it into the main api router.

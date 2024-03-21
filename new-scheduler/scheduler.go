@@ -156,7 +156,7 @@ func (this *Scheduler) New(stdMsgs []*eucommon.StandardMessage) *Schedule {
 		return len(v) == 0
 	})
 
-	// Whatever is left in the msgPairs array is the sequential transaction set.
+	// Whatever left in the msgPairs array is the sequential transaction set.
 	sch.WithConflict = (*associative.Pairs[uint32, *eucommon.StandardMessage])(&msgPairs).Seconds()
 	return sch
 }

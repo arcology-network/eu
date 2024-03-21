@@ -186,19 +186,20 @@ func (this *WriteCache) InCache(path string) (interface{}, bool) {
 	return univ, ok
 }
 
-// Get the raw value directly, skip the access counting at the univalue level
-func (this *WriteCache) Find(path string, T any) (interface{}, interface{}) {
+// Get the raw value directly, put it in an empty univalue without recording the access at the univalue level.
+func (this *WriteCache) Find(tx uint32, path string, T any) (interface{}, interface{}) {
 	if univ, ok := this.kvDict[path]; ok {
 		return univ.Value(), univ
 	}
 
 	v, _ := this.ReadOnlyDataStore().Retrive(path, T)
-	univ := univalue.NewUnivalue(committercommon.SYSTEM, path, 0, 0, 0, v, nil)
+	univ := univalue.NewUnivalue(tx, path, 0, 0, 0, v, nil)
 	return univ.Value(), univ
 }
 
+// Get the raw value directly.
 func (this *WriteCache) Retrive(path string, T any) (interface{}, error) {
-	typedv, _ := this.Find(path, T)
+	typedv, _ := this.Find(committercommon.SYSTEM, path, T)
 	if typedv == nil || typedv.(intf.Type).IsDeltaApplied() {
 		return typedv, nil
 	}
@@ -245,7 +246,9 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 		(*v).CopyTo(this) // Write back to the parent writecache
 	})
 
-	// Remove the changes to the existing path meta, as they will be updated automatically when inserting sub elements.
+	// Remove the changes to the existing path meta, as they will be updated automatically
+	// when inserting or deleting sub elements. This is just simpler and more straightforward
+	// than to keep track of the meta changes and merge them back the meta changes.
 	transitions = slice.RemoveIf(&transitions, func(_ int, v *univalue.Univalue) bool {
 		return common.IsPath(*v.GetPath())
 	})

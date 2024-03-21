@@ -115,6 +115,13 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	// return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, datastore, committer, transitions
 }
 
+func ConfigChain(coinbase evmcommon.Address, blockNum uint64) {
+	config := MainTestConfig()
+	config.Coinbase = &Coinbase
+	config.BlockNumber = new(big.Int).SetUint64(blockNum)
+	config.Time = new(big.Int).SetUint64(10000000)
+}
+
 func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool) (*evmcore.ExecutionResult, error, *eu.EU, *evmcoretypes.Receipt) {
 	if !commonlibcommon.FileExists(filepath.Join(targetPath, contractFile)) {
 		return nil, errors.New("Error: The contract is not found!!!"), nil, nil
@@ -130,6 +137,20 @@ func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName 
 	}
 	result, err := AliceCall(eu, *contractAddress, funcName, db)
 	return result, err, eu, nil
+}
+
+func CreateEthMsg(from evmcommon.Address, to evmcommon.Address, nonce, value, gasLimit, gasPrice uint64, data []byte, checkNonce bool, tx uint64) core.Message {
+	return core.NewMessage(
+		Alice,
+		&to,
+		nonce,
+		new(big.Int).SetUint64(value),
+		gasLimit,
+		new(big.Int).SetUint64(gasPrice),
+		data,
+		nil,
+		true,
+	)
 }
 
 func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, ccurlintf.Datastore, []byte, error) {
@@ -157,6 +178,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
+	// fmt.Print(v)
 	if receipt.Status != 1 || err != nil || execResult.Err != nil {
 		return nil, nil, nil, []byte{}, errors.New("Error: Deployment failed!!!")
 	}
@@ -166,6 +188,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)
+	testEu.eu.Api().WriteCache().(interface{ Reset() }).Reset()
 
 	return testEu.eu, &contractAddress, testEu.db, evmcommon.Hex2Bytes(code), nil
 }
