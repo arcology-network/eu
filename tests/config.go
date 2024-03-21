@@ -178,6 +178,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
+	// fmt.Print(v)
 	if receipt.Status != 1 || err != nil || execResult.Err != nil {
 		return nil, nil, nil, []byte{}, errors.New("Error: Deployment failed!!!")
 	}
@@ -187,6 +188,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)
+	testEu.eu.Api().WriteCache().(interface{ Reset() }).Reset()
 
 	return testEu.eu, &contractAddress, testEu.db, evmcommon.Hex2Bytes(code), nil
 }

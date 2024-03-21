@@ -4,7 +4,6 @@ package execution
 import (
 	"crypto/sha256"
 	"fmt"
-	"strings"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -102,9 +101,9 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		tempApi.DecrementDepth() // The api router always increments the depth.  So we need to decrement it here.
 
 		this.Results[i] = this.execute(msg, config, tempApi) // Execute the message and store the result.
-		univalue.Univalues(this.Results[i].RawStateAccesses).Print(func(v *univalue.Univalue) bool {
-			return strings.Contains(*v.GetPath(), "/container")
-		})
+		// univalue.Univalues(this.Results[i].RawStateAccesses).Print(func(v *univalue.Univalue) bool {
+		// 	return strings.Contains(*v.GetPath(), "/container")
+		// })
 
 		if this.Results[i].EvmResult.Err != nil {
 			fmt.Println("error in execute message:", this.Results[i].EvmResult.Err.Error())
