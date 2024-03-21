@@ -7,14 +7,14 @@ import (
 	"testing"
 )
 
-// func TestParaVote(t *testing.T) {
-// 	currentPath, _ := os.Getwd()
-// 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
-// 	_, err, _, _ := DeployThenInvoke(targetPath, "examples/vote/parallelVote-Mp_test.sol", "0.8.19", "BallotTest", "", []byte{}, false)
-// 	if err != nil {
-// 		t.Error(err.Error())
-// 	}
-// }
+func TestParaVote(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "examples/vote/parallelVote-Mp_test.sol", "0.8.19", "BallotTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err.Error())
+	}
+}
 
 func TestParaVisit(t *testing.T) {
 	currentPath, _ := os.Getwd()
