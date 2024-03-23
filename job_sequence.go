@@ -8,7 +8,6 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
 	mapi "github.com/arcology-network/common-lib/exp/map"
-	"github.com/arcology-network/common-lib/exp/mempool"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	cache "github.com/arcology-network/eu/cache"
 	eucommon "github.com/arcology-network/eu/common"
@@ -93,36 +92,24 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 // case there is a contract deployment in the sequence.
 func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
+	this.ApiRouter = mainApi.Cascade()
 
-	this.ApiRouter = this.cascade(mainApi)
-	// t0 = time.Now()
 	for i, msg := range this.StdMsgs {
-		tempApi := this.cascade(this.ApiRouter)
-		tempApi.DecrementDepth() // The api router always increments the depth.  So we need to decrement it here.
+		tempApi := this.ApiRouter.Cascade() // A new router whose writeCache uses the parent APIHandler's writeCache as the data source.
+		tempApi.DecrementDepth()            // The api router always increments the depth.  So we need to decrement it here.
 
 		this.Results[i] = this.execute(msg, config, tempApi) // Execute the message and store the result.
-		// univalue.Univalues(this.Results[i].RawStateAccesses).Print(func(v *univalue.Univalue) bool {
-		// 	return strings.Contains(*v.GetPath(), "/container")
-		// })
-
 		if this.Results[i].EvmResult.Err != nil {
 			fmt.Println("error in execute message:", this.Results[i].EvmResult.Err.Error())
-			fmt.Println(msg)
-			// panic("error in execute message:")
 		}
 
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
 		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict())                                          // The tx may generate new aux data, so merge it into the main api router.
 	}
-	accessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
-	return slice.Fill(make([]uint32, len(accessRecords)), this.ID), accessRecords
-}
 
-// cascades the parent API router and returns a new one with the parent cache being the read-only data source of the child.
-func (this *JobSequence) cascade(parentApi intf.EthApiRouter) intf.EthApiRouter {
-	writeCache := parentApi.WriteCachePool().(*mempool.Mempool[*cache.WriteCache]).New() // Get a new write cache from the shared write cache pool.
-	writeCache.SetReadOnlyDataStore(parentApi.WriteCache().(*cache.WriteCache))          // Use mainapi's cache as the read-only data store.
-	return parentApi.New(parentApi.WriteCachePool(), writeCache, parentApi.GetDeployer(), parentApi.GetSchedule())
+	// Get acumulated state access records from all the transactions in the sequence.
+	accmulatedAccessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
+	return slice.Fill(make([]uint32, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
@@ -210,6 +197,5 @@ func (this *JobSequence) RefundTo(payer, recipent *univalue.Univalue, amount uin
 		return 0, err
 	}
 	payer.IncrementDeltaWrites(1)
-
 	return amount, nil
 }

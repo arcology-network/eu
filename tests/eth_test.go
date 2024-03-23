@@ -17,11 +17,29 @@
 
 package tests
 
-// func TestContractTransfer(t *testing.T) {
-// 	currentPath, _ := os.Getwd()
-// 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
-// 	_, err, _, _ := DeployThenInvoke(targetPath, "examples/eth/TransferTest.sol", "0.8.19", "transferToContract", "", []byte{}, false)
-// 	if err != nil {
-// 		t.Error(err.Error())
-// 	}
-// }
+import (
+	"testing"
+)
+
+func TestContractTransfer(t *testing.T) {
+	// currentPath, _ := os.Getwd()
+	// targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
+	// _, err, _, _ := DeployThenInvoke(targetPath, "examples/eth/TransferTest.sol", "0.8.19", "TransferTest", "transferToContract()", []byte{}, false, 0)
+	// if err != nil {
+	// 	t.Error(err.Error())
+	// }
+
+	// if !commonlibcommon.FileExists(filepath.Join(targetPath, "examples/eth/TransferTest.sol")) {
+	// 	t.Error("Error: The contract is not found!!!")
+	// }
+
+	// eu, contractAddress, db, _, err := AliceDeploy(targetPath, "examples/eth/TransferTest.sol", "0.8.19", "transferToContract()")
+	// if err != nil {
+	// 	t.Error("Error: The contract is not found!!!")
+	// }
+
+	// _, err = AliceCall(eu, *contractAddress, "examples/eth/TransferTest.sol", db, 11)
+	// if err != nil {
+	// 	t.Error("Error: The contract is not found!!!")
+	// }
+}

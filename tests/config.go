@@ -122,7 +122,7 @@ func ConfigChain(coinbase evmcommon.Address, blockNum uint64) {
 	config.Time = new(big.Int).SetUint64(10000000)
 }
 
-func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool) (*evmcore.ExecutionResult, error, *eu.EU, *evmcoretypes.Receipt) {
+func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName string, inputData []byte, checkNonce bool, args ...uint64) (*evmcore.ExecutionResult, error, *eu.EU, *evmcoretypes.Receipt) {
 	if !commonlibcommon.FileExists(filepath.Join(targetPath, contractFile)) {
 		return nil, errors.New("Error: The contract is not found!!!"), nil, nil
 	}
@@ -135,7 +135,12 @@ func DeployThenInvoke(targetPath, contractFile, version, contractName, funcName 
 	if len(funcName) == 0 {
 		return nil, err, eu, nil
 	}
-	result, err := AliceCall(eu, *contractAddress, funcName, db)
+
+	amount := uint64(0)
+	if len(args) > 0 {
+		amount = args[0]
+	}
+	result, err := AliceCall(eu, *contractAddress, funcName, db, amount)
 	return result, err, eu, nil
 }
 
@@ -193,7 +198,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	return testEu.eu, &contractAddress, testEu.db, evmcommon.Hex2Bytes(code), nil
 }
 
-func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.Datastore) (*core.ExecutionResult, error) {
+func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.Datastore, amount uint64) (*core.ExecutionResult, error) {
 	config := MainTestConfig()
 	config.Coinbase = &Coinbase
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
@@ -208,7 +213,7 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
 
 	data := crypto.Keccak256([]byte(funcName))[:4]
-	msg := core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
+	msg := core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(amount), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 	StdMsg := &eucommon.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
