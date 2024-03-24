@@ -35,17 +35,20 @@ type JobSequence struct {
 	RecordBuffer []*univalue.Univalue
 }
 
-func NewJobSequence(seqID uint32, tx uint64, txHash [32]byte, evmMsg *evmcore.Message, api intf.EthApiRouter) *JobSequence {
+func NewJobSequence(seqID uint32, tx []uint64, evmMsgs []*evmcore.Message, txHash [32]byte, api intf.EthApiRouter) *JobSequence {
 	newJobSeq := &JobSequence{
 		ID:        seqID,
 		ApiRouter: api,
 	}
 
-	return newJobSeq.AppendMsg(&eucommon.StandardMessage{
-		ID:     tx,
-		Native: evmMsg,
-		TxHash: txHash,
-	})
+	for i, evmMsg := range evmMsgs {
+		newJobSeq.AppendMsg(&eucommon.StandardMessage{
+			ID:     tx[i],
+			Native: evmMsg,
+			TxHash: txHash,
+		})
+	}
+	return newJobSeq
 }
 
 func (*JobSequence) T() *JobSequence { return &JobSequence{} }
@@ -99,12 +102,16 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 		tempApi.DecrementDepth()            // The api router always increments the depth.  So we need to decrement it here.
 
 		this.Results[i] = this.execute(msg, config, tempApi) // Execute the message and store the result.
-		if this.Results[i].EvmResult.Err != nil {
-			fmt.Println("error in execute message:", this.Results[i].EvmResult.Err.Error())
+		if this.Results[i].EvmResult.Err != nil || this.Results[i].Receipt.Status != 1 {
+			if this.Results[i].EvmResult.Err != nil {
+				fmt.Println("error in execute message:", this.Results[i].EvmResult.Err.Error())
+			}
+			fmt.Println("error in execute message:", this.Results[i].Receipt.Status)
 		}
 
 		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
 		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict())                                          // The tx may generate new aux data, so merge it into the main api router.
+		// break
 	}
 
 	// Get acumulated state access records from all the transactions in the sequence.

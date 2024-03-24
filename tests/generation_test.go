@@ -21,7 +21,7 @@ package tests
 // 	store := storage.NewHybirdStore()
 // 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 // 		return cache.NewWriteCache(store, 32, 1)
-// 	}, func(cache *cache.WriteCache) { cache.Reset() }))
+// 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 // 	currentPath, _ := os.Getwd()
 // 	code, err := compiler.CompileContracts(path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/"), "examples/visit-counter/VisitCounter.sol", "0.8.19", "VisitCounter", true)

@@ -42,7 +42,7 @@ func GenRandomAccounts(num int) []ethcommon.Address {
 type TestEu struct {
 	eu          *eu.EU
 	config      *execution.Config
-	db          ccurlintf.Datastore
+	store       ccurlintf.Datastore
 	committer   *concurrenturl.StateCommitter
 	transitions []*univalue.Univalue
 }

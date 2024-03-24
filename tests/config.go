@@ -76,7 +76,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Reset() }))
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -96,7 +96,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	api = apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Reset() }))
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb = eth.NewImplStateDB(api)
 
@@ -108,12 +108,19 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	return &TestEu{
 		eu:          eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api),
 		config:      config,
-		db:          datastore,
+		store:       datastore,
 		committer:   committer,
 		transitions: transitions,
 	}
-	// return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api), config, datastore, committer, transitions
 }
+
+// func CreateNewEu(oinbase evmcommon.Address, blockNum uint64) *eu.EU {
+// 	config := MainTestConfig()
+// 	config.Coinbase = &Coinbase
+// 	config.BlockNumber = new(big.Int).SetUint64(blockNum)
+// 	config.Time = new(big.Int).SetUint64(10000000)
+// 	return eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
+// }
 
 func ConfigChain(coinbase evmcommon.Address, blockNum uint64) {
 	config := MainTestConfig()
@@ -189,13 +196,13 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	}
 
 	contractAddress := receipt.ContractAddress
-	testEu.committer = concurrenturl.NewStorageCommitter(testEu.db)
+	testEu.committer = concurrenturl.NewStorageCommitter(testEu.store)
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)
 	testEu.eu.Api().WriteCache().(interface{ Reset() }).Reset()
 
-	return testEu.eu, &contractAddress, testEu.db, evmcommon.Hex2Bytes(code), nil
+	return testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
 
 func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.Datastore, amount uint64) (*core.ExecutionResult, error) {
@@ -207,7 +214,7 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	// localCache := cache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Reset() }))
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb := eth.NewImplStateDB(api)
 	eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
