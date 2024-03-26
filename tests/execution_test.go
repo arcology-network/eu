@@ -29,7 +29,6 @@ import (
 	execution "github.com/arcology-network/eu"
 	"github.com/arcology-network/eu/cache"
 	"github.com/arcology-network/evm-adaptor/compiler"
-	stgcomm "github.com/arcology-network/storage-committer"
 	"github.com/arcology-network/storage-committer/importer"
 	"github.com/arcology-network/storage-committer/univalue"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -161,20 +160,17 @@ func TestGeneration(t *testing.T) {
 
 	// // ================================== Commit to DB  ==================================
 	acctTrans := univalue.Univalues(clearTransitions).To(importer.IPTransition{})
-	committer := stgcomm.NewStorageCommitter(testEu.store)
-	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
-		return v.GetTx()
-	})
-	committer.Import(acctTrans).Precommit(txs)
-	committer.Commit(0)
-	committer.Clear()
+	// committer := stgcomm.NewStorageCommitter(testEu.store)
+	// txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
+	// 	return v.GetTx()
+	// })
+	// committer.Import(acctTrans).Precommit(txs)
+	// committer.Commit(0)
+	// committer.Clear()
 
-	// writeCache := testEu.eu.Api().WriteCache().(*cache.WriteCache)
-	// writeCache.Clear()
-	// writeCache.Insert(acctTrans)
-	// check where the state data is coming from
-
-	// v := nativeSeq.ApiRouter.WriteCache().(*cache.WriteCache).ReadOnlyDataStore()
+	writeCache := testEu.eu.Api().WriteCache().(*cache.WriteCache)
+	writeCache.Clear()
+	writeCache.Insert(acctTrans)
 
 	msgNativeCheck2 := core.NewMessage(Alice, &contractNativeStorageAddr, 3, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
 	// msgSequentialCheck2 := core.NewMessage(Alice, &contractSequentialAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
@@ -182,4 +178,18 @@ func TestGeneration(t *testing.T) {
 	seq := execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&msgNativeCheck2), [32]byte{}, testEu.eu.Api())
 	_2ndGen := eu.NewGeneration(0, 2, []*execution.JobSequence{seq})
 	_2ndGen.Execute(testEu.config, testEu.eu.Api())
+
+	// Add again
+	addMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("call2()"))[:4], nil, false)
+	seq = execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&addMsg), [32]byte{}, testEu.eu.Api())
+	clearTransitions = eu.NewGeneration(0, 2, []*execution.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
+	acctTrans = univalue.Univalues(clearTransitions).To(importer.IPTransition{})
+
+	writeCache = testEu.eu.Api().WriteCache().(*cache.WriteCache)
+	writeCache.Clear()
+	writeCache.Insert(acctTrans)
+
+	checkMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 5, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check3()"))[:4], nil, false)
+	seq = execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&checkMsg), [32]byte{}, testEu.eu.Api())
+	eu.NewGeneration(0, 2, []*execution.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
 }

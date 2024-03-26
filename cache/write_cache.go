@@ -117,7 +117,7 @@ func (this *WriteCache) SetReadOnlyDataStore(store intf.ReadOnlyDataStore) *Writ
 }
 
 func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.store }
-func (this *WriteCache) Cache() map[string]*univalue.Univalue      { return this.kvDict }
+func (this *WriteCache) Cache() *map[string]*univalue.Univalue     { return &this.kvDict }
 func (this *WriteCache) MinSize() int                              { return this.uniPool.MinSize() }
 func (this *WriteCache) NewUnivalue() *univalue.Univalue           { return this.uniPool.New() }
 

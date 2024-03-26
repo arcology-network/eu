@@ -181,7 +181,7 @@ func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *adapt
 // CalcualteRefund calculates the refund amount for the JobSequence.
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
-	for _, v := range this.ApiRouter.WriteCache().(*cache.WriteCache).Cache() {
+	for _, v := range *this.ApiRouter.WriteCache().(*cache.WriteCache).Cache() {
 		typed := v.Value().(ccurlintf.Type)
 		amount += common.IfThen(
 			!v.Preexist(),
