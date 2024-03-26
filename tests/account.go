@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	eu "github.com/arcology-network/eu"
-	execution "github.com/arcology-network/eu/execution"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	concurrenturl "github.com/arcology-network/storage-committer"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -41,7 +41,7 @@ func GenRandomAccounts(num int) []ethcommon.Address {
 
 type TestEu struct {
 	eu          *eu.EU
-	config      *execution.Config
+	config      *adaptorcommon.Config
 	store       ccurlintf.Datastore
 	committer   *concurrenturl.StateCommitter
 	transitions []*univalue.Univalue

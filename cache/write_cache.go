@@ -229,7 +229,7 @@ func (this *WriteCache) IfExists(path string) bool {
 
 // The function is used to add the transitions to the writecache, which usually comes from
 // the child writecaches. It usually happens with the sub processeses are completed.
-func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
+func (this *WriteCache) Insert(transitions []*univalue.Univalue) {
 	if len(transitions) == 0 {
 		return
 	}

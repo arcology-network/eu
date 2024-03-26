@@ -12,6 +12,7 @@ import (
 	cache "github.com/arcology-network/eu/cache"
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/execution"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	eth "github.com/arcology-network/evm-adaptor/eth"
 	intf "github.com/arcology-network/evm-adaptor/interface"
 	"github.com/arcology-network/storage-committer/commutative"
@@ -93,7 +94,7 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
 // Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
 // case there is a contract deployment in the sequence.
-func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
+func (this *JobSequence) Run(config *adaptorcommon.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
 	this.ApiRouter = mainApi.Cascade()
 
@@ -109,8 +110,8 @@ func (this *JobSequence) Run(config *execution.Config, mainApi intf.EthApiRouter
 			fmt.Println("error in execute message:", this.Results[i].Receipt.Status)
 		}
 
-		this.ApiRouter.WriteCache().(*cache.WriteCache).AddTransitions(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
-		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict())                                          // The tx may generate new aux data, so merge it into the main api router.
+		this.ApiRouter.WriteCache().(*cache.WriteCache).Insert(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
+		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict())                                  // The tx may generate new aux data, so merge it into the main api router.
 		// break
 	}
 
@@ -146,7 +147,7 @@ func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
 }
 
 // execute executes a standard message and returns the result.
-func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *execution.Config, api intf.EthApiRouter) *execution.Result {
+func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *adaptorcommon.Config, api intf.EthApiRouter) *execution.Result {
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(StdMsg.TxHash, [32]byte{}, uint32(StdMsg.ID))
 
@@ -160,8 +161,8 @@ func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *execu
 	receipt, evmResult, prechkErr :=
 		eu.Run(
 			StdMsg,
-			execution.NewEVMBlockContext(config),
-			execution.NewEVMTxContext(*StdMsg.Native),
+			adaptorcommon.NewEVMBlockContext(config),
+			adaptorcommon.NewEVMTxContext(*StdMsg.Native),
 		)
 
 	return (&execution.Result{

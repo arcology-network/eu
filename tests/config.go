@@ -13,9 +13,9 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 	concurrenturl "github.com/arcology-network/storage-committer"
 	"github.com/arcology-network/storage-committer/commutative"
+	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/storage"
-	stgcommstorage "github.com/arcology-network/storage-committer/storage"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -27,8 +27,8 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	eu "github.com/arcology-network/eu"
-	execution "github.com/arcology-network/eu/execution"
 	apihandler "github.com/arcology-network/evm-adaptor/apihandler"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	"github.com/arcology-network/evm-adaptor/compiler"
 	"github.com/arcology-network/evm-adaptor/eth"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
@@ -40,13 +40,13 @@ const (
 )
 
 var (
-	encoder = stgcommstorage.Rlp{}.Encode
-	decoder = stgcommstorage.Rlp{}.Decode
+	encoder = ethstg.Rlp{}.Encode
+	decoder = ethstg.Rlp{}.Decode
 )
 
-func MainTestConfig() *execution.Config {
+func MainTestConfig() *adaptorcommon.Config {
 	vmConfig := vm.Config{}
-	cfg := &execution.Config{
+	cfg := &adaptorcommon.Config{
 		ChainConfig: params.MainnetChainConfig,
 		VMConfig:    &vmConfig,
 		BlockNumber: big.NewInt(0),
@@ -56,20 +56,19 @@ func MainTestConfig() *execution.Config {
 		GasLimit:    math.MaxUint64, // Should come from the message
 		Difficulty:  big.NewInt(0),
 	}
-	cfg.Chain = new(execution.DummyChain)
+	cfg.Chain = new(adaptorcommon.DummyChain)
 	return cfg
 }
 
 // Choose which data source to use
 func chooseDataStore() ccurlintf.Datastore {
-	// return stgcommstorage.NewParallelEthMemDataStore() // Eth trie datastore
+	// return ethstg.NewParallelEthMemDataStore() // Eth trie datastore
 	return storage.NewHybirdStore() // Eth trie datastore
-	// return stgcommstorage.NewLevelDBDataStore("./leveldb") // Eth trie datastore
+	// return ethstg.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
 }
 
-// func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) (*eu.EU, *execution.Config, ccurlintf.Datastore, *concurrenturl.StateCommitter, []*univalue.Univalue) {
 func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *TestEu {
 	datastore := chooseDataStore()
 	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
@@ -186,8 +185,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 
 	testEu := NewTestEU(Coinbase, Alice, Bob)
 
-	receipt, execResult, err := testEu.eu.Run(StdMsg, execution.NewEVMBlockContext(testEu.config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
-	// _, transitions := eu.Api().WriteCacheFilter().ByType()
+	receipt, execResult, err := testEu.eu.Run(StdMsg, adaptorcommon.NewEVMBlockContext(testEu.config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
 	// fmt.Print(v)
@@ -200,7 +198,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)
-	testEu.eu.Api().WriteCache().(interface{ Reset() }).Reset()
+	testEu.eu.Api().WriteCache().(interface{ Clear() }).Clear()
 
 	return testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
@@ -228,7 +226,7 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err := executor.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err := executor.Run(StdMsg, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	if err != nil {
 		return execResult, err
 	}
@@ -243,41 +241,7 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	return execResult, nil
 }
 
-// func AliceCall(eu *execution.EU, contractAddress evmcommon.Address, funcName string, committer *concurrenturl.StorageCommitter ) error {
-// 	api := eu.NewAPIHandler(committer)
-// 	eu.SetApi(api)
-
-// 	data := crypto.Keccak256([]byte(funcName))[:4]
-// 	msg := core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
-// 	StdMsg := &execution.StandardMessage{
-// 		ID:     1,
-// 		TxHash: [32]byte{1, 1, 1},
-// 		Native: &msg, // Build the message
-// 		Source: commontypes.TX_SOURCE_LOCAL,
-// 	}
-
-// 	config := MainTestConfig()
-// 	config.Coinbase = &Coinbase
-// 	config.BlockNumber = new(big.Int).SetUint64(10000000)
-// 	config.Time = new(big.Int).SetUint64(10000000)
-// 	receipt, execResult, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
-// 	// _, transitions : eu.Api().WriteCacheFilter().ByType()
-
-// 	if err != nil {
-// 		return (err)
-// 	}
-
-// 	if execResult != nil && execResult.Err != nil {
-// 		return (execResult.Err)
-// 	}
-
-// 	if receipt.Status != 1 || err != nil {
-// 		return errors.New("Error: Failed to call!!!")
-// 	}
-// 	return nil
-// }
-
-func DepolyContract(eu *eu.EU, committer *concurrenturl.StateCommitter, config *execution.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *execution.Config, *eu.EU, *evmcoretypes.Receipt) {
+func DepolyContract(eu *eu.EU, committer *concurrenturl.StateCommitter, config *adaptorcommon.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *adaptorcommon.Config, *eu.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	StdMsg := &eucommon.StandardMessage{
 		ID:     1,
@@ -286,7 +250,7 @@ func DepolyContract(eu *eu.EU, committer *concurrenturl.StateCommitter, config *
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, _, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, _, err := eu.Run(StdMsg, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 
 	if err != nil || receipt.Status != 1 {
 		errmsg := ""
@@ -322,11 +286,11 @@ func CallContract(eu *eu.EU, contractAddress common.Address, inputData []byte, n
 	config.Time = new(big.Int).SetUint64(10000000)
 
 	var execResult *evmcore.ExecutionResult
-	receipt, execResult, err := eu.Run(StdMsg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err := eu.Run(StdMsg, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
 	// msg = core.NewMessage(Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
-	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
+	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(msg))
 	// _, transitions = eu.Api().WriteCacheFilter().ByType()
 
 	if err != nil {
