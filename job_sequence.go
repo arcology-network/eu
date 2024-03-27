@@ -32,14 +32,14 @@ type JobSequence struct {
 	PreTxs       []uint32 ``
 	StdMsgs      []*eucommon.StandardMessage
 	Results      []*execution.Result
-	ApiRouter    intf.EthApiRouter
+	SeqAPI       intf.EthApiRouter
 	RecordBuffer []*univalue.Univalue
 }
 
 func NewJobSequence(seqID uint32, tx []uint64, evmMsgs []*evmcore.Message, txHash [32]byte, api intf.EthApiRouter) *JobSequence {
 	newJobSeq := &JobSequence{
-		ID:        seqID,
-		ApiRouter: api,
+		ID:     seqID,
+		SeqAPI: api,
 	}
 
 	for i, evmMsg := range evmMsgs {
@@ -57,8 +57,8 @@ func (*JobSequence) T() *JobSequence { return &JobSequence{} }
 // New creates a new JobSequence with the given ID and API router.
 func (*JobSequence) New(id uint32, apiRouter intf.EthApiRouter) *JobSequence {
 	return &JobSequence{
-		ID:        id,
-		ApiRouter: apiRouter,
+		ID:     id,
+		SeqAPI: apiRouter,
 	}
 }
 
@@ -94,15 +94,15 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
 // Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
 // case there is a contract deployment in the sequence.
-func (this *JobSequence) Run(config *adaptorcommon.Config, mainApi intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
+func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
-	this.ApiRouter = mainApi.Cascade()
+	this.SeqAPI = blockAPI.Cascade() // Create a new write cache for the sequence with the main router as the data source.
 
 	for i, msg := range this.StdMsgs {
-		tempApi := this.ApiRouter.Cascade() // A new router whose writeCache uses the parent APIHandler's writeCache as the data source.
-		tempApi.DecrementDepth()            // The api router always increments the depth.  So we need to decrement it here.
+		txApi := this.SeqAPI.Cascade() // A new router whose writeCache uses the parent APIHandler's writeCache as the data source.
+		txApi.DecrementDepth()         // The api router always increments the depth.  So we need to decrement it here.
 
-		this.Results[i] = this.execute(msg, config, tempApi) // Execute the message and store the result.
+		this.Results[i] = this.execute(msg, config, txApi) // Execute the message and store the result.
 		if this.Results[i].EvmResult.Err != nil || this.Results[i].Receipt.Status != 1 {
 			if this.Results[i].EvmResult.Err != nil {
 				fmt.Println("error in execute message:", this.Results[i].EvmResult.Err.Error())
@@ -110,20 +110,20 @@ func (this *JobSequence) Run(config *adaptorcommon.Config, mainApi intf.EthApiRo
 			fmt.Println("error in execute message:", this.Results[i].Receipt.Status)
 		}
 
-		this.ApiRouter.WriteCache().(*cache.WriteCache).Insert(this.Results[i].RawStateAccesses) // Merge the tempApi write cache back into the api router.
-		mapi.Merge(tempApi.AuxDict(), this.ApiRouter.AuxDict())                                  // The tx may generate new aux data, so merge it into the main api router.
+		this.SeqAPI.WriteCache().(*cache.WriteCache).Insert(this.Results[i].RawStateAccesses) // Merge the txApi write cache back into the api router.
+		mapi.Merge(txApi.AuxDict(), this.SeqAPI.AuxDict())                                    // The tx may generate new aux data, so merge it into the main api router.
 		// break
 	}
 
 	// Get acumulated state access records from all the transactions in the sequence.
-	accmulatedAccessRecords := univalue.Univalues(this.ApiRouter.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
+	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
 	return slice.Fill(make([]uint32, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 	if idx, _ := slice.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
-		return this.ApiRouter.WriteCache().(*cache.WriteCache).Export()
+		return this.SeqAPI.WriteCache().(*cache.WriteCache).Export()
 	}
 
 	trans := slice.Concate(this.Results,
@@ -181,7 +181,7 @@ func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *adapt
 // CalcualteRefund calculates the refund amount for the JobSequence.
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
-	for _, v := range *this.ApiRouter.WriteCache().(*cache.WriteCache).Cache() {
+	for _, v := range *this.SeqAPI.WriteCache().(*cache.WriteCache).Cache() {
 		typed := v.Value().(ccurlintf.Type)
 		amount += common.IfThen(
 			!v.Preexist(),

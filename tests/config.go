@@ -198,7 +198,8 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)
-	testEu.eu.Api().WriteCache().(interface{ Clear() }).Clear()
+
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
 
 	return testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
