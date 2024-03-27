@@ -5,8 +5,8 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/eu/execution"
 	scheduler "github.com/arcology-network/eu/new-scheduler"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	intf "github.com/arcology-network/evm-adaptor/interface"
 	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
@@ -91,31 +91,36 @@ func (this *Generation) Add(job *JobSequence) bool {
 // don't want to cause any conflict. That is why we need to give different nonceOffset to different child threads, so they can deploy
 // their contracts at different addresses.
 
-func (this *Generation) Execute(parentApiRouter intf.EthApiRouter) []*univalue.Univalue {
-	config := execution.NewConfig().SetCoinbase(parentApiRouter.Coinbase())
+func (this *Generation) Execute(execCoinbase interface{}, parentApiRouter intf.EthApiRouter) []*univalue.Univalue {
+	config := execCoinbase.(*adaptorcommon.Config)
 
-	groupIDs := make([][]uint32, len(this.jobSeqs))
+	seqIDs := make([][]uint32, len(this.jobSeqs))
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))
 
-	// Execute the job sequences in parallel
+	// Execute the job sequences in parallel. All the access records from the same sequence share
+	// the same sequence ID. The sequence ID is used to detect the conflicts between different sequences.
 	slice.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
-		groupIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter, uint64(i+1))
+		seqIDs[i], records[i] = this.jobSeqs[i].Run(config, parentApiRouter, uint64(i))
 	})
 
-	txDict, groupDict, _ := this.Detect(groupIDs, records).ToDict()
-	return slice.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
-		if _, ok := groupDict[(*seq).ID]; ok {
+	// Detect the conflicts between different sequences.
+	txDict, seqDict, _ := this.Detect(seqIDs, records).ToDict()
+
+	// Mark the conflicts in the job sequences.
+	trans := slice.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
+		if _, ok := seqDict[(*seq).ID]; ok {
 			(*seq).FlagConflict(txDict, errors.New(ccurlcommon.WARN_ACCESS_CONFLICT))
 		}
-		return (*seq).GetClearedTransition()
+		return (*seq).GetClearedTransition() // Return the conflict-free transitions
 	})
+	return trans
 }
 
-func (*Generation) Detect(groupIDs [][]uint32, records [][]*univalue.Univalue) arbitrator.Conflicts {
+func (*Generation) Detect(seqIDs [][]uint32, records [][]*univalue.Univalue) arbitrator.Conflicts {
 	if len(records) == 1 {
 		return arbitrator.Conflicts{}
 	}
-	return arbitrator.Conflicts((&arbitrator.Arbitrator{}).Detect(slice.Flatten(groupIDs), slice.Flatten(records)))
+	return arbitrator.Conflicts((&arbitrator.Arbitrator{}).Detect(slice.Flatten(seqIDs), slice.Flatten(records)))
 }
 
 func (this *Generation) Clear() uint64 {

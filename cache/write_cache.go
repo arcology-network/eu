@@ -117,7 +117,7 @@ func (this *WriteCache) SetReadOnlyDataStore(store intf.ReadOnlyDataStore) *Writ
 }
 
 func (this *WriteCache) ReadOnlyDataStore() intf.ReadOnlyDataStore { return this.store }
-func (this *WriteCache) Cache() map[string]*univalue.Univalue      { return this.kvDict }
+func (this *WriteCache) Cache() *map[string]*univalue.Univalue     { return &this.kvDict }
 func (this *WriteCache) MinSize() int                              { return this.uniPool.MinSize() }
 func (this *WriteCache) NewUnivalue() *univalue.Univalue           { return this.uniPool.New() }
 
@@ -229,7 +229,7 @@ func (this *WriteCache) IfExists(path string) bool {
 
 // The function is used to add the transitions to the writecache, which usually comes from
 // the child writecaches. It usually happens with the sub processeses are completed.
-func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
+func (this *WriteCache) Insert(transitions []*univalue.Univalue) {
 	if len(transitions) == 0 {
 		return
 	}
@@ -260,7 +260,7 @@ func (this *WriteCache) AddTransitions(transitions []*univalue.Univalue) {
 }
 
 // Reset the writecache to the initial state for the next round of processing.
-func (this *WriteCache) Reset() {
+func (this *WriteCache) Clear() {
 	if clear(this.buffer); cap(this.buffer) > 3*this.uniPool.MinSize() {
 		this.buffer = make([]*univalue.Univalue, 0, this.uniPool.MinSize())
 	}
@@ -332,7 +332,7 @@ func (this *WriteCache) KVs() ([]string, []intf.Type) {
 // including the conflict detection.
 //
 // It's mainly used for TESTING purpose.
-func (this *WriteCache) FlushToEthStore(store interfaces.Datastore) interfaces.Datastore {
+func (this *WriteCache) FlushToStore(store interfaces.Datastore) interfaces.Datastore {
 	acctTrans := univalue.Univalues(slice.Clone(this.Export(importer.Sorter))).To(importer.IPTransition{})
 	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
 		return v.GetTx()
@@ -342,7 +342,6 @@ func (this *WriteCache) FlushToEthStore(store interfaces.Datastore) interfaces.D
 	committer.Import(acctTrans)
 	committer.Precommit(txs) // Write all the transitions to the store
 	committer.Commit(0)
-	this.Reset()
-
+	this.Clear()
 	return store
 }

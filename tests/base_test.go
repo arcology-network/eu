@@ -10,7 +10,7 @@ import (
 	commontypes "github.com/arcology-network/common-lib/types"
 	"github.com/arcology-network/eu/cache"
 	eucommon "github.com/arcology-network/eu/common"
-	"github.com/arcology-network/eu/execution"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	"github.com/arcology-network/evm-adaptor/compiler"
 	stgcomm "github.com/arcology-network/storage-committer"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -39,7 +39,7 @@ func TestBaseContainer(t *testing.T) {
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err := testEu.eu.Run(StdMsg, execution.NewEVMBlockContext(testEu.config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err := testEu.eu.Run(StdMsg, adaptorcommon.NewEVMBlockContext(testEu.config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
@@ -55,7 +55,7 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	contractAddress := receipt.ContractAddress
-	testEu.committer = stgcomm.NewStorageCommitter(testEu.db)
+	testEu.committer = stgcomm.NewStorageCommitter(testEu.store)
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)
@@ -76,7 +76,7 @@ func TestBaseContainer(t *testing.T) {
 		Source: commontypes.TX_SOURCE_LOCAL,
 	}
 
-	receipt, execResult, err = testEu.eu.Run(StdMsg, execution.NewEVMBlockContext(testEu.config), execution.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err = testEu.eu.Run(StdMsg, adaptorcommon.NewEVMBlockContext(testEu.config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions = eu.Api().WriteCacheFilter().ByType()
 	_, transitions = cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 

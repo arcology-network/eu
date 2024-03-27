@@ -40,7 +40,7 @@ func NewWriteCacheFilter(writeCache interface{}) *WriteCacheFilter {
 }
 
 func (this *WriteCacheFilter) ToBuffer() []*univalue.Univalue {
-	return mapi.Values(this.WriteCache.Cache())
+	return mapi.Values(*this.WriteCache.Cache())
 }
 
 func (this *WriteCacheFilter) RemoveByAddress(addr string) {
