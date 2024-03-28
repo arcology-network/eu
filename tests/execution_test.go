@@ -160,7 +160,7 @@ func TestGeneration(t *testing.T) {
 
 	// // ================================== Commit to DB  ==================================
 	acctTrans := univalue.Univalues(clearTransitions).To(importer.IPTransition{})
-	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear().Insert(acctTrans)
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Insert(acctTrans)
 
 	msgNativeCheck2 := core.NewMessage(Alice, &contractNativeStorageAddr, 3, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
 	// msgSequentialCheck2 := core.NewMessage(Alice, &contractSequentialAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
