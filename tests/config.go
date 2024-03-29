@@ -13,9 +13,9 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 	concurrenturl "github.com/arcology-network/storage-committer"
 	"github.com/arcology-network/storage-committer/commutative"
-	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/storage"
+	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	storage "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -63,7 +63,7 @@ func MainTestConfig() *adaptorcommon.Config {
 // Choose which data source to use
 func chooseDataStore() ccurlintf.Datastore {
 	// return ethstg.NewParallelEthMemDataStore() // Eth trie datastore
-	return storage.NewHybirdStore() // Eth trie datastore
+	return storage.NewStoreProxy() // Eth trie datastore
 	// return ethstg.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)

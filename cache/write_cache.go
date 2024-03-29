@@ -261,6 +261,12 @@ func (this *WriteCache) Insert(transitions []*univalue.Univalue) *WriteCache {
 }
 
 // Reset the writecache to the initial state for the next round of processing.
+func (this *WriteCache) Precommit(args ...interface{}) [32]byte {
+	this.Insert(args[0].([]*univalue.Univalue))
+	return [32]byte{}
+}
+
+// Reset the writecache to the initial state for the next round of processing.
 func (this *WriteCache) Clear() *WriteCache {
 	if clear(this.buffer); cap(this.buffer) > 3*this.uniPool.MinSize() {
 		this.buffer = make([]*univalue.Univalue, 0, this.uniPool.MinSize())
