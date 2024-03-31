@@ -3,6 +3,7 @@ package cache
 import (
 	common "github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/storage-committer/interfaces"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 )
 
@@ -27,7 +28,7 @@ func (Fee) Reader(v interface{}) uint64 { // Call this before setting the value 
 	)
 }
 
-func (Fee) Writer(key string, v interface{}, writecache *WriteCache) int64 { // May get refunds sometimes
+func (Fee) Writer(key string, v interface{}, writecache *cache.WriteCache) int64 { // May get refunds sometimes
 	committedSize := uint64(0)
 	committedv, _ := writecache.ReadOnlyDataStore().Retrive(key, v)
 

@@ -7,11 +7,11 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/mempool"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/eu/cache"
 	concurrenturl "github.com/arcology-network/storage-committer"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/noncommutative"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
 	apihandler "github.com/arcology-network/evm-adaptor/apihandler"

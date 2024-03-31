@@ -27,9 +27,10 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	eu "github.com/arcology-network/eu"
 	execution "github.com/arcology-network/eu"
-	"github.com/arcology-network/eu/cache"
 	"github.com/arcology-network/evm-adaptor/compiler"
 	"github.com/arcology-network/storage-committer/importer"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	tests "github.com/arcology-network/storage-committer/tests"
 	"github.com/arcology-network/storage-committer/univalue"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -55,7 +56,7 @@ func TestSequence(t *testing.T) {
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Results[0].Receipt.ContractAddress
 
-	seq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	tests.FlushToStore(seq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
 	// acctTrans := univalue.Univalues(slice.Clone(accesses)).To(importer.IPTransition{})
 	// committer := stgcomm.NewStorageCommitter(testEu.store)
 	// committer.Import(acctTrans).Precommit([]uint32{1})
@@ -93,8 +94,8 @@ func TestSequence2(t *testing.T) {
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Results[0].Receipt.ContractAddress
 
-	seq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
-
+	// seq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	tests.FlushToStore(seq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
 	// // Prepare the messages for the contract calls
 	data := crypto.Keccak256([]byte("add()"))[:4]
 	msgCallAdd1 := core.NewMessage(Alice, &contractAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
@@ -141,7 +142,8 @@ func TestGeneration(t *testing.T) {
 	// 	t.Error("Error: The sequence and generation transitions are not equal")
 	// }
 
-	_0thSeq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	// _0thSeq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	tests.FlushToStore(_0thSeq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
 
 	// ================================== 1st contract Call  ==================================
 	contractNativeStorageAddr := _0thSeq.Results[0].Receipt.ContractAddress
