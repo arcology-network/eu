@@ -27,9 +27,10 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	eu "github.com/arcology-network/eu"
 	execution "github.com/arcology-network/eu"
-	"github.com/arcology-network/eu/cache"
 	"github.com/arcology-network/evm-adaptor/compiler"
 	"github.com/arcology-network/storage-committer/importer"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	tests "github.com/arcology-network/storage-committer/tests"
 	"github.com/arcology-network/storage-committer/univalue"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -55,7 +56,7 @@ func TestSequence(t *testing.T) {
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Results[0].Receipt.ContractAddress
 
-	seq.ApiRouter.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	tests.FlushToStore(seq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
 	// acctTrans := univalue.Univalues(slice.Clone(accesses)).To(importer.IPTransition{})
 	// committer := stgcomm.NewStorageCommitter(testEu.store)
 	// committer.Import(acctTrans).Precommit([]uint32{1})
@@ -93,8 +94,8 @@ func TestSequence2(t *testing.T) {
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Results[0].Receipt.ContractAddress
 
-	seq.ApiRouter.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
-
+	// seq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	tests.FlushToStore(seq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
 	// // Prepare the messages for the contract calls
 	data := crypto.Keccak256([]byte("add()"))[:4]
 	msgCallAdd1 := core.NewMessage(Alice, &contractAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
@@ -141,7 +142,8 @@ func TestGeneration(t *testing.T) {
 	// 	t.Error("Error: The sequence and generation transitions are not equal")
 	// }
 
-	_0thSeq.ApiRouter.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	// _0thSeq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	tests.FlushToStore(_0thSeq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
 
 	// ================================== 1st contract Call  ==================================
 	contractNativeStorageAddr := _0thSeq.Results[0].Receipt.ContractAddress
@@ -160,17 +162,7 @@ func TestGeneration(t *testing.T) {
 
 	// // ================================== Commit to DB  ==================================
 	acctTrans := univalue.Univalues(clearTransitions).To(importer.IPTransition{})
-	// committer := stgcomm.NewStorageCommitter(testEu.store)
-	// txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
-	// 	return v.GetTx()
-	// })
-	// committer.Import(acctTrans).Precommit(txs)
-	// committer.Commit(0)
-	// committer.Clear()
-
-	writeCache := testEu.eu.Api().WriteCache().(*cache.WriteCache)
-	writeCache.Clear()
-	writeCache.Insert(acctTrans)
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Insert(acctTrans)
 
 	msgNativeCheck2 := core.NewMessage(Alice, &contractNativeStorageAddr, 3, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
 	// msgSequentialCheck2 := core.NewMessage(Alice, &contractSequentialAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
@@ -185,9 +177,7 @@ func TestGeneration(t *testing.T) {
 	clearTransitions = eu.NewGeneration(0, 2, []*execution.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
 	acctTrans = univalue.Univalues(clearTransitions).To(importer.IPTransition{})
 
-	writeCache = testEu.eu.Api().WriteCache().(*cache.WriteCache)
-	writeCache.Clear()
-	writeCache.Insert(acctTrans)
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear().Insert(acctTrans)
 
 	checkMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 5, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check3()"))[:4], nil, false)
 	seq = execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&checkMsg), [32]byte{}, testEu.eu.Api())

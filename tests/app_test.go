@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// Will produce a couple of errors when calling Vote() because two voters have delegated their votes to the another voter already.
+// This is expected behavior.
 func TestParaVote(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")

@@ -9,13 +9,13 @@ import (
 	commonlibcommon "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/mempool"
 	commontypes "github.com/arcology-network/common-lib/types"
-	"github.com/arcology-network/eu/cache"
 	eucommon "github.com/arcology-network/eu/common"
 	concurrenturl "github.com/arcology-network/storage-committer"
 	"github.com/arcology-network/storage-committer/commutative"
-	ethstg "github.com/arcology-network/storage-committer/ethstorage"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/storage"
+	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	storage "github.com/arcology-network/storage-committer/storage/proxy"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -30,7 +30,7 @@ import (
 	apihandler "github.com/arcology-network/evm-adaptor/apihandler"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	"github.com/arcology-network/evm-adaptor/compiler"
-	"github.com/arcology-network/evm-adaptor/eth"
+	ethimpl "github.com/arcology-network/evm-adaptor/eth"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
 )
 
@@ -63,7 +63,7 @@ func MainTestConfig() *adaptorcommon.Config {
 // Choose which data source to use
 func chooseDataStore() ccurlintf.Datastore {
 	// return ethstg.NewParallelEthMemDataStore() // Eth trie datastore
-	return storage.NewHybirdStore() // Eth trie datastore
+	return storage.NewStoreProxy() // Eth trie datastore
 	// return ethstg.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
@@ -77,7 +77,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 		return cache.NewWriteCache(datastore, 32, 1)
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
-	statedb := eth.NewImplStateDB(api)
+	statedb := ethimpl.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
 	statedb.CreateAccount(Coinbase)
 
@@ -97,7 +97,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 		return cache.NewWriteCache(datastore, 32, 1)
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
-	statedb = eth.NewImplStateDB(api)
+	statedb = ethimpl.NewImplStateDB(api)
 
 	config := MainTestConfig()
 	config.Coinbase = &Coinbase
@@ -198,7 +198,8 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)
-	testEu.eu.Api().WriteCache().(interface{ Clear() }).Clear()
+
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
 
 	return testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
@@ -214,7 +215,7 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 		return cache.NewWriteCache(datastore, 32, 1)
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
-	statedb := eth.NewImplStateDB(api)
+	statedb := ethimpl.NewImplStateDB(api)
 	eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
 
 	data := crypto.Keccak256([]byte(funcName))[:4]

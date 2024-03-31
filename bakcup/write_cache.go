@@ -229,9 +229,9 @@ func (this *WriteCache) IfExists(path string) bool {
 
 // The function is used to add the transitions to the writecache, which usually comes from
 // the child writecaches. It usually happens with the sub processeses are completed.
-func (this *WriteCache) Insert(transitions []*univalue.Univalue) {
+func (this *WriteCache) Insert(transitions []*univalue.Univalue) *WriteCache {
 	if len(transitions) == 0 {
-		return
+		return this
 	}
 
 	// Filter out the path creations transitions as they will be treated differently.
@@ -257,15 +257,23 @@ func (this *WriteCache) Insert(transitions []*univalue.Univalue) {
 	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) {
 		(*v).CopyTo(this)
 	})
+	return this
 }
 
 // Reset the writecache to the initial state for the next round of processing.
-func (this *WriteCache) Clear() {
+func (this *WriteCache) Precommit(args ...interface{}) [32]byte {
+	this.Insert(args[0].([]*univalue.Univalue))
+	return [32]byte{}
+}
+
+// Reset the writecache to the initial state for the next round of processing.
+func (this *WriteCache) Clear() *WriteCache {
 	if clear(this.buffer); cap(this.buffer) > 3*this.uniPool.MinSize() {
 		this.buffer = make([]*univalue.Univalue, 0, this.uniPool.MinSize())
 	}
 	this.uniPool.Reset()
 	clear(this.kvDict)
+	return this
 }
 
 func (this *WriteCache) Equal(other *WriteCache) bool {

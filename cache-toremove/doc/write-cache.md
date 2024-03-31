@@ -5,6 +5,9 @@
     - [2.1. Block Cache](#21-block-cache)
     - [2.2. Sequence Cache](#22-sequence-cache)
     - [2.3. Transaction Cache](#23-transaction-cache)
+  - [State Commmiter](#state-commmiter)
+    - [Indexer](#indexer)
+  - [Deployment](#deployment)
 
 ## 1. Introduction
 
@@ -36,3 +39,14 @@ When a sequence starts, a new empty cache is created, with the block cache as it
 ### 2.3. Transaction Cache
 
 The transaction cache is the third-level cache in the system. Its read-only data source is the sequence cache. This cache is used to store the data that is written by a transaction. Before a transaction is executed, a transaction cache is created by linking the sequence cache as its read-only data source. The transaction only writes to this cache. When the transaction is completed, the cache is merged back to the sequence cache, so the updated state is available for the next transaction in the sequence.
+
+
+## State Commmiter
+
+The state commmiter is a module that is responsible for committing the state changes to any storage that implements the state DB interface.
+
+### Indexer
+
+The state Committer mainly consists of a number of indexers that are responsible for indexing the incoming state changes. 
+
+## Deployment
