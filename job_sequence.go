@@ -14,15 +14,14 @@ import (
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	eth "github.com/arcology-network/evm-adaptor/eth"
 	intf "github.com/arcology-network/evm-adaptor/interface"
+	indexer "github.com/arcology-network/storage-committer/committer"
 	"github.com/arcology-network/storage-committer/commutative"
-	indexer "github.com/arcology-network/storage-committer/importer"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
-	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 )
 
@@ -181,14 +180,14 @@ func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *adapt
 // CalcualteRefund calculates the refund amount for the JobSequence.
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
-	for _, v := range *this.SeqAPI.WriteCache().(*cache.WriteCache).Cache() {
-		typed := v.Value().(ccurlintf.Type)
-		amount += common.IfThen(
-			!v.Preexist(),
-			(uint64(typed.Size())/32)*uint64(v.Writes())*ethparams.SstoreSetGas,
-			(uint64(typed.Size())/32)*uint64(v.Writes()),
-		)
-	}
+	// for _, v := range *this.SeqAPI.WriteCache().(*cache.WriteCache).Cache() {
+	// 	typed := v.Value().(ccurlintf.Type)
+	// 	amount += common.IfThen(
+	// 		!v.Preexist(),
+	// 		(uint64(typed.Size())/32)*uint64(v.Writes())*ethparams.SstoreSetGas,
+	// 		(uint64(typed.Size())/32)*uint64(v.Writes()),
+	// 	)
+	// }
 	return amount
 }
 

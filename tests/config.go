@@ -10,7 +10,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/mempool"
 	commontypes "github.com/arcology-network/common-lib/types"
 	eucommon "github.com/arcology-network/eu/common"
-	concurrenturl "github.com/arcology-network/storage-committer"
+	stgcomm "github.com/arcology-network/storage-committer/committer"
 	"github.com/arcology-network/storage-committer/commutative"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
@@ -88,7 +88,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	_, transitions := cache.NewWriteCacheFilter(api.WriteCache()).ByType()
 
 	// Deploy.
-	committer := concurrenturl.NewStorageCommitter(datastore)
+	committer := stgcomm.NewStateCommitter(datastore)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
@@ -194,7 +194,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	}
 
 	contractAddress := receipt.ContractAddress
-	testEu.committer = concurrenturl.NewStorageCommitter(testEu.store)
+	testEu.committer = stgcomm.NewStateCommitter(testEu.store)
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)
@@ -242,7 +242,7 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	return execResult, nil
 }
 
-func DepolyContract(eu *eu.EU, committer *concurrenturl.StateCommitter, config *adaptorcommon.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *adaptorcommon.Config, *eu.EU, *evmcoretypes.Receipt) {
+func DepolyContract(eu *eu.EU, committer *stgcomm.StateCommitter, config *adaptorcommon.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *adaptorcommon.Config, *eu.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	StdMsg := &eucommon.StandardMessage{
 		ID:     1,

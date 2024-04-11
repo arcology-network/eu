@@ -7,7 +7,7 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/mempool"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	concurrenturl "github.com/arcology-network/storage-committer"
+	stgcomm "github.com/arcology-network/storage-committer/committer"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/commutative"
 	"github.com/arcology-network/storage-committer/noncommutative"
@@ -34,12 +34,12 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
-	committer := concurrenturl.NewStorageCommitter(db)
+	committer := stgcomm.NewStateCommitter(db)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer = concurrenturl.NewStorageCommitter(db)
+	committer = stgcomm.NewStateCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	balance := ethStatedb.GetBalance(account)
@@ -65,12 +65,12 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 
-	committer := concurrenturl.NewStorageCommitter(db)
+	committer := stgcomm.NewStateCommitter(db)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer = concurrenturl.NewStorageCommitter(db)
+	committer = stgcomm.NewStateCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	code := ethStatedb.GetCode(account)
@@ -96,12 +96,12 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
-	committer := concurrenturl.NewStorageCommitter(db)
+	committer := stgcomm.NewStateCommitter(db)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer = concurrenturl.NewStorageCommitter(db)
+	committer = stgcomm.NewStateCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	state := ethStatedb.GetState(account, evmcommon.Hash{})
@@ -115,7 +115,7 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	db := chooseDataStore()
 	meta := commutative.NewPath()
 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
-	committer := concurrenturl.NewStorageCommitter(db)
+	committer := stgcomm.NewStateCommitter(db)
 
 	// localCache := cache.NewWriteCache(db, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
@@ -132,7 +132,7 @@ func TestEthStateDBInterfaces(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer = concurrenturl.NewStorageCommitter(db)
+	committer = stgcomm.NewStateCommitter(db)
 	ethStatedb = eth.NewImplStateDB(api)
 
 	alice, bob := evmcommon.Address{}, evmcommon.Address{}

@@ -28,7 +28,7 @@ import (
 	eu "github.com/arcology-network/eu"
 	execution "github.com/arcology-network/eu"
 	"github.com/arcology-network/evm-adaptor/compiler"
-	"github.com/arcology-network/storage-committer/importer"
+	committer "github.com/arcology-network/storage-committer/committer"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	tests "github.com/arcology-network/storage-committer/tests"
 	"github.com/arcology-network/storage-committer/univalue"
@@ -57,8 +57,8 @@ func TestSequence(t *testing.T) {
 	contractAddr := seq.Results[0].Receipt.ContractAddress
 
 	tests.FlushToStore(seq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
-	// acctTrans := univalue.Univalues(slice.Clone(accesses)).To(importer.IPTransition{})
-	// committer := stgcomm.NewStorageCommitter(testEu.store)
+	// acctTrans := univalue.Univalues(slice.Clone(accesses)).To(committer.IPTransition{})
+	// committer := stgcomm.NewStateCommitter(testEu.store)
 	// committer.Import(acctTrans).Precommit([]uint32{1})
 	// committer.Commit(0)
 	// committer.Clear()
@@ -161,7 +161,7 @@ func TestGeneration(t *testing.T) {
 	clearTransitions := _1stGen.Execute(testEu.config, api) // Export transitions
 
 	// // ================================== Commit to DB  ==================================
-	acctTrans := univalue.Univalues(clearTransitions).To(importer.IPTransition{})
+	acctTrans := univalue.Univalues(clearTransitions).To(committer.IPTransition{})
 	testEu.eu.Api().WriteCache().(*cache.WriteCache).Insert(acctTrans)
 
 	msgNativeCheck2 := core.NewMessage(Alice, &contractNativeStorageAddr, 3, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
@@ -175,7 +175,7 @@ func TestGeneration(t *testing.T) {
 	addMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("call2()"))[:4], nil, false)
 	seq = execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&addMsg), [32]byte{}, testEu.eu.Api())
 	clearTransitions = eu.NewGeneration(0, 2, []*execution.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
-	acctTrans = univalue.Univalues(clearTransitions).To(importer.IPTransition{})
+	acctTrans = univalue.Univalues(clearTransitions).To(committer.IPTransition{})
 
 	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear().Insert(acctTrans)
 
