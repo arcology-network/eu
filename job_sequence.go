@@ -14,7 +14,6 @@ import (
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	eth "github.com/arcology-network/evm-adaptor/eth"
 	intf "github.com/arcology-network/evm-adaptor/interface"
-	indexer "github.com/arcology-network/storage-committer/committer"
 	"github.com/arcology-network/storage-committer/commutative"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
@@ -109,13 +108,13 @@ func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiR
 			fmt.Println("error in execute message:", this.Results[i].Receipt.Status)
 		}
 
-		this.SeqAPI.WriteCache().(*cache.WriteCache).Insert(this.Results[i].RawStateAccesses) // Merge the txApi write cache back into the api router.
+		this.SeqAPI.WriteCache().(*cache.WriteCache).Import(this.Results[i].RawStateAccesses) // Merge the txApi write cache back into the api router.
 		mapi.Merge(txApi.AuxDict(), this.SeqAPI.AuxDict())                                    // The tx may generate new aux data, so merge it into the main api router.
 		// break
 	}
 
 	// Get acumulated state access records from all the transactions in the sequence.
-	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
+	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(univalue.IPAccess{})
 	return slice.Fill(make([]uint32, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 

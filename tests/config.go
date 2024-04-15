@@ -11,7 +11,6 @@ import (
 	commontypes "github.com/arcology-network/common-lib/types"
 	eucommon "github.com/arcology-network/eu/common"
 	stgcomm "github.com/arcology-network/storage-committer/committer"
-	"github.com/arcology-network/storage-committer/commutative"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
@@ -31,7 +30,6 @@ import (
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	"github.com/arcology-network/evm-adaptor/compiler"
 	ethimpl "github.com/arcology-network/evm-adaptor/eth"
-	ccurlcommon "github.com/arcology-network/storage-committer/common"
 )
 
 const (
@@ -61,7 +59,7 @@ func MainTestConfig() *adaptorcommon.Config {
 }
 
 // Choose which data source to use
-func chooseDataStore() ccurlintf.Datastore {
+func chooseDataStore() ccurlintf.ReadOnlyStore {
 	// return ethstg.NewParallelEthMemDataStore() // Eth trie datastore
 	return storage.NewStoreProxy() // Eth trie datastore
 	// return ethstg.NewLevelDBDataStore("./leveldb") // Eth trie datastore
@@ -71,7 +69,7 @@ func chooseDataStore() ccurlintf.Datastore {
 
 func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *TestEu {
 	datastore := chooseDataStore()
-	datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
+	// datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
@@ -164,7 +162,7 @@ func CreateEthMsg(from evmcommon.Address, to evmcommon.Address, nonce, value, ga
 	)
 }
 
-func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, ccurlintf.Datastore, []byte, error) {
+func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, ccurlintf.ReadOnlyStore, []byte, error) {
 	code, err := compiler.CompileContracts(targetPath, contractFile, compilerVersion, contract, true)
 	if err != nil {
 		return nil, nil, nil, []byte{}, err
@@ -204,7 +202,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	return testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
 
-func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.Datastore, amount uint64) (*core.ExecutionResult, error) {
+func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.ReadOnlyStore, amount uint64) (*core.ExecutionResult, error) {
 	config := MainTestConfig()
 	config.Coinbase = &Coinbase
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
