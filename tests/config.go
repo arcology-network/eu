@@ -10,9 +10,11 @@ import (
 	"github.com/arcology-network/common-lib/exp/mempool"
 	commontypes "github.com/arcology-network/common-lib/types"
 	eucommon "github.com/arcology-network/eu/common"
+	statestore "github.com/arcology-network/storage-committer"
 	stgcomm "github.com/arcology-network/storage-committer/committer"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
+	"github.com/arcology-network/storage-committer/storage/proxy"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/ethereum/go-ethereum/common"
@@ -71,8 +73,10 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	datastore := chooseDataStore()
 	// datastore.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
 
+	sstore := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
+
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(datastore, 32, 1)
+		return cache.NewWriteCache(sstore.WriteCache, 32, 1)
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
@@ -86,7 +90,8 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	_, transitions := cache.NewWriteCacheFilter(api.WriteCache()).ByType()
 
 	// Deploy.
-	committer := stgcomm.NewStateCommitter(datastore)
+	store := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
+	committer := stgcomm.NewStateCommitter(datastore, store.GetWriters()...)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
@@ -105,7 +110,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	return &TestEu{
 		eu:          eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api),
 		config:      config,
-		store:       datastore,
+		store:       sstore,
 		committer:   committer,
 		transitions: transitions,
 	}
