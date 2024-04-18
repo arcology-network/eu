@@ -11,7 +11,7 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	"github.com/arcology-network/evm-adaptor/compiler"
-	stgcomm "github.com/arcology-network/storage-committer/committer"
+	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
