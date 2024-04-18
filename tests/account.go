@@ -6,7 +6,7 @@ import (
 
 	eu "github.com/arcology-network/eu"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	concurrenturl "github.com/arcology-network/storage-committer"
+	stgcomm "github.com/arcology-network/storage-committer/committer"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -42,7 +42,7 @@ func GenRandomAccounts(num int) []ethcommon.Address {
 type TestEu struct {
 	eu          *eu.EU
 	config      *adaptorcommon.Config
-	store       ccurlintf.Datastore
-	committer   *concurrenturl.StateCommitter
+	store       ccurlintf.ReadOnlyStore
+	committer   *stgcomm.StateCommitter
 	transitions []*univalue.Univalue
 }

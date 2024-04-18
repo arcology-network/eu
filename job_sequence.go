@@ -15,14 +15,12 @@ import (
 	eth "github.com/arcology-network/evm-adaptor/eth"
 	intf "github.com/arcology-network/evm-adaptor/interface"
 	"github.com/arcology-network/storage-committer/commutative"
-	indexer "github.com/arcology-network/storage-committer/importer"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
-	ethparams "github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
 )
 
@@ -116,7 +114,7 @@ func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiR
 	}
 
 	// Get acumulated state access records from all the transactions in the sequence.
-	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(indexer.IPAccess{})
+	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(univalue.IPAccess{})
 	return slice.Fill(make([]uint32, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 
@@ -181,14 +179,14 @@ func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *adapt
 // CalcualteRefund calculates the refund amount for the JobSequence.
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
-	for _, v := range *this.SeqAPI.WriteCache().(*cache.WriteCache).Cache() {
-		typed := v.Value().(ccurlintf.Type)
-		amount += common.IfThen(
-			!v.Preexist(),
-			(uint64(typed.Size())/32)*uint64(v.Writes())*ethparams.SstoreSetGas,
-			(uint64(typed.Size())/32)*uint64(v.Writes()),
-		)
-	}
+	// for _, v := range *this.SeqAPI.WriteCache().(*cache.WriteCache).Cache() {
+	// 	typed := v.Value().(ccurlintf.Type)
+	// 	amount += common.IfThen(
+	// 		!v.Preexist(),
+	// 		(uint64(typed.Size())/32)*uint64(v.Writes())*ethparams.SstoreSetGas,
+	// 		(uint64(typed.Size())/32)*uint64(v.Writes()),
+	// 	)
+	// }
 	return amount
 }
 
