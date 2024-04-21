@@ -55,7 +55,7 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	contractAddress := receipt.ContractAddress
-	testEu.committer = stgcomm.NewStateCommitter(testEu.store)
+	testEu.committer = stgcomm.NewStateCommitter(testEu.store, nil)
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)

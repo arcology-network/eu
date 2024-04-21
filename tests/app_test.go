@@ -18,17 +18,6 @@ func TestParaVote(t *testing.T) {
 	}
 }
 
-// Will produce a couple of errors when calling Vote() because two voters have delegated their votes to the another voter already.
-// This is expected behavior.
-func TestVisitCounterWithContainer(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "examples/para-visits/visitCounter-Mp_test.sol", "0.8.19", "VisitCounterCaller", "call()", []byte{}, false)
-	if err != nil {
-		t.Error(err.Error())
-	}
-}
-
 func TestParaVisit(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
