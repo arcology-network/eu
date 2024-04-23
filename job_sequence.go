@@ -108,6 +108,7 @@ func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiR
 			fmt.Println("error in execute message:", this.Results[i].Receipt.Status)
 		}
 
+		// the line below modifies the cache in the major api as well.
 		this.SeqAPI.WriteCache().(*cache.WriteCache).Insert(this.Results[i].RawStateAccesses) // Merge the txApi write cache back into the api router.
 		mapi.Merge(txApi.AuxDict(), this.SeqAPI.AuxDict())                                    // The tx may generate new aux data, so merge it into the main api router.
 		// break
