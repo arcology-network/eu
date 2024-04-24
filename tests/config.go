@@ -11,8 +11,8 @@ import (
 	commontypes "github.com/arcology-network/common-lib/types"
 	eucommon "github.com/arcology-network/eu/common"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcomm "github.com/arcology-network/storage-committer/committer"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
+	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
@@ -76,7 +76,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	sstore := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
 
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(sstore.WriteCache, 32, 1)
+		return cache.NewWriteCache(sstore.WriteCache, 32, 1) // Generation writecache
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
@@ -87,17 +87,19 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 		statedb.CreateAccount(genesisAccts[i])
 		statedb.AddBalance(genesisAccts[i], new(big.Int).SetUint64(1e18))
 	}
+
+	// Apply the transitions to the storage.
 	_, transitions := cache.NewWriteCacheFilter(api.WriteCache()).ByType()
 
-	// Deploy.
 	store := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
-	committer := stgcomm.NewStateCommitter(datastore, store.GetWriters()...)
+	committer := stgcomm.NewStateCommitter(datastore, store.GetWriters())
 	committer.Import(transitions)
 	committer.Precommit([]uint32{0})
 	committer.Commit(0)
 
+	// Init a new API
 	api = apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(datastore, 32, 1)
+		return cache.NewWriteCache(sstore, 32, 1)
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb = ethimpl.NewImplStateDB(api)
@@ -196,8 +198,9 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 		return nil, nil, nil, []byte{}, errors.New("Error: Deployment failed!!!")
 	}
 
+	statestore := testEu.store.(*statestore.StateStore)
 	contractAddress := receipt.ContractAddress
-	testEu.committer = stgcomm.NewStateCommitter(testEu.store)
+	testEu.committer = stgcomm.NewStateCommitter(statestore.Store(), statestore.GetWriters())
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(0)

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/mempool"
-	stgcomm "github.com/arcology-network/storage-committer/committer"
+	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
@@ -30,12 +30,12 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
-	committer := stgcomm.NewStateCommitter(db)
+	committer := stgcomm.NewStateCommitter(db, nil)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer = stgcomm.NewStateCommitter(db)
+	committer = stgcomm.NewStateCommitter(db, nil)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	balance := ethStatedb.GetBalance(account)
@@ -61,12 +61,12 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 
-	committer := stgcomm.NewStateCommitter(db)
+	committer := stgcomm.NewStateCommitter(db, nil)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer = stgcomm.NewStateCommitter(db)
+	committer = stgcomm.NewStateCommitter(db, nil)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	code := ethStatedb.GetCode(account)
@@ -92,12 +92,12 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
-	committer := stgcomm.NewStateCommitter(db)
+	committer := stgcomm.NewStateCommitter(db, nil)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
 	committer.Commit(0)
 
-	committer = stgcomm.NewStateCommitter(db)
+	committer = stgcomm.NewStateCommitter(db, nil)
 	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	state := ethStatedb.GetState(account, evmcommon.Hash{})

@@ -19,7 +19,7 @@ func TestAddressContainer(t *testing.T) {
 func TestBoolContainer(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "array/bool_test.sol", "0.8.19", "BoolTest", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "array/bool_test.sol", "0.8.19", "BoolTest", "check()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

@@ -139,13 +139,6 @@ func TestGeneration(t *testing.T) {
 	gen := eu.NewGeneration(0, 2, []*execution.JobSequence{_0thSeq})
 	gen.Execute(testEu.config, api)
 
-	// if len(seqUniv) != len(genUniv) {
-	// 	t.Error("Error: The sequence and generation transitions are not equal")
-	// }
-
-	// _0thSeq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
-	// tests.FlushToStore(_0thSeq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
-
 	tests.FlushToStore(testEu.store.(*statestore.StateStore))
 
 	// ================================== 1st contract Call  ==================================
@@ -186,3 +179,70 @@ func TestGeneration(t *testing.T) {
 	seq = execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&checkMsg), [32]byte{}, testEu.eu.Api())
 	eu.NewGeneration(0, 2, []*execution.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
 }
+
+// func TestGenerationWithParaVisit(t *testing.T) {
+// 	// ================================== Compile the 1st contract ==================================
+// 	currentPath, _ := os.Getwd()
+// 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "examples")
+// 	codeNativeStorage, err := compiler.CompileContracts(targetPath, "/para-visits/ParallelVisits.sol", "0.8.19", "Visits", true)
+// 	if err != nil || len(codeNativeStorage) == 0 {
+// 		t.Fatal("Error: Failed to generate the byte code")
+// 	}
+// 	deployNativeStorageMsg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(codeNativeStorage), nil, false)
+
+// 	// ================================== Compile the 2nd contract ==================================
+// 	targetPath = path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "native")
+// 	codeSequential, err := compiler.CompileContracts(targetPath, "/Sequential.sol", "0.8.19", "SequentialTest", true)
+// 	if err != nil || len(codeSequential) == 0 {
+// 		t.Error("Error: Failed to generate the byte code")
+// 	}
+// 	deploySequentialMsg := core.NewMessage(Alice, nil, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(codeSequential), nil, false)
+
+// 	// ================================== contract Deployment  ==================================
+// 	testEu := NewTestEU(Coinbase, Alice, Bob)
+// 	api := testEu.eu.Api()
+// 	_0thSeq := execution.NewJobSequence(1, []uint64{1, 2, 3}, slice.ToSlice(&deployNativeStorageMsg, &deploySequentialMsg), [32]byte{1}, testEu.eu.Api())
+// 	// _, seqUniv := _0thSeq.Run(testEu.config, api, 0)
+// 	gen := eu.NewGeneration(0, 2, []*execution.JobSequence{_0thSeq})
+// 	gen.Execute(testEu.config, api)
+
+// 	tests.FlushToStore(testEu.store.(*statestore.StateStore))
+
+// 	// ================================== 1st contract Call  ==================================
+// 	contractNativeStorageAddr := _0thSeq.Results[0].Receipt.ContractAddress
+// 	msgNativeCall := core.NewMessage(Alice, &contractNativeStorageAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("call()"))[:4], nil, false)
+// 	msgNativeCheck := core.NewMessage(Alice, &contractNativeStorageAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check()"))[:4], nil, false)
+// 	nativeSeq := execution.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgNativeCall, &msgNativeCheck), [32]byte{1}, testEu.eu.Api())
+
+// 	// ================================== 2nd contract Call  ==================================
+// 	contractSequentialAddr := _0thSeq.Results[1].Receipt.ContractAddress
+// 	msgSequentialAdd := core.NewMessage(Alice, &contractSequentialAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("add()"))[:4], nil, false)
+// 	msgSequentialCheck := core.NewMessage(Alice, &contractSequentialAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check()"))[:4], nil, false)
+// 	sequentialSeq := execution.NewJobSequence(2, []uint64{3, 4}, slice.ToSlice(&msgSequentialAdd, &msgSequentialCheck), [32]byte{1}, testEu.eu.Api())
+
+// 	_1stGen := eu.NewGeneration(0, 2, []*execution.JobSequence{nativeSeq, sequentialSeq})
+// 	clearTransitions := _1stGen.Execute(testEu.config, api) // Export transitions
+
+// 	// // ================================== Commit to DB  ==================================
+// 	acctTrans := univalue.Univalues(clearTransitions).To(univalue.IPTransition{})
+// 	testEu.eu.Api().WriteCache().(*cache.WriteCache).Insert(acctTrans)
+
+// 	msgNativeCheck2 := core.NewMessage(Alice, &contractNativeStorageAddr, 3, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
+// 	// msgSequentialCheck2 := core.NewMessage(Alice, &contractSequentialAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
+
+// 	seq := execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&msgNativeCheck2), [32]byte{}, testEu.eu.Api())
+// 	_2ndGen := eu.NewGeneration(0, 2, []*execution.JobSequence{seq})
+// 	_2ndGen.Execute(testEu.config, testEu.eu.Api())
+
+// 	// Add again
+// 	addMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("call2()"))[:4], nil, false)
+// 	seq = execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&addMsg), [32]byte{}, testEu.eu.Api())
+// 	clearTransitions = eu.NewGeneration(0, 2, []*execution.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
+// 	acctTrans = univalue.Univalues(clearTransitions).To(univalue.IPTransition{})
+
+// 	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear().Insert(acctTrans)
+
+// 	checkMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 5, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check3()"))[:4], nil, false)
+// 	seq = execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&checkMsg), [32]byte{}, testEu.eu.Api())
+// 	eu.NewGeneration(0, 2, []*execution.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
+// }

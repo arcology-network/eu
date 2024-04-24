@@ -6,8 +6,8 @@ import (
 
 	eu "github.com/arcology-network/eu"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	stgcomm "github.com/arcology-network/storage-committer/committer"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
+	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
