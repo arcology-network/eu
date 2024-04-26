@@ -9,9 +9,9 @@ import (
 
 func TestAccessRecordEncoding(t *testing.T) {
 	records := &TxAccessRecords{
-		Hash:     "0x1234567",
-		ID:       99,
-		Accesses: []byte{byte(67), byte(77)},
+		Hash: "0x1234567",
+		ID:   99,
+		//Accesses: []byte{byte(67), byte(77)},
 	}
 
 	buffer := records.Encode()
@@ -23,21 +23,21 @@ func TestAccessRecordEncoding(t *testing.T) {
 
 func TestAccessRecordSetEncoding(t *testing.T) {
 	_1 := &TxAccessRecords{
-		Hash:     "0x1234567",
-		ID:       99,
-		Accesses: []byte{byte(66), byte(33)},
+		Hash: "0x1234567",
+		ID:   99,
+		//Accesses: []byte{byte(66), byte(33)},
 	}
 
 	_2 := &TxAccessRecords{
-		Hash:     "0xabcde",
-		ID:       88,
-		Accesses: []byte{byte(44), byte(55)},
+		Hash: "0xabcde",
+		ID:   88,
+		//Accesses: []byte{byte(44), byte(55)},
 	}
 
 	_3 := &TxAccessRecords{
-		Hash:     "0x8976542",
-		ID:       77,
-		Accesses: []byte{byte(66), byte(88)},
+		Hash: "0x8976542",
+		ID:   77,
+		//Accesses: []byte{byte(66), byte(88)},
 	}
 
 	accessSet := TxAccessRecordSet{_1, _2, _3}
@@ -54,9 +54,9 @@ func BenchmarkAccessRecordSetEncoding(b *testing.B) {
 	recordVec := make([]*TxAccessRecords, 1000000)
 	for i := 0; i < len(recordVec); i++ {
 		recordVec[i] = &TxAccessRecords{
-			Hash:     "0x1234567",
-			ID:       uint32(i),
-			Accesses: []byte{byte(99), byte(110)},
+			Hash: "0x1234567",
+			ID:   uint32(i),
+			//Accesses: []byte{byte(99), byte(110)},
 		}
 	}
 

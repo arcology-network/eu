@@ -3,12 +3,13 @@ package shared
 import (
 	"github.com/arcology-network/common-lib/codec"
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/storage-committer/univalue"
 )
 
 type TxAccessRecords struct {
 	Hash     string
 	ID       uint32
-	Accesses []byte
+	Accesses []*univalue.Univalue
 }
 
 func (this *TxAccessRecords) HeaderSize() uint32 {
@@ -19,7 +20,8 @@ func (this *TxAccessRecords) Size() uint32 {
 	return this.HeaderSize() +
 		codec.String(this.Hash).Size() +
 		codec.UINT32_LEN +
-		codec.Bytes(this.Accesses).Size()
+		// codec.Bytes(this.Accesses).Size()
+		uint32(univalue.Univalues(this.Accesses).Size())
 }
 
 func (this *TxAccessRecords) Encode() []byte {
@@ -38,13 +40,14 @@ func (this *TxAccessRecords) EncodeToBuffer(buffer []byte) int {
 		[]uint32{
 			codec.String(this.Hash).Size(),
 			codec.Uint32(this.ID).Size(),
-			codec.Bytes(this.Accesses).Size(),
+			// codec.Bytes(this.Accesses).Size(),
+			uint32(univalue.Univalues(this.Accesses).Size()),
 		},
 	)
 
 	offset += codec.String(this.Hash).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.ID).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bytes(this.Accesses).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bytes(univalue.Univalues(this.Accesses).Encode()).EncodeToBuffer(buffer[offset:])
 	return offset
 }
 
@@ -52,7 +55,7 @@ func (this *TxAccessRecords) Decode(buffer []byte) *TxAccessRecords {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	this.Hash = codec.Bytes(fields[0]).ToString()
 	this.ID = uint32(codec.Uint32(0).Decode(fields[1]).(codec.Uint32))
-	this.Accesses = codec.Bytes{}.Decode(fields[2]).(codec.Bytes)
+	this.Accesses = univalue.Univalues(this.Accesses).Decode(fields[2]).([]*univalue.Univalue) //codec.Bytes{}.Decode(fields[2]).(codec.Bytes)
 	return this
 }
 

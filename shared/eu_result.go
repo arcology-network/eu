@@ -7,9 +7,9 @@ import (
 )
 
 type EuResult struct {
-	H            string
-	ID           uint32
-	Transitions  []byte
+	H  string
+	ID uint32
+	// Transitions  []byte
 	TransitTypes []byte
 	// DC           *DeferredCall
 	Trans   []*univalue.Univalue
@@ -25,7 +25,8 @@ func (this *EuResult) Size() uint32 {
 	return this.HeaderSize() +
 		uint32(len(this.H)) +
 		codec.UINT32_LEN +
-		codec.Bytes(this.Transitions).Size() +
+		// codec.Bytes(this.Trans).Size() +
+		uint32(univalue.Univalues(this.Trans).Size()) +
 		codec.Bytes(this.TransitTypes).Size() +
 		// this.DC.Size() +
 		codec.UINT64_LEN +
@@ -48,7 +49,8 @@ func (this *EuResult) EncodeToBuffer(buffer []byte) int {
 		[]uint32{
 			codec.String(this.H).Size(),
 			codec.Uint32(this.ID).Size(),
-			codec.Bytes(this.Transitions).Size(),
+			// codec.Bytes(this.Transitions).Size(),
+			uint32(univalue.Univalues(this.Trans).Size()),
 			codec.Bytes(this.TransitTypes).Size(),
 			// this.DC.Size(),
 			codec.UINT64_LEN,
@@ -58,7 +60,7 @@ func (this *EuResult) EncodeToBuffer(buffer []byte) int {
 
 	offset += codec.String(this.H).EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint32(this.ID).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bytes(this.Transitions).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bytes(univalue.Univalues(this.Trans).Encode()).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bytes(this.TransitTypes).EncodeToBuffer(buffer[offset:])
 	// offset += this.DC.EncodeToBuffer(buffer[offset:])
 	offset += codec.Uint64(this.Status).EncodeToBuffer(buffer[offset:])
@@ -72,8 +74,8 @@ func (this *EuResult) Decode(buffer []byte) *EuResult {
 
 	this.H = string(fields[0])
 	this.ID = uint32(codec.Uint32(0).Decode(fields[1]).(codec.Uint32))
-
-	this.Transitions = []byte(codec.Bytes{}.Decode(fields[2]).(codec.Bytes))
+	this.Trans = univalue.Univalues(this.Trans).Decode(fields[2]).([]*univalue.Univalue)
+	// this.Transitions = []byte(codec.Bytes{}.Decode(fields[2]).(codec.Bytes))
 	this.TransitTypes = []byte(codec.Bytes{}.Decode(fields[3]).(codec.Bytes))
 
 	// if len(fields[4]) > 0 {
