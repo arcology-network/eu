@@ -63,7 +63,7 @@ func MainTestConfig() *adaptorcommon.Config {
 // Choose which data source to use
 func chooseDataStore() ccurlintf.ReadOnlyStore {
 	// return ethstg.NewParallelEthMemDataStore() // Eth trie datastore
-	return storage.NewStoreProxy() // Eth trie datastore
+	return storage.NewStoreProxy("test") // Eth trie datastore
 	// return ethstg.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
