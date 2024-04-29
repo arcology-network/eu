@@ -33,7 +33,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	committer := stgcomm.NewStateCommitter(db, nil)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
-	committer.Commit(0)
+	committer.Commit(20)
 
 	committer = stgcomm.NewStateCommitter(db, nil)
 	ethStatedb = eth.NewImplStateDB(api)
@@ -64,7 +64,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	committer := stgcomm.NewStateCommitter(db, nil)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
-	committer.Commit(0)
+	committer.Commit(20)
 
 	committer = stgcomm.NewStateCommitter(db, nil)
 	ethStatedb = eth.NewImplStateDB(api)
@@ -95,7 +95,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	committer := stgcomm.NewStateCommitter(db, nil)
 	committer.Import(transitions)
 	committer.Precommit([]uint32{1})
-	committer.Commit(0)
+	committer.Commit(20)
 
 	committer = stgcomm.NewStateCommitter(db, nil)
 	ethStatedb = eth.NewImplStateDB(api)
@@ -126,7 +126,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 // 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 // 	committer.Import(transitions)
 // 	committer.Precommit([]uint32{1})
-// 	committer.Commit(0)
+// 	committer.Commit(20)
 
 // 	committer = stgcomm.NewStateCommitter(db)
 // 	ethStatedb = eth.NewImplStateDB(api)

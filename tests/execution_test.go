@@ -60,7 +60,7 @@ func TestSequence(t *testing.T) {
 	// acctTrans := univalue.Univalues(slice.Clone(accesses)).To(committer.IPTransition{})
 	// committer := stgcomm.NewStateCommitter(testEu.store)
 	// committer.Import(acctTrans).Precommit([]uint32{1})
-	// committer.Commit(0)
+	// committer.Commit(20)
 	// committer.Clear()
 
 	// Prepare the messages for the contract calls
