@@ -58,7 +58,7 @@ func TestBaseContainer(t *testing.T) {
 	testEu.committer = stgcomm.NewStateCommitter(testEu.store, nil)
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
-	testEu.committer.Commit(0)
+	testEu.committer.Commit(20)
 
 	// ================================== Call() ==================================
 	// receipt, _, err = eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, execution.NewEVMBlockContext(config), execution.NewEVMTxContext(msg))
