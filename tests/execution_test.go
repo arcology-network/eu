@@ -201,7 +201,9 @@ func TestMultiCummutiaves(t *testing.T) {
 	// Move all the transitions from local write cache to the global write cache, so they can be inserted.
 	wcache := seq.SeqAPI.WriteCache().(*cache.WriteCache)
 	testEu.store.(*statestore.StateStore).WriteCache.Insert(wcache.Export())
-	tests.FlushToStore(testEu.store.(*statestore.StateStore))
+	tests.FlushGeneration(testEu.store.(*statestore.StateStore))
+	testEu.store.(*statestore.StateStore).Commit(10)
+	testEu.store.(*statestore.StateStore).Clear()
 
 	// Prepare the messages for the contract calls
 	data := crypto.Keccak256([]byte("add1()"))[:4]
