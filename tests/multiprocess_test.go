@@ -367,3 +367,13 @@ func TestParaCumU256Sub(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestParaDeletions(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaDeletions", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}

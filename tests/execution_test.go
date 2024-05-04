@@ -224,7 +224,7 @@ func TestMultiCummutiaves(t *testing.T) {
 	// Move all the transitions from local write cache to the global write cache, so they can be inserted.
 	wcache = seq.SeqAPI.WriteCache().(*cache.WriteCache)
 	testEu.store.(*statestore.StateStore).WriteCache.Insert(wcache.Export())
-	tests.FlushToStore(testEu.store.(*statestore.StateStore))
+	tests.FlushGeneration(testEu.store.(*statestore.StateStore))
 
 	data = crypto.Keccak256([]byte("check()"))[:4]
 	msgCallCheck := core.NewMessage(Alice, &contractAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
