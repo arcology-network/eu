@@ -19,6 +19,8 @@ package scheduler
 import (
 	"testing"
 	"time"
+
+	"github.com/arcology-network/common-lib/codec"
 )
 
 func TestCallee(t *testing.T) {
@@ -28,7 +30,7 @@ func TestCallee(t *testing.T) {
 	for i := 0; i < numCalls; i++ {
 		callees[i] = &Callee{
 			Index:          uint32(i),
-			AddrAndSign:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4},
+			AddrAndSign:    new(codec.Bytes12).FromSlice([]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}),
 			Indices:        []uint32{1, 2, 3, 4},
 			SequentialOnly: false,
 			Calls:          uint32(i),
@@ -48,7 +50,7 @@ func TestCallee(t *testing.T) {
 			t.Error("Failed to encode/decode")
 		}
 	}
-	t.Log("Time Spend to encode / Decode :", numCalls, time.Since(t0))
+	t.Log("Time Spent to encode / Decode :", numCalls, time.Since(t0))
 }
 
 func BenchmarkTestCallee(t *testing.B) {
@@ -58,7 +60,7 @@ func BenchmarkTestCallee(t *testing.B) {
 	for i := 0; i < numCalls; i++ {
 		callees[i] = &Callee{
 			Index:          uint32(i),
-			AddrAndSign:    []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4},
+			AddrAndSign:    new(codec.Bytes12).FromSlice([]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4}),
 			Indices:        []uint32{1, 2, 3, 4},
 			SequentialOnly: false,
 			Calls:          uint32(i),

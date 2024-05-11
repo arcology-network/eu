@@ -112,7 +112,7 @@ func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRo
 
 	// Mark the conflicts in the job sequences.
 	cleanTrans := slice.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
-		if _, ok := seqDict[(*seq).ID]; ok {
+		if _, ok := seqDict[(*seq).ID]; ok { // A conflict transaction
 			(*seq).FlagConflict(txDict, errors.New(ccurlcommon.WARN_ACCESS_CONFLICT))
 		}
 		return (*seq).GetClearedTransition() // Return the conflict-free transitions

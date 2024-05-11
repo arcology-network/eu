@@ -12,12 +12,13 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/execution"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	eth "github.com/arcology-network/evm-adaptor/eth"
 	intf "github.com/arcology-network/evm-adaptor/interface"
+	pathbuilder "github.com/arcology-network/evm-adaptor/pathbuilder"
 	"github.com/arcology-network/storage-committer/commutative"
 	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/arcology-network/storage-committer/univalue"
+
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -111,36 +112,47 @@ func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiR
 		// the line below modifies the cache in the major api as well.
 		this.SeqAPI.WriteCache().(*cache.WriteCache).Insert(this.Results[i].RawStateAccesses) // Merge the txApi write cache back into the api router.
 		mapi.Merge(txApi.AuxDict(), this.SeqAPI.AuxDict())                                    // The tx may generate new aux data, so merge it into the main api router.
-		// break
 	}
 
 	// Get acumulated state access records from all the transactions in the sequence.
 	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(univalue.IPAccess{})
+
 	// univalue.Univalues(accmulatedAccessRecords).Print()
 	return slice.Fill(make([]uint32, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
-	if idx, _ := slice.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
-		return this.SeqAPI.WriteCache().(*cache.WriteCache).Export()
-	}
+	// if idx, _ := slice.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
+	// 	return this.SeqAPI.WriteCache().(*cache.WriteCache).Export()
+	// }
 
 	trans := slice.Concate(this.Results,
 		func(v *execution.Result) []*univalue.Univalue {
 			return v.Transitions()
 		},
 	)
-	return trans
+
+	uniqueDict := make(map[string]*univalue.Univalue)
+	for _, v := range trans {
+		uniqueDict[*v.GetPath()] = v
+	}
+
+	uniqueTrans := mapi.Values(uniqueDict)
+	return univalue.Univalues(uniqueTrans).SortByKey()
 }
 
-// FlagConflict flags the JobSequence as conflicting.
+// FlagConflict flags the transitions after the first conflicting transaction.
 func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
+	// Get the first index of the first conflict transaction.
+	// All the transitions after this index aren't usuable any more.
 	first, _ := slice.FindFirstIf(this.Results, func(r *execution.Result) bool {
 		_, ok := (dict)[r.TxIndex]
 		return ok
 	})
 
+	// The results of the transactions after the first conflict transaction are flagged as conflicting as well.
+	// Because they are potentially affected by the conflict by using the conflicting state.
 	for i := first; i < len(this.Results); i++ {
 		this.Results[i].Err = err
 	}
@@ -148,7 +160,7 @@ func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
 
 // execute executes a standard message and returns the result.
 func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *adaptorcommon.Config, api intf.EthApiRouter) *execution.Result {
-	statedb := eth.NewImplStateDB(api)
+	statedb := pathbuilder.NewImplStateDB(api)
 	statedb.PrepareFormer(StdMsg.TxHash, [32]byte{}, uint32(StdMsg.ID))
 
 	eu := NewEU(

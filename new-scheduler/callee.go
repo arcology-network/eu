@@ -23,17 +23,40 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 )
 
-// The callee struct stores the information of a contract that is called by EOA initiated transactions.
+const (
+	SHORT_CONTRACT_ADDRESS_LENGTH = 8
+	FUNCTION_SIGNATURE_LENGTH     = 4
+)
+
+// The callee struct stores the information of a contract function that is called by the EOA initiated transactions.
 // It is mainly used to optimize the execution of the transactions. A callee is uniquely identified by a
 // combination of the contract's address and the function signature.
 type Callee struct {
 	Index          uint32   // Index of the Callee in the Callee list
-	AddrAndSign    []byte   // Short address, the first 8 bytes of the contract address + Function signature [4]byte
+	AddrAndSign    [12]byte // Short address of the callee, first 8 bytes from the function + signature [4]byte
 	Indices        []uint32 // Indices of the conflicting callee indices.
 	SequentialOnly bool     // A sequential only function
-	Calls          uint32   // Total number of calls
-	AvgGas         uint32   // Average gas used
-	Deferrable     bool     // If one of the calls should be Deferrable to the second generation.
+	SeqOnlyWith    [][12]byte
+	paraOnlyWith   [][12]byte
+
+	Calls      uint32 // Total number of calls
+	AvgGas     uint32 // Average gas used
+	Deferrable bool   // If one of the calls should be Deferrable to the second generation.
+}
+
+func NewCallee(idx uint32, addr []byte, funSign []byte) *Callee {
+	return &Callee{
+		Index:        idx,
+		AddrAndSign:  new(codec.Bytes12).FromSlice(new(Callee).Compact(addr, funSign)),
+		SeqOnlyWith:  [][12]byte{},
+		paraOnlyWith: [][12]byte{},
+		Deferrable:   false,
+	}
+}
+
+func (this *Callee) Compact(addr []byte, funSign []byte) []byte {
+	addr = slice.Clone(addr) // Make sure the original data is not modified
+	return append(addr[:SHORT_CONTRACT_ADDRESS_LENGTH], funSign[:FUNCTION_SIGNATURE_LENGTH]...)
 }
 
 // 10x faster and 2x smaller than json marshal/unmarshal
@@ -43,16 +66,24 @@ func (this *Callee) Encode() ([]byte, error) {
 		this.AddrAndSign[:],
 		codec.Uint32s(this.Indices).Encode(),
 		codec.Bool(this.SequentialOnly).Encode(),
+
+		// SeqOnlyWith    [][12]byte
+		// paraOnlyWith   [][4]byte
+
+		codec.Bytes12s(this.SeqOnlyWith).Encode(),
+		codec.Bytes12s(this.paraOnlyWith).Encode(),
+
 		codec.Uint32(this.Calls).Encode(),
 		codec.Uint32(this.AvgGas).Encode(),
 		codec.Bool(this.Deferrable).Encode(),
 	}).Encode(), nil
 }
 
+// new(codec.Bytes12).FromSlice(slice.Clone(fields[1])[:])
 func (this *Callee) Decode(data []byte) *Callee {
 	fields, _ := codec.Byteset{}.Decode(data).(codec.Byteset)
 	this.Index = uint32(new(codec.Uint32).Decode(fields[0]).(codec.Uint32))
-	this.AddrAndSign = slice.Clone(fields[1])
+	this.AddrAndSign = new(codec.Bytes12).FromSlice(slice.Clone(fields[1])[:])
 	this.Indices = new(codec.Uint32s).Decode(fields[2]).(codec.Uint32s)
 	this.SequentialOnly = bool(new(codec.Bool).Decode(fields[3]).(codec.Bool))
 	this.Calls = uint32(new(codec.Uint32).Decode(fields[4]).(codec.Uint32))
@@ -63,7 +94,7 @@ func (this *Callee) Decode(data []byte) *Callee {
 
 func (this *Callee) Equal(other *Callee) bool {
 	return this.Index == other.Index &&
-		slice.EqualSet(this.AddrAndSign, other.AddrAndSign) &&
+		slice.EqualSet(this.AddrAndSign[:], other.AddrAndSign[:]) &&
 		slice.EqualSet(this.Indices, other.Indices) &&
 		this.SequentialOnly == other.SequentialOnly &&
 		this.Calls == other.Calls &&
@@ -88,3 +119,13 @@ func CallToKey(addr []byte, funSign []byte) string {
 }
 
 type Callees []*Callee
+
+func (Callees) From(addr []byte, funSigns ...[]byte) [][12]byte {
+	callees := make([][12]byte, len(funSigns))
+	for i, funSign := range funSigns {
+		callees[i] = new(codec.Bytes12).FromSlice(
+			new(Callee).Compact(addr, funSign),
+		)
+	}
+	return callees
+}

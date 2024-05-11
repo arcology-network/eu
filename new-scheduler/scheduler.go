@@ -53,22 +53,18 @@ func NewScheduler(fildb string, deferByDefault bool) (*Scheduler, error) {
 
 // The function will find the index of the entry by its address and signature.
 // If the entry is found, the index will be returned. If the entry is not found, the index will be added to the scheduler.
-// If the entry is new
 func (this *Scheduler) Find(addr [20]byte, sig [4]byte) (uint32, bool) {
 	lftKey := string(append(addr[:ADDRESS_LENGTH], sig[:]...)) // Join the address and signature to create a unique key.
 	idx, ok := this.calleeLookup[lftKey]
 	if !ok {
 		idx = uint32(len(this.callees))
-		this.callees = append(this.callees, &Callee{
-			Index:       uint32(len(this.callees)),
-			AddrAndSign: append(addr[:ADDRESS_LENGTH], sig[:]...),
-		})
+		this.callees = append(this.callees, NewCallee(idx, addr[:], sig[:]))
 		this.calleeLookup[lftKey] = idx
 	}
 	return idx, ok
 }
 
-// Add a conflict pair to the scheduler
+// Add a conflict pair to the sched uler
 func (this *Scheduler) Add(lftAddr [20]byte, lftSig [4]byte, rgtAddr [20]byte, rgtSig [4]byte) bool {
 	lftIdx, lftExist := this.Find(lftAddr, lftSig)
 	rgtIdx, rgtExist := this.Find(rgtAddr, rgtSig)

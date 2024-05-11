@@ -31,7 +31,7 @@ import (
 	apihandler "github.com/arcology-network/evm-adaptor/apihandler"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	"github.com/arcology-network/evm-adaptor/compiler"
-	ethimpl "github.com/arcology-network/evm-adaptor/eth"
+	ethimpl "github.com/arcology-network/evm-adaptor/pathbuilder"
 )
 
 const (

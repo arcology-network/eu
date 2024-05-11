@@ -162,7 +162,7 @@ func TestScheduler(t *testing.T) {
 
 }
 
-func TestMapArrayComparison(t *testing.T) {
+func TestMapBinarySearchComparison(t *testing.T) {
 	arr := slice.NewDo[int](1000000, func(_ int) int { return rand.Intn(1000000) })
 
 	t0 := time.Now()

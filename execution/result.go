@@ -92,7 +92,7 @@ func (this *Result) Postprocess() *Result {
 // If the execution is unsuccessful, only keep the transitions that are immune to failures.
 func (this *Result) Transitions() []*univalue.Univalue {
 	if this.Err != nil {
-		return this.immuned //.MoveIf(&this.RawStateAccesses, func(v *univalue.Univalue) bool { return v.Persistent() })
+		return this.immuned // Immune transitions include the gas fee and the nonce, which are independent of the execution status.
 	}
 	return this.RawStateAccesses
 }
