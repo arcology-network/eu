@@ -38,3 +38,23 @@ func TestDeferred(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestSequentializeAll(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "SequentializeAllTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestSchedulerSequentializeTest(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "SequentializeTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}

@@ -7,8 +7,8 @@ import (
 	"math/big"
 
 	eucommon "github.com/arcology-network/eu/common"
-	eth "github.com/arcology-network/evm-adaptor/eth"
 	intf "github.com/arcology-network/evm-adaptor/interface"
+	eth "github.com/arcology-network/evm-adaptor/pathbuilder"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	evmcore "github.com/ethereum/go-ethereum/core"
