@@ -116,22 +116,26 @@ func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiR
 
 	// Get acumulated state access records from all the transactions in the sequence.
 	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(univalue.IPAccess{})
-	// univalue.Univalues(accmulatedAccessRecords).Print()
+
 	return slice.Fill(make([]uint32, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
-	if idx, _ := slice.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
-		return this.SeqAPI.WriteCache().(*cache.WriteCache).Export()
-	}
-
 	trans := slice.Concate(this.Results,
 		func(v *execution.Result) []*univalue.Univalue {
 			return v.Transitions()
 		},
 	)
-	return trans
+
+	uniqueDict := make(map[string]*univalue.Univalue)
+	for _, v := range trans {
+		uniqueDict[*v.GetPath()] = v
+	}
+
+	uniqueTrans := mapi.Values(uniqueDict)
+	return univalue.Univalues(uniqueTrans).SortByKey()
+
 }
 
 // FlagConflict flags the JobSequence as conflicting.
