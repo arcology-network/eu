@@ -58,12 +58,12 @@ func (this *Result) Postprocess() *Result {
 	gasUsedInWei := new(uint256.Int).Mul(uint256.NewInt(this.Receipt.GasUsed), uint256.NewInt(this.StdMsg.Native.GasPrice.Uint64()))
 
 	// Find the sender's balance from the state accesses.
-	_, senderBalance := slice.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
+	_, senderBalance := slice.FindFirstIf(this.RawStateAccesses, func(_ int, v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.From[:]))
 	})
 
 	// Find the coinbase's balance from the state accesse records.
-	_, coinbaseBalance := slice.FindFirstIf(this.RawStateAccesses, func(v *univalue.Univalue) bool {
+	_, coinbaseBalance := slice.FindFirstIf(this.RawStateAccesses, func(_ int, v *univalue.Univalue) bool {
 		return v != nil && strings.HasSuffix(*v.GetPath(), "/balance") && strings.Contains(*v.GetPath(), hex.EncodeToString(this.Coinbase[:]))
 	})
 

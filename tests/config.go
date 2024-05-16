@@ -63,7 +63,7 @@ func MainTestConfig() *adaptorcommon.Config {
 // Choose which data source to use
 func chooseDataStore() ccurlintf.ReadOnlyStore {
 	// return ethstg.NewParallelEthMemDataStore() // Eth trie datastore
-	return storage.NewStoreProxy("test") // Eth trie datastore
+	return storage.NewMemDBStoreProxy() // Eth trie datastore
 	// return ethstg.NewLevelDBDataStore("./leveldb") // Eth trie datastore
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), encoder, decoder)
 	// return cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(1000000, 1), cachedstorage.NewMemDB(), encoder, decoder)
@@ -205,7 +205,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(20)
 
-	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
+	// testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
 
 	return testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
@@ -215,6 +215,8 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	config.Coinbase = &Coinbase
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
+
+	executor.Api().WriteCache().(*cache.WriteCache).Clear()
 
 	// localCache := cache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {

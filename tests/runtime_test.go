@@ -6,6 +6,10 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+
+	mapi "github.com/arcology-network/common-lib/exp/map"
+	scheduler "github.com/arcology-network/eu/new-scheduler"
+	cache "github.com/arcology-network/storage-committer/storage/writecache"
 )
 
 func TestResettable(t *testing.T) {
@@ -39,22 +43,36 @@ func TestDeferred(t *testing.T) {
 	}
 }
 
-func TestSequentializeAll(t *testing.T) {
+func TestPropertiesToCalleeStruct(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "SequentializeAllTest", "", []byte{}, false)
+	_, err, eu, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "SequentializerTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
-}
+	trans := eu.Api().WriteCache().(*cache.WriteCache).Export()
 
-func TestSchedulerSequentializeTest(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	// Extract callees from the transition set and save them to a dictionary.
+	dict := new(scheduler.Callee).ToCallee(trans)
+	if len(dict) != 1 {
+		t.Error("Expecting 1 callees")
+	}
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "SequentializeTest", "", []byte{}, false)
-	if err != nil {
-		t.Error(err)
+	// Export the callees from the dictionary
+	callees := mapi.Values(dict)
+	if len(callees[0].Except) != 3 {
+		t.Error("Expecting 3 excepts", len(callees[0].Except))
+	}
+
+	if !callees[0].Sequential {
+		t.Error("Expecting Parallel exection")
+	}
+
+	buffer := scheduler.Callees(callees).Encode()
+
+	out := scheduler.Callees{}.Decode(buffer).(scheduler.Callees)
+	if len(out) != 1 || !out[0].Equal(callees[0]) {
+		t.Error("Expecting the same callees")
 	}
 }

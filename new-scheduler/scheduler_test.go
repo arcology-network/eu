@@ -159,7 +159,6 @@ func TestScheduler(t *testing.T) {
 	t0 := time.Now()
 	scheduler.New(msgs)
 	fmt.Println("Scheduler", len(msgs), time.Since(t0))
-
 }
 
 func TestMapBinarySearchComparison(t *testing.T) {

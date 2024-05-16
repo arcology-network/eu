@@ -3,7 +3,6 @@ package execution
 
 import (
 	"crypto/sha256"
-	"fmt"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
@@ -95,19 +94,19 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 // case there is a contract deployment in the sequence.
 func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
-	this.SeqAPI = blockAPI.Cascade() // Create a new write cache for the sequence with the main router as the data source.
+	this.SeqAPI = blockAPI //.Cascade() // Create a new write cache for the sequence with the main router as the data source.
+
+	// Only one transaction in the sequence, no need to create a new router.
+	if len(this.StdMsgs) == 1 {
+		this.Results[0] = this.execute(this.StdMsgs[0], config, this.SeqAPI)
+		return slice.Fill(make([]uint32, len(this.Results[0].RawStateAccesses)), this.ID), this.Results[0].RawStateAccesses
+	}
 
 	for i, msg := range this.StdMsgs {
 		txApi := this.SeqAPI.Cascade() // A new router whose writeCache uses the parent APIHandler's writeCache as the data source.
 		txApi.DecrementDepth()         // The api router always increments the depth.  So we need to decrement it here.
 
 		this.Results[i] = this.execute(msg, config, txApi) // Execute the message and store the result.
-		if this.Results[i].EvmResult.Err != nil || this.Results[i].Receipt.Status != 1 {
-			if this.Results[i].EvmResult.Err != nil {
-				fmt.Println("error in execute message:", this.Results[i].EvmResult.Err.Error())
-			}
-			fmt.Println("error in execute message:", this.Results[i].Receipt.Status)
-		}
 
 		// the line below modifies the cache in the major api as well.
 		this.SeqAPI.WriteCache().(*cache.WriteCache).Insert(this.Results[i].RawStateAccesses) // Merge the txApi write cache back into the api router.
@@ -116,8 +115,6 @@ func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiR
 
 	// Get acumulated state access records from all the transactions in the sequence.
 	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(univalue.IPAccess{})
-
-	// univalue.Univalues(accmulatedAccessRecords).Print()
 	return slice.Fill(make([]uint32, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 
@@ -146,7 +143,7 @@ func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
 	// Get the first index of the first conflict transaction.
 	// All the transitions after this index aren't usuable any more.
-	first, _ := slice.FindFirstIf(this.Results, func(r *execution.Result) bool {
+	first, _ := slice.FindFirstIf(this.Results, func(_ int, r *execution.Result) bool {
 		_, ok := (dict)[r.TxIndex]
 		return ok
 	})

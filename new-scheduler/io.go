@@ -41,9 +41,9 @@ func LoadScheduler(filepath string) (*Scheduler, error) {
 	contractKeys := new(codec.Strings).Decode(buffers[1]).(codec.Strings)
 	contractIdx := new(codec.Uint32s).Decode(buffers[2]).(codec.Uint32s)
 
-	sch.calleeLookup = make(map[string]uint32)
+	sch.calleeDict = make(map[string]uint32)
 	for i := range contractKeys {
-		sch.calleeLookup[contractKeys[i]] = contractIdx[i]
+		sch.calleeDict[contractKeys[i]] = contractIdx[i]
 	}
 	return sch, nil
 }
@@ -54,7 +54,7 @@ func SaveScheduler(this *Scheduler, filepath string) error {
 		return v
 	})
 
-	keys, values := mapi.KVs(this.calleeLookup)
+	keys, values := mapi.KVs(this.calleeDict)
 	codec.Strings(keys).Encode()
 	codec.Uint32s(values).Encode()
 

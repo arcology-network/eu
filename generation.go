@@ -99,13 +99,13 @@ func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRo
 
 	// Execute the job sequences in parallel. All the access records from the same sequence share
 	// the same sequence ID. The sequence ID is used to detect the conflicts between different sequences.
-	// slice.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
-	// 	seqIDs[i], records[i] = this.jobSeqs[i].Run(config, blockAPI, uint64(i))
-	// })
+	slice.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
+		seqIDs[i], records[i] = this.jobSeqs[i].Run(config, blockAPI.Cascade(), uint64(i))
+	})
 
-	for i := 0; i < len(this.jobSeqs); i++ {
-		seqIDs[i], records[i] = this.jobSeqs[i].Run(config, blockAPI, uint64(i))
-	}
+	// for i := 0; i < len(this.jobSeqs); i++ {
+	// 	seqIDs[i], records[i] = this.jobSeqs[i].Run(config, blockAPI, uint64(i))
+	// }
 
 	// Detect the conflicts between different sequences.
 	txDict, seqDict, _ := this.Detect(seqIDs, records).ToDict()

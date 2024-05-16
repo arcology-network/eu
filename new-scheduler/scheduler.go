@@ -21,6 +21,7 @@ import (
 	"math"
 	"sort"
 
+	"github.com/arcology-network/common-lib/codec"
 	associative "github.com/arcology-network/common-lib/exp/associative"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
@@ -28,15 +29,25 @@ import (
 )
 
 const (
-	ADDRESS_LENGTH     = 8
-	ID_LENGTH          = ADDRESS_LENGTH + 4 // 8 bytes for address and 4 bytes for signature
-	MAX_CONFLICT_RATIO = 0.5
-	MAX_NUM_CONFLICTS  = 256
+	SHORT_CONTRACT_ADDRESS_LENGTH = 8 //8 bytes for address
+	FUNCTION_SIGNATURE_LENGTH     = 4 // 4 bytes for signature
+	CALLEE_ID_LENGTH              = SHORT_CONTRACT_ADDRESS_LENGTH + FUNCTION_SIGNATURE_LENGTH
+	MAX_CONFLICT_RATIO            = 0.5
+	MAX_NUM_CONFLICTS             = 256
+
+	PROPERTY_PATH        = "func/"
+	PROPERTY_PATH_LENGTH = len(PROPERTY_PATH)
+	EXECUTION_METHOD     = "execution"
+	EXECUTION_EXCEPTED   = "except/"
+	DEFERRED_FUNC        = "defer"
+
+	PARALLEL_EXECUTION   = uint8(0) // The default method
+	SEQUENTIAL_EXECUTION = uint8(255)
 )
 
 type Scheduler struct {
 	fildb          string
-	calleeLookup   map[string]uint32 // A calleeLookup table to find the index of a calleeLookup by its address + signature.
+	calleeDict     map[string]uint32 // A calleeDict table to find the index of a calleeDict by its address + signature.
 	callees        []*Callee
 	deferByDefault bool // If the scheduler should schedule the deferred transactions by default.
 }
@@ -46,28 +57,44 @@ type Scheduler struct {
 func NewScheduler(fildb string, deferByDefault bool) (*Scheduler, error) {
 	return &Scheduler{
 		fildb:          fildb,
-		calleeLookup:   make(map[string]uint32),
+		calleeDict:     make(map[string]uint32),
 		deferByDefault: deferByDefault,
 	}, nil
 }
 
+// Add a deferred function to the scheduler.
+func (this *Scheduler) Import(rawCallees []*Callee) []*Callee {
+	length := len(this.callees)
+	for _, callee := range rawCallees {
+		lftAddr := new(codec.Bytes20).FromBytes(callee.AddrAndSign[:8])
+		lftSign := new(codec.Bytes4).FromBytes(callee.AddrAndSign[8:])
+
+		for _, rgtAddrAndSign := range callee.Except {
+			rgtAddr := new(codec.Bytes20).FromBytes(rgtAddrAndSign[:8])
+			rgtSign := new(codec.Bytes4).FromBytes(rgtAddrAndSign[8:])
+			this.Add(lftAddr, lftSign, rgtAddr, rgtSign)
+		}
+	}
+	return this.callees[length:]
+}
+
 // The function will find the index of the entry by its address and signature.
 // If the entry is found, the index will be returned. If the entry is not found, the index will be added to the scheduler.
-func (this *Scheduler) Find(addr [20]byte, sig [4]byte) (uint32, bool) {
-	lftKey := string(append(addr[:ADDRESS_LENGTH], sig[:]...)) // Join the address and signature to create a unique key.
-	idx, ok := this.calleeLookup[lftKey]
+func (this *Scheduler) Find(addr [20]byte, sig [4]byte) (uint32, *Callee, bool) {
+	lftKey := string(append(addr[:SHORT_CONTRACT_ADDRESS_LENGTH], sig[:]...)) // Join the address and signature to create a unique key.
+	idx, ok := this.calleeDict[lftKey]
 	if !ok {
 		idx = uint32(len(this.callees))
 		this.callees = append(this.callees, NewCallee(idx, addr[:], sig[:]))
-		this.calleeLookup[lftKey] = idx
+		this.calleeDict[lftKey] = idx
 	}
-	return idx, ok
+	return idx, this.callees[idx], ok
 }
 
-// Add a conflict pair to the sched uler
+// Add a conflict pair to the scheduler
 func (this *Scheduler) Add(lftAddr [20]byte, lftSig [4]byte, rgtAddr [20]byte, rgtSig [4]byte) bool {
-	lftIdx, lftExist := this.Find(lftAddr, lftSig)
-	rgtIdx, rgtExist := this.Find(rgtAddr, rgtSig)
+	lftIdx, _, lftExist := this.Find(lftAddr, lftSig)
+	rgtIdx, _, rgtExist := this.Find(rgtAddr, rgtSig)
 
 	if lftExist && rgtExist {
 		return false // The conflict pair is already recorded.
@@ -76,6 +103,12 @@ func (this *Scheduler) Add(lftAddr [20]byte, lftSig [4]byte, rgtAddr [20]byte, r
 	this.callees[lftIdx].Indices = append(this.callees[lftIdx].Indices, rgtIdx)
 	this.callees[rgtIdx].Indices = append(this.callees[rgtIdx].Indices, lftIdx)
 	return true
+}
+
+// Add a deferred function to the scheduler.
+func (this *Scheduler) AddDeferred(addr [20]byte, funSig [4]byte) {
+	idx, _, _ := this.Find(addr, funSig)
+	this.callees[idx].Deferrable = true
 }
 
 // The scheduler will optimize the given transactions and return a schedule.
@@ -170,12 +203,12 @@ func (this *Scheduler) Deferred(paraMsgInfo *associative.Pairs[uint32, *eucommon
 	deferredMsgs := associative.Pairs[uint32, *eucommon.StandardMessage]{}
 	for i := 0; i < len(*paraMsgInfo); i++ {
 		// Find the first and last instance of the same callee.
-		first, _ := slice.FindFirstIf(*paraMsgInfo, func(v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
+		first, _ := slice.FindFirstIf(*paraMsgInfo, func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
 			return (*paraMsgInfo)[i].First == v.First
 		})
 
 		// Find the first and last instance of the same callee.
-		last, deferred := slice.FindLastIf(*paraMsgInfo, func(v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
+		last, deferred := slice.FindLastIf(*paraMsgInfo, func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
 			return (*paraMsgInfo)[i].First == v.First
 		})
 
@@ -206,7 +239,10 @@ func (this *Scheduler) Prefilter(stdMsgs []*eucommon.StandardMessage) (*Schedule
 
 	// Get the IDs for the given addresses and signatures, which will be used to find the callee index.
 	pairs := slice.ParallelTransform(stdMsgs, 8, func(i int, msg *eucommon.StandardMessage) *associative.Pair[uint32, *eucommon.StandardMessage] {
-		idx, ok := this.calleeLookup[string(append(slice.Clone((*msg.Native.To)[:])[:ADDRESS_LENGTH], msg.Native.Data[:4]...))]
+		// key := string(append(slice.Clone((*msg.Native.To)[:])[:SHORT_CONTRACT_ADDRESS_LENGTH], msg.Native.Data[:4]...))
+
+		key := new(Callee).Compact((*msg.Native.To)[:], msg.Native.Data[:])
+		idx, ok := this.calleeDict[string(key)]
 		if !ok {
 			idx = math.MaxUint32 // The callee is new.
 		}
@@ -225,7 +261,7 @@ func (this *Scheduler) Prefilter(stdMsgs []*eucommon.StandardMessage) (*Schedule
 
 	// Deployments are less likely to have conflicts, but it's not guaranteed.
 	sequentialOnly := slice.MoveIf(&pairs, func(_ int, v *associative.Pair[uint32, *eucommon.StandardMessage]) bool {
-		return this.callees[v.First].SequentialOnly
+		return this.callees[v.First].Sequential
 	})
 
 	sch.Unknows = (*associative.Pairs[uint32, *eucommon.StandardMessage])(&unknows).Seconds()
