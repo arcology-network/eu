@@ -92,13 +92,13 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
 // Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
 // case there is a contract deployment in the sequence.
-func (this *JobSequence) Run(config *adaptorcommon.Config, blockAPI intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
+func (this *JobSequence) Run(config *adaptorcommon.Config, seqAPI intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.Results = make([]*execution.Result, len(this.StdMsgs))
-	this.SeqAPI = blockAPI //.Cascade() // Create a new write cache for the sequence with the main router as the data source.
+	this.SeqAPI = seqAPI //.Cascade() // Create a new write cache for the sequence with the main router as the data source.
 
 	// Only one transaction in the sequence, no need to create a new router.
 	if len(this.StdMsgs) == 1 {
-		this.Results[0] = this.execute(this.StdMsgs[0], config, this.SeqAPI)
+		this.Results[0] = this.execute(this.StdMsgs[0], config, this.SeqAPI.Cascade())
 		return slice.Fill(make([]uint32, len(this.Results[0].RawStateAccesses)), this.ID), this.Results[0].RawStateAccesses
 	}
 
