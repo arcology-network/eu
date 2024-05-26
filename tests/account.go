@@ -2,23 +2,47 @@
 package tests
 
 import (
-	evmcommon "github.com/ethereum/go-ethereum/common"
+	"strconv"
+
+	eu "github.com/arcology-network/eu"
+	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
+	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
+	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
+	"github.com/arcology-network/storage-committer/univalue"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
+// Addresses used in tests.
 var (
-	Coinbase = evmcommon.BytesToAddress([]byte("coinbase"))
-	Owner    = evmcommon.BytesToAddress([]byte("owner"))
-	Alice    = evmcommon.BytesToAddress([]byte("user1"))
-	Bob      = evmcommon.BytesToAddress([]byte("user2"))
+	Coinbase = ethcommon.BytesToAddress([]byte("coinbase"))
+	Owner    = ethcommon.BytesToAddress([]byte("owner"))
+	Alice    = ethcommon.BytesToAddress([]byte("user1"))
+	Bob      = ethcommon.BytesToAddress([]byte("user2"))
 
-	Abby    = evmcommon.BytesToAddress([]byte("Abby"))
-	Abu     = evmcommon.BytesToAddress([]byte("Abu"))
-	Andy    = evmcommon.BytesToAddress([]byte("Andy"))
-	Anna    = evmcommon.BytesToAddress([]byte("Anna"))
-	Antonio = evmcommon.BytesToAddress([]byte("Antonio"))
-	Bailey  = evmcommon.BytesToAddress([]byte("Bailey"))
-	Baloo   = evmcommon.BytesToAddress([]byte("Baloo"))
-	Bambi   = evmcommon.BytesToAddress([]byte("Bambi"))
-	Banza   = evmcommon.BytesToAddress([]byte("Banza"))
-	Beast   = evmcommon.BytesToAddress([]byte("Beast"))
+	Abby    = ethcommon.BytesToAddress([]byte("Abby"))
+	Abu     = ethcommon.BytesToAddress([]byte("Abu"))
+	Andy    = ethcommon.BytesToAddress([]byte("Andy"))
+	Anna    = ethcommon.BytesToAddress([]byte("Anna"))
+	Antonio = ethcommon.BytesToAddress([]byte("Antonio"))
+	Bailey  = ethcommon.BytesToAddress([]byte("Bailey"))
+	Baloo   = ethcommon.BytesToAddress([]byte("Baloo"))
+	Bambi   = ethcommon.BytesToAddress([]byte("Bambi"))
+	Banza   = ethcommon.BytesToAddress([]byte("Banza"))
+	Beast   = ethcommon.BytesToAddress([]byte("Beast"))
 )
+
+func GenRandomAccounts(num int) []ethcommon.Address {
+	accounts := make([]ethcommon.Address, num)
+	for i := 0; i < num; i++ {
+		accounts[i] = ethcommon.BytesToAddress([]byte(strconv.Itoa(i)))
+	}
+	return accounts
+}
+
+type TestEu struct {
+	eu          *eu.EU
+	config      *adaptorcommon.Config
+	store       ccurlintf.ReadOnlyStore
+	committer   *stgcomm.StateCommitter
+	transitions []*univalue.Univalue
+}

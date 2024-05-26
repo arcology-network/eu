@@ -56,7 +56,7 @@ func NewExecutionLogs() *ExecutionLogs {
 	}
 }
 
-func (this *ExecutionLogs) Append(key, value string) {
+func (this *ExecutionLogs) Transform(key, value string) {
 	this.Logs = append(this.Logs, ExecutionLog{
 		Key:   key,
 		Value: value,
