@@ -2,7 +2,7 @@ module github.com/arcology-network/eu
 
 go 1.22
 
-replace github.com/ethereum/go-ethereum => ../concurrent-evm/
+replace github.com/ethereum/go-ethereum v1.13.1 => ../concurrent-evm/
 
 replace github.com/arcology-network/common-lib => ../common-lib/
 
@@ -11,10 +11,10 @@ replace github.com/arcology-network/evm-adaptor => ../evm-adaptor/
 replace github.com/arcology-network/storage-committer => ../storage-committer/
 
 require (
-	github.com/arcology-network/common-lib v1.9.0
-	github.com/arcology-network/evm-adaptor v1.9.0
-	github.com/arcology-network/storage-committer v1.9.0
-	github.com/ethereum/go-ethereum v1.13.7
+	github.com/arcology-network/common-lib v0.0.0-00010101000000-000000000000
+	github.com/arcology-network/evm-adaptor v0.0.0-00010101000000-000000000000
+	github.com/arcology-network/storage-committer v0.0.0-00010101000000-000000000000
+	github.com/ethereum/go-ethereum v1.13.1
 	github.com/holiman/uint256 v1.2.4
 	golang.org/x/crypto v0.20.0
 )
@@ -23,7 +23,6 @@ require (
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
-	github.com/arcology-network/evm v1.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bits-and-blooms/bitset v1.10.0 // indirect
 	github.com/btcsuite/btcd v0.21.0-beta // indirect
@@ -39,7 +38,6 @@ require (
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
-	github.com/elliotchance/orderedmap v1.5.1 // indirect
 	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240227051544-1ec5013384e8 // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
 	github.com/getsentry/sentry-go v0.25.0 // indirect
