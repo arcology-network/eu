@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
+	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	evmTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -35,14 +35,14 @@ type Result struct {
 // affected by conflicts, while the gas deduction part is not.
 func (this *Result) GenGasTransition(rawTransition *univalue.Univalue, gasDelta *uint256.Int, isCredit bool) *univalue.Univalue {
 	balanceTransition := rawTransition.Clone().(*univalue.Univalue)
-	if diff := balanceTransition.Value().(ccurlintf.Type).Delta().(uint256.Int); diff.Cmp(gasDelta) >= 0 {
+	if diff := balanceTransition.Value().(stgcommon.Type).Delta().(uint256.Int); diff.Cmp(gasDelta) >= 0 {
 		// transfer := diff.Sub(diff.Clone(), (*uint256.Int)(gasDelta))                            // balance - gas
-		// (balanceTransition).Value().(ccurlintf.Type).SetDelta((*codec.Uint256)(transfer)) // Set the transfer, Won't change the initial value.
-		// (balanceTransition).Value().(ccurlintf.Type).SetDeltaSign(false)
+		// (balanceTransition).Value().(stgcommon.Type).SetDelta((*codec.Uint256)(transfer)) // Set the transfer, Won't change the initial value.
+		// (balanceTransition).Value().(stgcommon.Type).SetDeltaSign(false)
 		//
 		newGasTransition := balanceTransition.Clone().(*univalue.Univalue)
-		newGasTransition.Value().(ccurlintf.Type).SetDelta(*gasDelta)
-		newGasTransition.Value().(ccurlintf.Type).SetDeltaSign(isCredit)
+		newGasTransition.Value().(stgcommon.Type).SetDelta(*gasDelta)
+		newGasTransition.Value().(stgcommon.Type).SetDeltaSign(isCredit)
 		newGasTransition.Property.SetPersistent(true)
 		return newGasTransition
 	}

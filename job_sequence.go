@@ -8,15 +8,15 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
+	"github.com/arcology-network/common-lib/types/storage/commutative"
+	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
+	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/execution"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	intf "github.com/arcology-network/evm-adaptor/interface"
 	pathbuilder "github.com/arcology-network/evm-adaptor/pathbuilder"
-	"github.com/arcology-network/storage-committer/commutative"
-	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
-	"github.com/arcology-network/storage-committer/univalue"
 
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
@@ -26,8 +26,8 @@ import (
 
 // JobSequence represents a sequence of jobs to be executed.
 type JobSequence struct {
-	ID           uint32   // group id
-	PreTxs       []uint32 ``
+	ID           uint32 // group id
+	PreTxs       []uint32
 	StdMsgs      []*eucommon.StandardMessage
 	Results      []*execution.Result
 	SeqAPI       intf.EthApiRouter
@@ -192,7 +192,7 @@ func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *adapt
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
 	// for _, v := range *this.SeqAPI.WriteCache().(*cache.WriteCache).Cache() {
-	// 	typed := v.Value().(ccurlintf.Type)
+	// 	typed := v.Value().(stgtype.Type)
 	// 	amount += common.IfThen(
 	// 		!v.Preexist(),
 	// 		(uint64(typed.Size())/32)*uint64(v.Writes())*ethparams.SstoreSetGas,
@@ -205,13 +205,13 @@ func (this *JobSequence) CalcualteRefund() uint64 {
 // RefundTo refunds the specified amount from the payer to the recipient.
 func (this *JobSequence) RefundTo(payer, recipent *univalue.Univalue, amount uint64) (uint64, error) {
 	credit := commutative.NewU256Delta(uint256.NewInt(amount), true).(*commutative.U256)
-	if _, _, _, _, err := recipent.Value().(ccurlintf.Type).Set(credit, nil); err != nil {
+	if _, _, _, _, err := recipent.Value().(stgcommon.Type).Set(credit, nil); err != nil {
 		return 0, err
 	}
 	recipent.IncrementDeltaWrites(1)
 
 	debit := commutative.NewU256Delta(uint256.NewInt(amount), false).(*commutative.U256)
-	if _, _, _, _, err := payer.Value().(ccurlintf.Type).Set(debit, nil); err != nil {
+	if _, _, _, _, err := payer.Value().(stgcommon.Type).Set(debit, nil); err != nil {
 		return 0, err
 	}
 	payer.IncrementDeltaWrites(1)

@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	commontypes "github.com/arcology-network/common-lib/types"
+	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	eucommon "github.com/arcology-network/eu/common"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	"github.com/arcology-network/evm-adaptor/compiler"
-	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
+	stgcommiter "github.com/arcology-network/storage-committer/storage/committer"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -55,7 +55,7 @@ func TestBaseContainer(t *testing.T) {
 	}
 
 	contractAddress := receipt.ContractAddress
-	testEu.committer = stgcomm.NewStateCommitter(testEu.store, nil)
+	testEu.committer = stgcommiter.NewStateCommitter(testEu.store, nil)
 	testEu.committer.Import(transitions)
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(20)

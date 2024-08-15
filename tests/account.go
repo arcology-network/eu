@@ -4,11 +4,11 @@ package tests
 import (
 	"strconv"
 
+	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	eu "github.com/arcology-network/eu"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
@@ -42,7 +42,7 @@ func GenRandomAccounts(num int) []ethcommon.Address {
 type TestEu struct {
 	eu          *eu.EU
 	config      *adaptorcommon.Config
-	store       ccurlintf.ReadOnlyStore
+	store       stgcommon.ReadOnlyStore
 	committer   *stgcomm.StateCommitter
 	transitions []*univalue.Univalue
 }

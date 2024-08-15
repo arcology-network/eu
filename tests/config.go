@@ -9,14 +9,14 @@ import (
 	commonlibcommon "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/mempool"
 	commontypes "github.com/arcology-network/common-lib/types"
+	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
+	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	eucommon "github.com/arcology-network/eu/common"
 	statestore "github.com/arcology-network/storage-committer"
-	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -61,7 +61,7 @@ func MainTestConfig() *adaptorcommon.Config {
 }
 
 // Choose which data source to use
-func chooseDataStore() ccurlintf.ReadOnlyStore {
+func chooseDataStore() stgcommon.ReadOnlyStore {
 	// return ethstg.NewParallelEthMemDataStore() // Eth trie datastore
 	return storage.NewMemDBStoreProxy() // Eth trie datastore
 	// return ethstg.NewLevelDBDataStore("./leveldb") // Eth trie datastore
@@ -169,7 +169,7 @@ func CreateEthMsg(from evmcommon.Address, to evmcommon.Address, nonce, value, ga
 	)
 }
 
-func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, ccurlintf.ReadOnlyStore, []byte, error) {
+func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*eu.EU, *evmcommon.Address, stgcommon.ReadOnlyStore, []byte, error) {
 	code, err := compiler.CompileContracts(targetPath, contractFile, compilerVersion, contract, true)
 	if err != nil {
 		return nil, nil, nil, []byte{}, err
@@ -210,7 +210,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	return testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
 
-func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore ccurlintf.ReadOnlyStore, amount uint64) (*core.ExecutionResult, error) {
+func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName string, datastore stgcommon.ReadOnlyStore, amount uint64) (*core.ExecutionResult, error) {
 	config := MainTestConfig()
 	config.Coinbase = &Coinbase
 	config.BlockNumber = new(big.Int).SetUint64(10000000)

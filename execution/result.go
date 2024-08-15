@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
+	"github.com/arcology-network/common-lib/types/storage/univalue"
 	eucommon "github.com/arcology-network/eu/common"
-	ccurlintf "github.com/arcology-network/storage-committer/interfaces"
-	"github.com/arcology-network/storage-committer/univalue"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	ethcoretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -33,7 +33,7 @@ type Result struct {
 // The tx sender has to pay the tx fees regardless the execution status. This function deducts the gas fee from the sender's balance
 // change and generates a new transition for that.
 func (this *Result) GenGasTransition(balanceTransition *univalue.Univalue, gasDelta *uint256.Int, isCredit bool) *univalue.Univalue {
-	totalDelta := balanceTransition.Value().(ccurlintf.Type).Delta().(uint256.Int)
+	totalDelta := balanceTransition.Value().(stgcommon.Type).Delta().(uint256.Int)
 	if totalDelta.Cmp(gasDelta) == 0 { // Balance change == gas fee paid.
 		balanceTransition.Property.SetPersistent(true) // Won't be affect by conflicts
 		return balanceTransition
@@ -41,8 +41,8 @@ func (this *Result) GenGasTransition(balanceTransition *univalue.Univalue, gasDe
 
 	// Separate the gas fee from the balance change and generate a new transition for that.
 	gasTransition := balanceTransition.Clone().(*univalue.Univalue)
-	gasTransition.Value().(ccurlintf.Type).SetDelta(*gasDelta)    // Set the gas fee.
-	gasTransition.Value().(ccurlintf.Type).SetDeltaSign(isCredit) // Negative for the sender, positive for the coinbase.
+	gasTransition.Value().(stgcommon.Type).SetDelta(*gasDelta)    // Set the gas fee.
+	gasTransition.Value().(stgcommon.Type).SetDeltaSign(isCredit) // Negative for the sender, positive for the coinbase.
 	gasTransition.Property.SetPersistent(true)
 	return gasTransition
 }

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/mempool"
+	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	pathbuilder "github.com/arcology-network/evm-adaptor/pathbuilder"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
-	cache "github.com/arcology-network/storage-committer/storage/writecache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
 	apihandler "github.com/arcology-network/evm-adaptor/apihandler"
