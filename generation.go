@@ -7,10 +7,10 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	scheduler "github.com/arcology-network/eu/new-scheduler"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	intf "github.com/arcology-network/evm-adaptor/interface"
-	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
+	scheduler "github.com/arcology-network/scheduler"
+	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	evmcore "github.com/ethereum/go-ethereum/core"
 )
 

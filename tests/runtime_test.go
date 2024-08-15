@@ -9,7 +9,7 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
-	scheduler "github.com/arcology-network/eu/new-scheduler"
+	scheduler "github.com/arcology-network/scheduler"
 )
 
 func TestResettable(t *testing.T) {

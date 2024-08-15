@@ -13,6 +13,7 @@ replace github.com/arcology-network/storage-committer => ../storage-committer/
 require (
 	github.com/arcology-network/common-lib v1.9.1-0.20240526090033-4c2ee0f20f15
 	github.com/arcology-network/evm-adaptor v0.0.0-00010101000000-000000000000
+	github.com/arcology-network/scheduler v0.0.0-20240815215301-5db83de42803
 	github.com/arcology-network/storage-committer v0.0.0-00010101000000-000000000000
 	github.com/ethereum/go-ethereum v1.13.1
 	github.com/holiman/uint256 v1.2.4
