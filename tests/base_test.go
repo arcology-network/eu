@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	commontypes "github.com/arcology-network/common-lib/types"
+	eucommon "github.com/arcology-network/common-lib/types"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
-	eucommon "github.com/arcology-network/eu/common"
 	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	"github.com/arcology-network/evm-adaptor/compiler"
 	stgcommiter "github.com/arcology-network/storage-committer/storage/committer"

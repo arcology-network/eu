@@ -19,7 +19,7 @@ package scheduler
 
 import (
 	"github.com/arcology-network/common-lib/exp/slice"
-	eucommon "github.com/arcology-network/eu/common"
+	eucommon "github.com/arcology-network/common-lib/types"
 )
 
 type Schedule struct {

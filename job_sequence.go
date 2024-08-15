@@ -8,6 +8,7 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	types "github.com/arcology-network/common-lib/types"
 	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/arcology-network/common-lib/types/storage/commutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
@@ -28,7 +29,7 @@ import (
 type JobSequence struct {
 	ID           uint32 // group id
 	PreTxs       []uint32
-	StdMsgs      []*eucommon.StandardMessage
+	StdMsgs      []*types.StandardMessage
 	Results      []*execution.Result
 	SeqAPI       intf.EthApiRouter
 	RecordBuffer []*univalue.Univalue
@@ -41,7 +42,7 @@ func NewJobSequence(seqID uint32, tx []uint64, evmMsgs []*evmcore.Message, txHas
 	}
 
 	for i, evmMsg := range evmMsgs {
-		newJobSeq.AppendMsg(&eucommon.StandardMessage{
+		newJobSeq.AppendMsg(&types.StandardMessage{
 			ID:     tx[i],
 			Native: evmMsg,
 			TxHash: txHash,
@@ -64,7 +65,7 @@ func (*JobSequence) New(id uint32, apiRouter intf.EthApiRouter) *JobSequence {
 func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, baseTxHash [32]byte, api intf.EthApiRouter) *JobSequence {
 	newJobSeq := new(JobSequence).New(uint32(api.GetSerialNum(eucommon.SUB_PROCESS)), api)
 
-	return newJobSeq.AppendMsg(&eucommon.StandardMessage{
+	return newJobSeq.AppendMsg(&types.StandardMessage{
 		ID:     uint64(newJobSeq.GetID()),
 		Native: evmMsg,
 		TxHash: newJobSeq.DeriveNewHash(baseTxHash), //api.GetEU().(interface{ TxHash() [32]byte }).TxHash()
@@ -74,7 +75,7 @@ func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, baseTxHash [32]byte, ap
 // GetID returns the ID of the JobSequence.
 func (this *JobSequence) GetID() uint32 { return this.ID }
 func (this *JobSequence) AppendMsg(msg interface{}) *JobSequence {
-	this.StdMsgs = append(this.StdMsgs, msg.(*eucommon.StandardMessage))
+	this.StdMsgs = append(this.StdMsgs, msg.(*types.StandardMessage))
 	return this
 }
 
@@ -157,7 +158,7 @@ func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
 }
 
 // execute executes a standard message and returns the result.
-func (this *JobSequence) execute(StdMsg *eucommon.StandardMessage, config *adaptorcommon.Config, api intf.EthApiRouter) *execution.Result {
+func (this *JobSequence) execute(StdMsg *types.StandardMessage, config *adaptorcommon.Config, api intf.EthApiRouter) *execution.Result {
 	statedb := pathbuilder.NewImplStateDB(api)
 	statedb.PrepareFormer(StdMsg.TxHash, [32]byte{}, uint32(StdMsg.ID))
 

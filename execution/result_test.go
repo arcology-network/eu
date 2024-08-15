@@ -22,11 +22,11 @@ import (
 	"math/big"
 	"testing"
 
+	eucommon "github.com/arcology-network/common-lib/types"
 	intf "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	eucommon "github.com/arcology-network/eu/common"
 	ethcore "github.com/ethereum/go-ethereum/core"
 	ethcoretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"

@@ -6,7 +6,7 @@ import (
 	"math"
 	"math/big"
 
-	eucommon "github.com/arcology-network/eu/common"
+	eucommon "github.com/arcology-network/common-lib/types"
 	intf "github.com/arcology-network/evm-adaptor/interface"
 	eth "github.com/arcology-network/evm-adaptor/pathbuilder"
 	ethcommon "github.com/ethereum/go-ethereum/common"

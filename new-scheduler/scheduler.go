@@ -25,8 +25,8 @@ import (
 	associative "github.com/arcology-network/common-lib/exp/associative"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
+	eucommon "github.com/arcology-network/common-lib/types"
 	schtype "github.com/arcology-network/common-lib/types/scheduler"
-	eucommon "github.com/arcology-network/eu/common"
 )
 
 // const (

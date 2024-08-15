@@ -24,11 +24,11 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	eucommon "github.com/arcology-network/common-lib/types"
 	schtype "github.com/arcology-network/common-lib/types/scheduler"
 	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	eucommon "github.com/arcology-network/eu/common"
 )
 
 // The callee struct stores the information of a contract function that is called by the EOA initiated transactions.
