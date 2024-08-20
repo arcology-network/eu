@@ -23,6 +23,7 @@ import (
 	evmcore "github.com/ethereum/go-ethereum/core"
 	evmcoretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/holiman/uint256"
 
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/params"
@@ -85,7 +86,8 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	for i := 0; i < len(genesisAccts); i++ {
 		statedb.CreateAccount(genesisAccts[i])
-		statedb.AddBalance(genesisAccts[i], new(big.Int).SetUint64(1e18))
+		v, _ := uint256.FromBig(new(big.Int).SetUint64(1e18))
+		statedb.AddBalance(genesisAccts[i], v)
 	}
 
 	// Apply the transitions to the storage.

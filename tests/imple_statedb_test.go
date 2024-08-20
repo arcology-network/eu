@@ -2,7 +2,6 @@ package tests
 
 import (
 	"bytes"
-	"math/big"
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/mempool"
@@ -39,7 +38,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	ethStatedb = pathbuilder.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	balance := ethStatedb.GetBalance(account)
-	if balance == nil || balance.Cmp(new(big.Int)) != 0 {
+	if balance == nil || !balance.IsZero() {
 		t.Fail()
 	}
 }
