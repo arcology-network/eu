@@ -25,8 +25,8 @@ import (
 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
+	"github.com/arcology-network/eu/eth"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	statestore "github.com/arcology-network/storage-committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
@@ -40,7 +40,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 
 	alice := AliceAccount()
 
-	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -83,7 +83,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

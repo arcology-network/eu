@@ -24,8 +24,8 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/eu/eth"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	stgcomm "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/arcology-network/common-lib/types/storage/commutative"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
@@ -41,7 +41,7 @@ func TestRandomOrderImport(t *testing.T) {
 	sstore := statestore.NewStateStore(store)
 	WriteCache := sstore.WriteCache
 
-	if _, err := typeexec.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
@@ -121,7 +121,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	alice := AliceAccount()
 	// sstore:= statestore.NewStateStore(store)
 
-	if _, err := typeexec.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
@@ -223,7 +223,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	sstore := statestore.NewStateStore(store)
 	WriteCache := sstore.WriteCache
 
-	if _, err := typeexec.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})

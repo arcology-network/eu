@@ -24,17 +24,19 @@ import (
 	"math/big"
 
 	"github.com/arcology-network/common-lib/codec"
+	// "github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/types"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	stgtype "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	abi "github.com/arcology-network/eu/abi"
 	"github.com/arcology-network/eu/common"
+	eth "github.com/arcology-network/eu/eth"
+	intf "github.com/arcology-network/eu/interface"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/holiman/uint256"
@@ -42,21 +44,21 @@ import (
 
 // APIs under the concurrency namespace
 type BaseHandlers struct {
-	api         typeexec.EthApiRouter
-	pathBuilder *typeexec.PathBuilder
+	api         intf.EthApiRouter
+	pathBuilder *eth.PathBuilder
 	args        []interface{}
 }
 
-func NewBaseHandlers(api typeexec.EthApiRouter, args ...interface{}) *BaseHandlers {
+func NewBaseHandlers(api intf.EthApiRouter, args ...interface{}) *BaseHandlers {
 	return &BaseHandlers{
 		api:         api,
-		pathBuilder: typeexec.NewPathBuilder("/storage/container", api),
+		pathBuilder: eth.NewPathBuilder("/storage/container", api),
 		args:        args,
 	}
 }
 
-func (this *BaseHandlers) Address() [20]byte                { return common.BYTES_HANDLER }
-func (this *BaseHandlers) Connector() *typeexec.PathBuilder { return this.pathBuilder }
+func (this *BaseHandlers) Address() [20]byte           { return common.BYTES_HANDLER }
+func (this *BaseHandlers) Connector() *eth.PathBuilder { return this.pathBuilder }
 
 func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64) ([]byte, bool, int64) {
 	signature := [4]byte{}
@@ -131,7 +133,7 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	return []byte{}, false, 0 // unknown
 }
 
-func (this *BaseHandlers) Api() typeexec.EthApiRouter { return this.api }
+func (this *BaseHandlers) Api() intf.EthApiRouter { return this.api }
 
 // Create a new container. This function is called when the constructor of the base contract is called in the concurrentlib.
 func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {

@@ -26,11 +26,10 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/common-lib/exp/slice"
-	eucommon "github.com/arcology-network/common-lib/types/execution"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+	eucommon "github.com/arcology-network/eu/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	apicontainer "github.com/arcology-network/eu/apihandler/container"
 	apicumulative "github.com/arcology-network/eu/apihandler/cumulative"
 	apimultiprocess "github.com/arcology-network/eu/apihandler/multiprocess"
@@ -88,7 +87,7 @@ func NewAPIHandler(writeCachePool *mempool.Mempool[*cache.WriteCache]) *APIHandl
 }
 
 // Initliaze a new APIHandler from an existing writeCache. This is different from the NewAPIHandler() function in that it does not create a new writeCache.
-func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, deployer ethcommon.Address, schedule interface{}) typeexec.EthApiRouter {
+func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, deployer ethcommon.Address, schedule interface{}) intf.EthApiRouter {
 	// localCache := writeCachePool.(*mempool.Mempool[*cache.WriteCache]).New()
 	api := NewAPIHandler(this.writeCachePool)
 	api.SetDeployer(deployer)
@@ -104,7 +103,7 @@ func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, 
 
 // The Cascade() function creates a new APIHandler whose writeCache uses the parent APIHandler's writeCache as the
 // read-only data store.  writecache -> parent's writecache -> backend datastore
-func (this *APIHandler) Cascade() typeexec.EthApiRouter {
+func (this *APIHandler) Cascade() intf.EthApiRouter {
 	api := NewAPIHandler(this.writeCachePool)
 	api.SetDeployer(this.deployer)
 	api.depth = this.depth + 1
@@ -131,7 +130,7 @@ func (this *APIHandler) GetSchedule() interface{}         { return this.schedule
 func (this *APIHandler) SetSchedule(schedule interface{}) { this.schedule = schedule }
 
 func (this *APIHandler) WriteCache() interface{} { return this.localCache }
-func (this *APIHandler) SetWriteCache(writeCache interface{}) typeexec.EthApiRouter {
+func (this *APIHandler) SetWriteCache(writeCache interface{}) intf.EthApiRouter {
 	this.localCache = writeCache.(*cache.WriteCache)
 	return this
 }

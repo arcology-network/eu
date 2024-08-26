@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package pathbuilder
+package eth
 
 import (
 	"github.com/arcology-network/common-lib/codec"

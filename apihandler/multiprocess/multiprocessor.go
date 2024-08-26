@@ -35,11 +35,11 @@ import (
 
 	"github.com/arcology-network/eu/abi"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	eu "github.com/arcology-network/eu"
-	adaptorcommon "github.com/arcology-network/eu/common"
+	eucommon "github.com/arcology-network/eu/common"
 
 	basecontainer "github.com/arcology-network/eu/apihandler/container"
+	intf "github.com/arcology-network/eu/interface"
 )
 
 // APIs under the concurrency namespace
@@ -47,16 +47,16 @@ type MultiprocessHandler struct {
 	*basecontainer.BaseHandlers
 }
 
-func NewMultiprocessHandler(ethApiRouter typeexec.EthApiRouter) *MultiprocessHandler {
+func NewMultiprocessHandler(ethApiRouter intf.EthApiRouter) *MultiprocessHandler {
 	handler := &MultiprocessHandler{}
 	handler.BaseHandlers = basecontainer.NewBaseHandlers(ethApiRouter, handler.Run, &eu.Generation{})
 	return handler
 }
 
-func (this *MultiprocessHandler) Address() [20]byte { return adaptorcommon.MULTIPROCESS_HANDLER }
+func (this *MultiprocessHandler) Address() [20]byte { return eucommon.MULTIPROCESS_HANDLER }
 
 func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args ...interface{}) ([]byte, bool, int64) {
-	if atomic.AddUint64(&typeexec.TotalSubProcesses, 1); !this.Api().CheckRuntimeConstrains() {
+	if atomic.AddUint64(&eucommon.TotalSubProcesses, 1); !this.Api().CheckRuntimeConstrains() {
 		return []byte{}, false, 0
 	}
 
@@ -73,7 +73,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 
 	path := this.Connector().Key(caller)
 	length, successful, fee := this.Length(path)
-	length = common.Min(typeexec.MAX_VM_INSTANCES, length)
+	length = common.Min(eucommon.MAX_VM_INSTANCES, length)
 	if !successful {
 		return []byte{}, successful, fee
 	}
@@ -94,7 +94,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	})
 
 	// Generate the configuration for the sub processes based on the current block context.
-	subConfig := adaptorcommon.NewConfigFromBlockContext(this.Api().GetEU().(interface{ VM() interface{} }).VM().(*vm.EVM).Context)
+	subConfig := eucommon.NewConfigFromBlockContext(this.Api().GetEU().(interface{ VM() interface{} }).VM().(*vm.EVM).Context)
 	transitions := eu.NewGenerationFromMsgs(0, threads, ethMsgs, this.Api()).Execute(subConfig, this.Api()) // Run the job sequences in parallel.
 
 	// Sub processes may have been spawned during the execution, recheck it.

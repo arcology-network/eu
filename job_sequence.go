@@ -9,16 +9,15 @@ import (
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	types "github.com/arcology-network/common-lib/types"
-	eucommon "github.com/arcology-network/common-lib/types/execution"
-	execution "github.com/arcology-network/common-lib/types/execution"
 	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/arcology-network/common-lib/types/storage/commutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	adaptorcommon "github.com/arcology-network/eu/common"
-	pathbuilder "github.com/arcology-network/eu/pathbuilder"
+	eucommon "github.com/arcology-network/eu/common"
+	eth "github.com/arcology-network/eu/eth"
+	intf "github.com/arcology-network/eu/interface"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -30,12 +29,12 @@ type JobSequence struct {
 	ID           uint32 // group id
 	PreTxs       []uint32
 	StdMsgs      []*types.StandardMessage
-	Results      []*execution.Result
-	SeqAPI       typeexec.EthApiRouter
+	Results      []*eucommon.Result
+	SeqAPI       intf.EthApiRouter
 	RecordBuffer []*univalue.Univalue
 }
 
-func NewJobSequence(seqID uint32, tx []uint64, evmMsgs []*evmcore.Message, txHash [32]byte, api typeexec.EthApiRouter) *JobSequence {
+func NewJobSequence(seqID uint32, tx []uint64, evmMsgs []*evmcore.Message, txHash [32]byte, api intf.EthApiRouter) *JobSequence {
 	newJobSeq := &JobSequence{
 		ID:     seqID,
 		SeqAPI: api,
@@ -54,7 +53,7 @@ func NewJobSequence(seqID uint32, tx []uint64, evmMsgs []*evmcore.Message, txHas
 func (*JobSequence) T() *JobSequence { return &JobSequence{} }
 
 // New creates a new JobSequence with the given ID and API router.
-func (*JobSequence) New(id uint32, apiRouter typeexec.EthApiRouter) *JobSequence {
+func (*JobSequence) New(id uint32, apiRouter intf.EthApiRouter) *JobSequence {
 	return &JobSequence{
 		ID:     id,
 		SeqAPI: apiRouter,
@@ -62,7 +61,7 @@ func (*JobSequence) New(id uint32, apiRouter typeexec.EthApiRouter) *JobSequence
 }
 
 // NewFromCall creates a new JobSequence from the given call.
-func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, baseTxHash [32]byte, api typeexec.EthApiRouter) *JobSequence {
+func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, baseTxHash [32]byte, api intf.EthApiRouter) *JobSequence {
 	newJobSeq := new(JobSequence).New(uint32(api.GetSerialNum(eucommon.SUB_PROCESS)), api)
 
 	return newJobSeq.AppendMsg(&types.StandardMessage{
@@ -93,12 +92,12 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
 // Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
 // case there is a contract deployment in the sequence.
-func (this *JobSequence) Run(config *adaptorcommon.Config, seqAPI typeexec.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
+func (this *JobSequence) Run(config *adaptorcommon.Config, seqAPI intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
 	this.SeqAPI = seqAPI //.Cascade() // Create a new write cache for the sequence with the main router as the data source.
 	this.SeqAPI.DecrementDepth()
 
 	// Only one transaction in the sequence, no need to create a new router.
-	this.Results = make([]*execution.Result, len(this.StdMsgs))
+	this.Results = make([]*eucommon.Result, len(this.StdMsgs))
 	if len(this.StdMsgs) == 1 {
 		this.Results[0] = this.execute(this.StdMsgs[0], config, this.SeqAPI.Cascade())
 		return slice.Fill(make([]uint32, len(this.Results[0].RawStateAccesses)), this.ID), this.Results[0].RawStateAccesses
@@ -122,12 +121,12 @@ func (this *JobSequence) Run(config *adaptorcommon.Config, seqAPI typeexec.EthAp
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
-	// if idx, _ := slice.FindFirstIf(this.Results, func(v *execution.Result) bool { return v.Err != nil }); idx < 0 {
+	// if idx, _ := slice.FindFirstIf(this.Results, func(v *Result) bool { return v.Err != nil }); idx < 0 {
 	// 	return this.SeqAPI.WriteCache().(*cache.WriteCache).Export()
 	// }
 
 	trans := slice.Concate(this.Results,
-		func(v *execution.Result) []*univalue.Univalue {
+		func(v *eucommon.Result) []*univalue.Univalue {
 			return v.Transitions()
 		},
 	)
@@ -145,7 +144,7 @@ func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
 	// Get the first index of the first conflict transaction.
 	// All the transitions after this index aren't usuable any more.
-	first, _ := slice.FindFirstIf(this.Results, func(_ int, r *execution.Result) bool {
+	first, _ := slice.FindFirstIf(this.Results, func(_ int, r *eucommon.Result) bool {
 		_, ok := (dict)[r.TxIndex]
 		return ok
 	})
@@ -158,8 +157,8 @@ func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
 }
 
 // execute executes a standard message and returns the result.
-func (this *JobSequence) execute(StdMsg *types.StandardMessage, config *adaptorcommon.Config, api typeexec.EthApiRouter) *execution.Result {
-	statedb := pathbuilder.NewImplStateDB(api)
+func (this *JobSequence) execute(StdMsg *types.StandardMessage, config *adaptorcommon.Config, api intf.EthApiRouter) *eucommon.Result {
+	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(StdMsg.TxHash, [32]byte{}, uint32(StdMsg.ID))
 
 	eu := NewEU(
@@ -176,7 +175,7 @@ func (this *JobSequence) execute(StdMsg *types.StandardMessage, config *adaptorc
 			adaptorcommon.NewEVMTxContext(*StdMsg.Native),
 		)
 
-	return (&execution.Result{
+	return (&eucommon.Result{
 		TxIndex:          uint32(StdMsg.ID),
 		TxHash:           common.IfThenDo1st(receipt != nil, func() evmcommon.Hash { return receipt.TxHash }, evmcommon.Hash{}),
 		RawStateAccesses: cache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),

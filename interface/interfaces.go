@@ -21,6 +21,7 @@ package interfaces
 import (
 	"github.com/ethereum/go-ethereum/common"
 
+	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -40,37 +41,37 @@ type ChainContext interface {
 	GetHeader(common.Hash, uint64) *types.Header // GetHeader returns the hash corresponding to their hash.
 }
 
-// type EthApiRouter interface {
-// 	GetDeployer() evmcommon.Address
-// 	SetDeployer(evmcommon.Address)
+type EthApiRouter interface {
+	GetDeployer() evmcommon.Address
+	SetDeployer(evmcommon.Address)
 
-// 	GetEU() interface{}
-// 	SetEU(interface{})
+	GetEU() interface{}
+	SetEU(interface{})
 
-// 	GetSchedule() interface{}
-// 	SetSchedule(interface{})
+	GetSchedule() interface{}
+	SetSchedule(interface{})
 
-// 	AuxDict() map[string]interface{}
-// 	WriteCachePool() interface{}
-// 	WriteCache() interface{}
-// 	SetWriteCache(interface{}) EthApiRouter
-// 	New(interface{}, interface{}, evmcommon.Address, interface{}) EthApiRouter
-// 	Cascade() EthApiRouter
+	AuxDict() map[string]interface{}
+	WriteCachePool() interface{}
+	WriteCache() interface{}
+	SetWriteCache(interface{}) EthApiRouter
+	New(interface{}, interface{}, evmcommon.Address, interface{}) EthApiRouter
+	Cascade() EthApiRouter
 
-// 	Origin() evmcommon.Address
-// 	Coinbase() evmcommon.Address
+	Origin() evmcommon.Address
+	Coinbase() evmcommon.Address
 
-// 	VM() interface{} //*vm.EVM
+	VM() interface{} //*vm.EVM
 
-// 	CheckRuntimeConstrains() bool
+	CheckRuntimeConstrains() bool
 
-// 	DecrementDepth() uint8
-// 	Depth() uint8
-// 	AddLog(key, value string)
-// 	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash) (bool, []byte, bool, int64)
+	DecrementDepth() uint8
+	Depth() uint8
+	AddLog(key, value string)
+	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash) (bool, []byte, bool, int64)
 
-// 	GetSerialNum(int) uint64
-// 	Pid() [32]byte
-// 	UUID() []byte
-// 	ElementUID() []byte
-// }
+	GetSerialNum(int) uint64
+	Pid() [32]byte
+	UUID() []byte
+	ElementUID() []byte
+}

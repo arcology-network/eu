@@ -15,12 +15,12 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package pathbuilder
+package eth
 
 import (
 	commonlib "github.com/arcology-network/common-lib/common"
+	intf "github.com/arcology-network/eu/interface"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
@@ -64,11 +64,11 @@ func getStorageRootPath(writeCache *cache.WriteCache, account evmcommon.Address)
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/")
 }
 
-func getLocalStorageKeyPath(api typeexec.EthApiRouter, account evmcommon.Address, key evmcommon.Hash) string {
+func getLocalStorageKeyPath(api intf.EthApiRouter, account evmcommon.Address, key evmcommon.Hash) string {
 	return stgcommon.ETH10_ACCOUNT_PREFIX + hexutil.Encode(account[:]) + "/storage/native/local/" + "0"
 }
 
-func getStorageKeyPath(api typeexec.EthApiRouter, account evmcommon.Address, key evmcommon.Hash) string {
+func getStorageKeyPath(api intf.EthApiRouter, account evmcommon.Address, key evmcommon.Hash) string {
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/", key.Hex())
 }
 
@@ -89,7 +89,7 @@ func accountExist(writeCache *cache.WriteCache, account evmcommon.Address, tid u
 }
 
 func createAccount(writeCache *cache.WriteCache, account evmcommon.Address, tid uint32) {
-	if _, err := typeexec.CreateNewAccount(tid, hexutil.Encode(account[:]), writeCache); err != nil {
+	if _, err := CreateNewAccount(tid, hexutil.Encode(account[:]), writeCache); err != nil {
 		panic(err)
 	}
 

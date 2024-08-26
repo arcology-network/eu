@@ -25,11 +25,11 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
+	"github.com/arcology-network/eu/eth"
 
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	statestore "github.com/arcology-network/storage-committer"
@@ -56,7 +56,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	alice := AliceAccount()
-	if _, err := typeexec.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -66,7 +66,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	writeCache.Clear()
 
 	bob := BobAccount()
-	if _, err := typeexec.CreateNewAccount(2, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(2, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -105,7 +105,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	alice := AliceAccount()
 
 	// = committer.WriteCache()
-	if _, err := typeexec.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -116,12 +116,12 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache.Clear()
 
 	// = committer.WriteCache()
-	if _, err := typeexec.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
 
 	// writeCache = committer.WriteCache()
-	if _, err := typeexec.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	path2 := commutative.NewPath() // create a path
@@ -152,7 +152,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
 
-	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -168,7 +168,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// committer.NewAccount(1, alice)
 
-	if _, err := typeexec.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -181,7 +181,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// writeCache = committer.WriteCache()
 
-	if _, err := typeexec.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(2, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
 	path2 := commutative.NewPath() // create a path

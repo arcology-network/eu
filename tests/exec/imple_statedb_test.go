@@ -6,7 +6,7 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/mempool"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
-	pathbuilder "github.com/arcology-network/eu/pathbuilder"
+	eth "github.com/arcology-network/eu/eth"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
@@ -24,7 +24,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
-	ethStatedb := pathbuilder.NewImplStateDB(api)
+	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
@@ -35,7 +35,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	committer.Commit(20)
 
 	committer = stgcomm.NewStateCommitter(db, nil)
-	ethStatedb = pathbuilder.NewImplStateDB(api)
+	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	balance := ethStatedb.GetBalance(account)
 	if balance == nil || !balance.IsZero() {
@@ -54,7 +54,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
-	ethStatedb := pathbuilder.NewImplStateDB(api)
+	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
@@ -66,7 +66,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	committer.Commit(20)
 
 	committer = stgcomm.NewStateCommitter(db, nil)
-	ethStatedb = pathbuilder.NewImplStateDB(api)
+	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	code := ethStatedb.GetCode(account)
 	if len(code) != 0 {
@@ -86,7 +86,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
-	ethStatedb := pathbuilder.NewImplStateDB(api)
+	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
@@ -97,7 +97,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	committer.Commit(20)
 
 	committer = stgcomm.NewStateCommitter(db, nil)
-	ethStatedb = pathbuilder.NewImplStateDB(api)
+	ethStatedb = eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 2)
 	state := ethStatedb.GetState(account, evmcommon.Hash{})
 	if !bytes.Equal(state.Bytes(), evmcommon.Hash{}.Bytes()) {
@@ -118,7 +118,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 // 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 // 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
-// 	ethStatedb := pathbuilder.NewImplStateDB(api)
+// 	ethStatedb := eth.NewImplStateDB(api)
 // 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 // 	ethStatedb.CreateAccount(account)
 // 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
@@ -128,7 +128,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 // 	committer.Commit(20)
 
 // 	committer = stgcomm.NewStateCommitter(db)
-// 	ethStatedb = pathbuilder.NewImplStateDB(api)
+// 	ethStatedb = eth.NewImplStateDB(api)
 
 // 	alice, bob := evmcommon.Address{}, evmcommon.Address{}
 // 	slice.Fill(alice[:], 1)

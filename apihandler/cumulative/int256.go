@@ -35,11 +35,11 @@ package api
 
 // // APIs under the concurrency namespace
 // type Int256CumulativeHandler struct {
-// 	api       typeexec.EthApiRouter,
+// 	api       intf.EthApiRouter,
 // 	connector *BuiltinPathMaker
 // }
 
-// func NewInt256CumulativeHandler(api typeexec.EthApiRouter) *Int256CumulativeHandler {
+// func NewInt256CumulativeHandler(api intf.EthApiRouter) *Int256CumulativeHandler {
 // 	return &Int256CumulativeHandler{
 // 		api:       api,
 // 		connector: NewBuiltinPathMaker("/container", api, api.WriteCache()),

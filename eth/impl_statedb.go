@@ -15,13 +15,13 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package pathbuilder
+package eth
 
 import (
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+	intf "github.com/arcology-network/eu/interface"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -38,10 +38,10 @@ type ImplStateDB struct {
 	tid              uint32 // tx id
 	logs             map[evmcommon.Hash][]*evmtypes.Log
 	transientStorage transientStorage
-	api              typeexec.EthApiRouter
+	api              intf.EthApiRouter
 }
 
-func NewImplStateDB(api typeexec.EthApiRouter) *ImplStateDB {
+func NewImplStateDB(api intf.EthApiRouter) *ImplStateDB {
 	return &ImplStateDB{
 		logs:             make(map[evmcommon.Hash][]*evmtypes.Log),
 		api:              api,

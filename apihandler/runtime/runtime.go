@@ -29,24 +29,24 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	schtype "github.com/arcology-network/common-lib/types/scheduler"
 	"github.com/arcology-network/common-lib/types/storage/commutative"
 	"github.com/arcology-network/common-lib/types/storage/noncommutative"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	adaptorcommon "github.com/arcology-network/eu/common"
-	pathbuilder "github.com/arcology-network/eu/pathbuilder"
+	eth "github.com/arcology-network/eu/eth"
+	intf "github.com/arcology-network/eu/interface"
 )
 
 type RuntimeHandlers struct {
-	api         typeexec.EthApiRouter
-	pathBuilder *typeexec.PathBuilder
+	api         intf.EthApiRouter
+	pathBuilder *eth.PathBuilder
 }
 
-func NewRuntimeHandlers(ethApiRouter typeexec.EthApiRouter) *RuntimeHandlers {
+func NewRuntimeHandlers(ethApiRouter intf.EthApiRouter) *RuntimeHandlers {
 	return &RuntimeHandlers{
 		api:         ethApiRouter,
-		pathBuilder: typeexec.NewPathBuilder("/storage", ethApiRouter),
+		pathBuilder: eth.NewPathBuilder("/storage", ethApiRouter),
 	}
 }
 
@@ -162,12 +162,12 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	txID := this.api.GetEU().(interface{ ID() uint32 }).ID()
 
 	// Create the parent path for the properties.
-	propertyPath := pathbuilder.FuncPropertyPath(caller, sourceFunc)
+	propertyPath := eth.FuncPropertyPath(caller, sourceFunc)
 	if _, err = cache.Write(txID, propertyPath, commutative.NewPath()); err != nil {
 		return []byte{}, err == nil, 0
 	}
 
-	path := pathbuilder.ExecutionMethodPath(caller, sourceFunc)
+	path := eth.ExecutionMethodPath(caller, sourceFunc)
 
 	// If local method is parallel, global method is sequential and vice versa.
 	globalMethod := schtype.PARALLEL_EXECUTION
@@ -181,7 +181,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 		return hex.EncodeToString(schtype.Compact(targetAddr[:], signature[:]))
 	})
 
-	path = pathbuilder.ExceptPaths(caller, sourceFunc)
+	path = eth.ExceptPaths(caller, sourceFunc)
 	_, err = cache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
 	return []byte{}, err == nil, 0
 }
@@ -201,10 +201,10 @@ func (this *RuntimeHandlers) deferred(caller, _ evmcommon.Address, input []byte)
 	txID := this.api.GetEU().(interface{ ID() uint32 }).ID()
 
 	// Get the function signature.
-	propertyPath := pathbuilder.FuncPropertyPath(caller, funSign)
+	propertyPath := eth.FuncPropertyPath(caller, funSign)
 	cache.Write(txID, propertyPath, commutative.NewPath())
 
-	deferPath := pathbuilder.DeferrablePath(caller, funSign)
+	deferPath := eth.DeferrablePath(caller, funSign)
 	_, err := cache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
 	return []byte{}, err == nil, 0
 }

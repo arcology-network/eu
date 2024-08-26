@@ -31,16 +31,14 @@ import (
 	platform "github.com/arcology-network/common-lib/types/storage/platform"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"golang.org/x/crypto/sha3"
-
 	// "github.com/google/btree"
 	// ehtrlp "github.com/elliotchance/orderedmap"
-
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 )
 
 func TestWriteWithNewWriteCacheSlowWrite(b *testing.T) {
@@ -321,7 +319,7 @@ func BenchmarkPathReadAndWrites(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	alice := AliceAccount()
-	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 

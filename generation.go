@@ -5,10 +5,10 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	adaptorcommon "github.com/arcology-network/eu/common"
+	intf "github.com/arcology-network/eu/interface"
 	scheduler "github.com/arcology-network/scheduler"
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	evmcore "github.com/ethereum/go-ethereum/core"
@@ -46,7 +46,7 @@ func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generat
 // This function is used for Multiprocessor execution ONLY !!!.
 // This function converts a list of raw calls to a list of parallel job sequences. One job sequence is created for each caller.
 // If there are N callers, there will be N job sequences. There sequences will be later added to a generation and executed in parallel.
-func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api typeexec.EthApiRouter) *Generation {
+func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter) *Generation {
 	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{})
 	slice.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
 		gen.Add(new(JobSequence).NewFromCall(*msg, api.GetEU().(interface{ TxHash() [32]byte }).TxHash(), api))
@@ -91,7 +91,7 @@ func (this *Generation) Add(job *JobSequence) bool {
 // don't want to cause any conflict. That is why we need to give different nonceOffset to different child threads, so they can deploy
 // their contracts at different addresses.
 
-func (this *Generation) Execute(execCoinbase interface{}, blockAPI typeexec.EthApiRouter) []*univalue.Univalue {
+func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRouter) []*univalue.Univalue {
 	config := execCoinbase.(*adaptorcommon.Config)
 
 	seqIDs := make([][]uint32, len(this.jobSeqs))

@@ -26,11 +26,11 @@ import (
 	"time"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	interfaces "github.com/arcology-network/common-lib/types/storage/common"
 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+	eth "github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	opadapter "github.com/arcology-network/storage-committer/op"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
@@ -109,7 +109,7 @@ func NewAcountsInCache(writeCache *cache.WriteCache, accounts ...string) {
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	// writeCache := sstore.WriteCache
 	for i := range accounts {
-		if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}
@@ -119,7 +119,7 @@ func NewWriteCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	for i := range accounts {
-		if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}

@@ -20,16 +20,16 @@ package runtime
 import (
 	"fmt"
 
-	typeexec "github.com/arcology-network/common-lib/types/execution"
 	"github.com/arcology-network/eu/common"
+	intf "github.com/arcology-network/eu/interface"
 )
 
 // APIs under the concurrency namespace
 type IoHandlers struct {
-	api typeexec.EthApiRouter
+	api intf.EthApiRouter
 }
 
-func NewIoHandlers(api typeexec.EthApiRouter) *IoHandlers {
+func NewIoHandlers(api intf.EthApiRouter) *IoHandlers {
 	return &IoHandlers{
 		api: api,
 	}

@@ -32,7 +32,7 @@ import (
 	apihandler "github.com/arcology-network/eu/apihandler"
 	adaptorcommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/compiler"
-	ethimpl "github.com/arcology-network/eu/pathbuilder"
+	ethimpl "github.com/arcology-network/eu/eth"
 )
 
 const (
