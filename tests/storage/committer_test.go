@@ -27,12 +27,12 @@ import (
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	typeexec "github.com/arcology-network/common-lib/types/execution"
 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	stgtype "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/arcology-network/common-lib/types/storage/commutative"
 	"github.com/arcology-network/common-lib/types/storage/noncommutative"
 	"github.com/arcology-network/common-lib/types/storage/univalue"
-	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
@@ -47,7 +47,7 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
@@ -144,7 +144,7 @@ func TestSize(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(111110)
 
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -193,7 +193,7 @@ func TestSize2(t *testing.T) {
 	committer.Precommit([]uint32{1})
 	committer.Commit(111110)
 
-	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
+	typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", noncommutative.NewString("124"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+key, noncommutative.NewBytes(slice.New[byte](320, 11)))
 
@@ -226,7 +226,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, trans := writeCache.Export(univalue.Sorter)
@@ -277,7 +277,7 @@ func TestReadWriteAt(t *testing.T) {
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -320,7 +320,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, trans := writeCache.Export(univalue.Sorter)
@@ -394,7 +394,7 @@ func TestBasic(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -501,7 +501,7 @@ func TestCommitter(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.WriteCache
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -596,7 +596,7 @@ func TestCommitter2(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -776,7 +776,7 @@ func TestTransientDBv2(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -801,7 +801,7 @@ func TestCustomCodec(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -1084,12 +1084,12 @@ func TestPathReadAndWritesPath(b *testing.T) {
 	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
 	bob := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -1149,7 +1149,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	NewAcountsInCache(writeCache, AliceAccount())
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 

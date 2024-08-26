@@ -6,11 +6,11 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/mempool"
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
-	pathbuilder "github.com/arcology-network/evm-adaptor/pathbuilder"
+	pathbuilder "github.com/arcology-network/eu/pathbuilder"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
-	apihandler "github.com/arcology-network/evm-adaptor/apihandler"
+	apihandler "github.com/arcology-network/eu/apihandler"
 )
 
 func TestStateDBV2GetNonexistBalance(t *testing.T) {

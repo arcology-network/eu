@@ -29,10 +29,10 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	eu "github.com/arcology-network/eu"
-	apihandler "github.com/arcology-network/evm-adaptor/apihandler"
-	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	"github.com/arcology-network/evm-adaptor/compiler"
-	ethimpl "github.com/arcology-network/evm-adaptor/pathbuilder"
+	apihandler "github.com/arcology-network/eu/apihandler"
+	adaptorcommon "github.com/arcology-network/eu/common"
+	"github.com/arcology-network/eu/compiler"
+	ethimpl "github.com/arcology-network/eu/pathbuilder"
 )
 
 const (

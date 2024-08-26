@@ -23,12 +23,12 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	typeexec "github.com/arcology-network/common-lib/types/execution"
 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	stgtype "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
@@ -41,7 +41,7 @@ func TestAuxTrans(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -131,7 +131,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

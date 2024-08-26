@@ -26,10 +26,10 @@ import (
 	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	typeexec "github.com/arcology-network/common-lib/types/execution"
 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	"github.com/arcology-network/common-lib/types/storage/commutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/holiman/uint256"
@@ -47,10 +47,10 @@ func TestTransitionFilters(t *testing.T) {
 
 	// writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
-	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
+	typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
 	// committer.NewAccount(stgcommcommon.SYSTEM, bob)
 
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -137,8 +137,8 @@ func TestAccessFilters(t *testing.T) {
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
-	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

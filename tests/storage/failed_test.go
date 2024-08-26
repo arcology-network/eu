@@ -23,10 +23,10 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 
+	typeexec "github.com/arcology-network/common-lib/types/execution"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
@@ -38,7 +38,7 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -117,7 +117,7 @@ func TestAddAndDelete(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

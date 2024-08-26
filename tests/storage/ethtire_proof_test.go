@@ -24,11 +24,11 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/slice"
+	typeexec "github.com/arcology-network/common-lib/types/execution"
 	common "github.com/arcology-network/common-lib/types/storage/common"
 	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
 	statestore "github.com/arcology-network/storage-committer"
 	opadapter "github.com/arcology-network/storage-committer/op"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
@@ -45,12 +45,12 @@ func TestEthWorldTrieProof(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := adaptorcommon.CreateNewAccount(common.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(common.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := adaptorcommon.CreateNewAccount(common.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := typeexec.CreateNewAccount(common.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	FlushToStore(sstore)
@@ -127,7 +127,7 @@ func TestGetProofAPI(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	bob := BobAccount()
-	adaptorcommon.CreateNewAccount(common.SYSTEM, bob, writeCache)
+	typeexec.CreateNewAccount(common.SYSTEM, bob, writeCache)
 	FlushToStore(sstore)
 
 	/* Bob updates */
@@ -190,7 +190,7 @@ func TestProofCacheBigInt(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	adaptorcommon.CreateNewAccount(common.SYSTEM, alice, writeCache)
+	typeexec.CreateNewAccount(common.SYSTEM, alice, writeCache)
 
 	/* Alice updates */
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -249,7 +249,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	adaptorcommon.CreateNewAccount(common.SYSTEM, alice, writeCache)
+	typeexec.CreateNewAccount(common.SYSTEM, alice, writeCache)
 	FlushToStore(sstore)
 
 	buf := slice.New[byte](32, 0)
@@ -317,10 +317,10 @@ func TestProofCache(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	adaptorcommon.CreateNewAccount(common.SYSTEM, alice, writeCache)
+	typeexec.CreateNewAccount(common.SYSTEM, alice, writeCache)
 
 	bob := BobAccount()
-	adaptorcommon.CreateNewAccount(common.SYSTEM, bob, writeCache)
+	typeexec.CreateNewAccount(common.SYSTEM, bob, writeCache)
 
 	FlushToStore(sstore)
 
@@ -462,7 +462,7 @@ func TestHistoryProofs(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	adaptorcommon.CreateNewAccount(common.SYSTEM, alice, writeCache)
+	typeexec.CreateNewAccount(common.SYSTEM, alice, writeCache)
 	FlushToStore(sstore)
 
 	/* Bob updates */

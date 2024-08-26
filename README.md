@@ -4,7 +4,7 @@ The EU project introduces an Abstract Execution Unit that serves as a transactio
 
 - **[Parallelized EVM](https://github.com/arcology-network/concurrent-evm):** A module responsible for parallelizing the Ethereum Virtual Machine (EVM) on Arcology Network.
 
-- **[evm-adaptor](https://github.com/arcology-network/evm-adaptor):** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
+- **[evm-adaptor](https://github.com/arcology-network/eu):** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
 
 - A local Write Cache to temporarily store data before persist them to the stateDB
 <br />
