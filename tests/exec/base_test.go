@@ -23,7 +23,7 @@ func TestBaseContainer(t *testing.T) {
 	testEu := NewTestEU(Coinbase, Alice, Bob)
 	// ================================== Compile the contract ==================================
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "lib")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib", "lib")
 
 	code, err := compiler.CompileContracts(targetPath, "/base/base_test.sol", "0.8.19", "BaseTest", true)
 	if err != nil || len(code) == 0 {

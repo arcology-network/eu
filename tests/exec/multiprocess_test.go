@@ -9,7 +9,7 @@ import (
 
 func TestU256CumulativeParallelInitTest(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256CumulativeParallelInitTest", "call()", []byte{}, false)
 	if err != nil {
@@ -19,7 +19,7 @@ func TestU256CumulativeParallelInitTest(t *testing.T) {
 
 func TestU256ParallelInitTest(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelInitTest", "call()", []byte{}, false)
 	if err != nil {
@@ -30,7 +30,7 @@ func TestU256ParallelInitTest(t *testing.T) {
 // //434343
 func TestU256ParallelPop(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelPopTest", "call()", []byte{}, false)
 	if err != nil {
@@ -40,7 +40,7 @@ func TestU256ParallelPop(t *testing.T) {
 
 func TestU256ParallelPushPopGet(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelTest", "call()", []byte{}, false)
 	if err != nil {
@@ -50,7 +50,7 @@ func TestU256ParallelPushPopGet(t *testing.T) {
 
 func TestParallelBasic(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaNativeAssignmentTest", "call()", []byte{}, false)
 	if err != nil {
@@ -60,7 +60,7 @@ func TestParallelBasic(t *testing.T) {
 
 func TestParallelWithConflict(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaFixedLengthWithConflictTest", "call()", []byte{}, false)
 	if err != nil {
@@ -70,7 +70,7 @@ func TestParallelWithConflict(t *testing.T) {
 
 func TestParaFixedLengthWithConflictAndRollback(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaFixedLengthWithConflictRollbackTest", "call()", []byte{}, false)
 	if err != nil {
@@ -80,7 +80,7 @@ func TestParaFixedLengthWithConflictAndRollback(t *testing.T) {
 
 func TestMultiGlobalParaSingleInUse(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiGlobalParaSingleInUse", "call()", []byte{}, false)
 	if err != nil {
@@ -90,7 +90,7 @@ func TestMultiGlobalParaSingleInUse(t *testing.T) {
 
 func TestMultiGlobalParaTest(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiprocessConcurrentBool", "call()", []byte{}, false)
 	if err != nil {
@@ -100,7 +100,7 @@ func TestMultiGlobalParaTest(t *testing.T) {
 
 func TestMultiLocalPara(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiTempParaTest", "call()", []byte{}, false)
 	if err != nil {
@@ -110,7 +110,7 @@ func TestMultiLocalPara(t *testing.T) {
 
 func TestParaMultiWithClear(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiLocalParaTestWithClear", "call()", []byte{}, false)
 	if err != nil {
@@ -121,7 +121,7 @@ func TestParaMultiWithClear(t *testing.T) {
 // func TestParaVote(t *testing.T) {
 func TestMultiParaU256Conflict(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelConflictTest", "call()", []byte{}, false)
 	if err != nil {
@@ -131,7 +131,7 @@ func TestMultiParaU256Conflict(t *testing.T) {
 
 func TestMultiParaU256Array(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ArrayOfU256ParallelTest", "call()", []byte{}, false)
 	if err != nil {
@@ -141,7 +141,7 @@ func TestMultiParaU256Array(t *testing.T) {
 
 func TestMultiParaCumulativeU256(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiParaCumulativeU256", "call()", []byte{}, false)
 	if err != nil {
@@ -151,7 +151,7 @@ func TestMultiParaCumulativeU256(t *testing.T) {
 
 func TestMultiParaCumulativeU256Second(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiParaCumulativeU256WithParent", "call()", []byte{}, false)
 	if err != nil {
@@ -161,7 +161,7 @@ func TestMultiParaCumulativeU256Second(t *testing.T) {
 
 func TestMultiCumulativeU256ConcurrentOperation(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiCumulativeU256ConcurrentOperation", "call()", []byte{}, false)
 	if err != nil {
@@ -171,7 +171,7 @@ func TestMultiCumulativeU256ConcurrentOperation(t *testing.T) {
 
 func TestParallelizerArray(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParallelizerArrayTest", "call()", []byte{}, false)
 	if err != nil {
@@ -181,7 +181,7 @@ func TestParallelizerArray(t *testing.T) {
 
 func TestMultipleParallelArray(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MultiParaCumulativeU256", "call()", []byte{}, false)
 	if err != nil {
@@ -191,7 +191,7 @@ func TestMultipleParallelArray(t *testing.T) {
 
 func TestRecursiveParallelizerOnNativeArray(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "RecursiveParallelizerOnNativeArrayTest", "call()", []byte{}, false)
 	if err != nil {
@@ -201,7 +201,7 @@ func TestRecursiveParallelizerOnNativeArray(t *testing.T) {
 
 func TestRecursiveAssigner(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "RecursiveAssignerTest", "call()", []byte{}, false)
 	if err != nil {
@@ -211,7 +211,7 @@ func TestRecursiveAssigner(t *testing.T) {
 
 func TestRecursiveParallelizerOnContainer(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "RecursiveParallelizerOnContainerTest", "call()", []byte{}, false)
 	if err != nil {
@@ -221,7 +221,7 @@ func TestRecursiveParallelizerOnContainer(t *testing.T) {
 
 func TestMaxSelfRecursiveDepth4Test(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MaxSelfRecursiveDepth4Test", "call()", []byte{}, false)
 	if err != nil {
@@ -231,7 +231,7 @@ func TestMaxSelfRecursiveDepth4Test(t *testing.T) {
 
 func TestMaxSelfRecursiveDepth(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MaxRecursiveDepth4Test", "call()", []byte{}, false)
 	if err != nil {
@@ -241,7 +241,7 @@ func TestMaxSelfRecursiveDepth(t *testing.T) {
 
 func TestMaxRecursiveDepthOffLimits(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MaxRecursiveDepthOffLimitTest", "call()", []byte{}, false)
 	if err != nil {
@@ -251,7 +251,7 @@ func TestMaxRecursiveDepthOffLimits(t *testing.T) {
 
 func TestCumulativeU256Recursive(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "MixedRecursiveMultiprocessTest", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
@@ -260,7 +260,7 @@ func TestCumulativeU256Recursive(t *testing.T) {
 
 func TestCumulativeU256Case(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParallelCumulativeU256", "call()", []byte{}, false)
 	if err != nil {
@@ -270,7 +270,7 @@ func TestCumulativeU256Case(t *testing.T) {
 
 func TestCumulativeU256Case1(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParallelCumulativeU256", "call1()", []byte{}, false)
 	if err != nil {
@@ -280,7 +280,7 @@ func TestCumulativeU256Case1(t *testing.T) {
 
 func TestCumulativeU256ThreadingMultiRuns(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ThreadingCumulativeU256SameMpMulti", "call()", []byte{}, false)
 	if err != nil {
@@ -290,7 +290,7 @@ func TestCumulativeU256ThreadingMultiRuns(t *testing.T) {
 
 func TestU256ParaCompute(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParaCompute", "call()", []byte{}, false)
 	if err != nil {
@@ -300,7 +300,7 @@ func TestU256ParaCompute(t *testing.T) {
 
 func TestNativeStorageAssignment(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "NativeStorageAssignmentTest", "call()", []byte{}, false)
 	if err != nil {
@@ -310,7 +310,7 @@ func TestNativeStorageAssignment(t *testing.T) {
 
 func TestParaConflictDifferentContracts(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaConflictTest", "call()", []byte{}, false)
 	if err != nil {
@@ -320,7 +320,7 @@ func TestParaConflictDifferentContracts(t *testing.T) {
 
 func TestParaRwConflict(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaRwConflictTest", "call()", []byte{}, false)
 	if err != nil {
@@ -330,7 +330,7 @@ func TestParaRwConflict(t *testing.T) {
 
 func TestParaSubbranchConflict(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaSubbranchConflictTest", "call()", []byte{}, false)
 	if err != nil {
@@ -340,7 +340,7 @@ func TestParaSubbranchConflict(t *testing.T) {
 
 func TestParentChildBranchConflict(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParentChildBranchConflictTest", "call()", []byte{}, false)
 	if err != nil {
@@ -350,7 +350,7 @@ func TestParentChildBranchConflict(t *testing.T) {
 
 func TestSimpleConflict(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "SimpleConflictTest", "call()", []byte{}, false)
 	if err != nil {
@@ -360,7 +360,7 @@ func TestSimpleConflict(t *testing.T) {
 
 func TestParaCumU256Sub(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaCumU256SubTest", "call()", []byte{}, false)
 	if err != nil {
@@ -370,7 +370,7 @@ func TestParaCumU256Sub(t *testing.T) {
 
 func TestParaDeletions(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaDeletions", "call()", []byte{}, false)
 	if err != nil {

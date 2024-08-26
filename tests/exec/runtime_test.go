@@ -14,7 +14,7 @@ import (
 
 func TestResettable(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "storage/storage_test.sol", "0.8.19", "ResettableDeployer", "call()", []byte{}, false)
 	if err != nil {
@@ -24,7 +24,7 @@ func TestResettable(t *testing.T) {
 
 func TestInstances(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	result, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "NumConcurrentInstanceTest", "call()", []byte{}, false)
 	if err != nil {
@@ -35,7 +35,7 @@ func TestInstances(t *testing.T) {
 
 func TestDeferred(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "DeferredTest", "", []byte{}, false)
 	if err != nil {
@@ -45,7 +45,7 @@ func TestDeferred(t *testing.T) {
 
 func TestPropertiesToCalleeStruct(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, eu, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "SequentializerTest", "", []byte{}, false)
 	if err != nil {

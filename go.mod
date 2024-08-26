@@ -15,9 +15,12 @@ require (
 	github.com/arcology-network/evm-adaptor v0.0.0-00010101000000-000000000000
 	github.com/arcology-network/scheduler v0.0.0-20240815215301-5db83de42803
 	github.com/arcology-network/storage-committer v0.0.0-00010101000000-000000000000
+	github.com/elliotchance/orderedmap v1.5.1
 	github.com/ethereum/go-ethereum v1.13.1
+	github.com/google/btree v1.1.2
 	github.com/holiman/uint256 v1.2.4
 	golang.org/x/crypto v0.20.0
+	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
 )
 
 require (
@@ -54,7 +57,6 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
-	github.com/google/btree v1.1.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
@@ -81,7 +83,6 @@ require (
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect

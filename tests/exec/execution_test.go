@@ -29,9 +29,9 @@ import (
 	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	eu "github.com/arcology-network/eu"
 	execution "github.com/arcology-network/eu"
+	tests "github.com/arcology-network/eu/tests/storage"
 	"github.com/arcology-network/evm-adaptor/compiler"
 	statestore "github.com/arcology-network/storage-committer"
-	tests "github.com/arcology-network/storage-committer/tests"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	evmcore "github.com/ethereum/go-ethereum/core"
@@ -41,7 +41,7 @@ import (
 func TestSequence(t *testing.T) {
 	// ================================== Compile the contract ==================================
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "native")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib", "native")
 	code, err := compiler.CompileContracts(targetPath, "/NativeStorage.sol", "0.8.19", "NativeStorage", true)
 	if err != nil || len(code) == 0 {
 		t.Error("Error: Failed to generate the byte code")
@@ -79,7 +79,7 @@ func TestSequence(t *testing.T) {
 func TestSequence2(t *testing.T) {
 	// ================================== Compile the contract ==================================
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "native")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib", "native")
 	code, err := compiler.CompileContracts(targetPath, "/Sequential.sol", "0.8.19", "SequentialTest", true)
 	if err != nil || len(code) == 0 {
 		t.Fatal("Error: Failed to generate the byte code")
@@ -116,7 +116,7 @@ func TestSequence2(t *testing.T) {
 func TestGeneration(t *testing.T) {
 	// ================================== Compile the 1st contract ==================================
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "native")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib", "native")
 	codeNativeStorage, err := compiler.CompileContracts(targetPath, "/NativeStorage.sol", "0.8.19", "NativeStorage", true)
 	if err != nil || len(codeNativeStorage) == 0 {
 		t.Fatal("Error: Failed to generate the byte code")
@@ -124,7 +124,7 @@ func TestGeneration(t *testing.T) {
 	deployNativeStorageMsg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(codeNativeStorage), nil, false)
 
 	// ================================== Compile the 2nd contract ==================================
-	targetPath = path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "native")
+	targetPath = path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib", "native")
 	codeSequential, err := compiler.CompileContracts(targetPath, "/Sequential.sol", "0.8.19", "SequentialTest", true)
 	if err != nil || len(codeSequential) == 0 {
 		t.Error("Error: Failed to generate the byte code")
@@ -183,7 +183,7 @@ func TestGeneration(t *testing.T) {
 func TestMultiCummutiaves(t *testing.T) {
 	// ================================== Compile the contract ==================================
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib", "lib", "commutative")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib", "lib", "commutative")
 	code, err := compiler.CompileContracts(targetPath, "/u256Cum_test.sol", "0.8.19", "MultiCummutative", true)
 	if err != nil || len(code) == 0 {
 		t.Error("Error: Failed to generate the byte code")

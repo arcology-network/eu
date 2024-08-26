@@ -25,7 +25,7 @@ func TestSlotHash(t *testing.T) {
 
 func TestNativeStorage(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/native/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/native/")
 	_, err, _, _ := DeployThenInvoke(targetPath, "NativeStorage.sol", "0.8.19", "NativeStorage", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
@@ -34,7 +34,7 @@ func TestNativeStorage(t *testing.T) {
 
 func TestGasDebitInFailedTx(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/native/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/native/")
 	_, err, _, _ := DeployThenInvoke(targetPath, "NativeStorage.sol", "0.8.19", "TestFailed", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)

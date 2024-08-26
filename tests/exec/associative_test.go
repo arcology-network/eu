@@ -9,7 +9,7 @@ import (
 
 func TestContainerPair(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "array/bytes_bool_test.sol", "0.8.19", "PairTest", "", []byte{}, false)
 	if err != nil {
@@ -19,7 +19,7 @@ func TestContainerPair(t *testing.T) {
 
 func TestU256ConcurrentMap(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "lib/map/u256_test.sol", "0.8.19", "ConcurrenctU256MapTest", "call()", []byte{}, false)
 	if err != nil {
@@ -29,7 +29,7 @@ func TestU256ConcurrentMap(t *testing.T) {
 
 func TestAddressBooleanMap(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "map/addressBoolean_test.sol", "0.8.19", "AddressBooleanMapTest", "", []byte{}, false)
 	if err != nil {
@@ -39,7 +39,7 @@ func TestAddressBooleanMap(t *testing.T) {
 
 func TestAddressUint256Map(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "map/addressUint256_test.sol", "0.8.19", "AddressU256MapTest", "", []byte{}, false)
 	if err != nil {
@@ -54,7 +54,7 @@ func TestAddressUint256Map(t *testing.T) {
 
 func TestConcurrentAddressBooleanMap(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "map/addressBoolean_test.sol", "0.8.19", "AddressBooleanMapConcurrentTest", "call()", []byte{}, false)
 	if err != nil {
@@ -64,7 +64,7 @@ func TestConcurrentAddressBooleanMap(t *testing.T) {
 
 func TestStringUint256Map(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(filepath.Dir(currentPath)), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "map/stringUint256_test.sol", "0.8.19", "StringUint256MapTest", "", []byte{}, false)
 	if err != nil {
