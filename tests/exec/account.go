@@ -1,5 +1,5 @@
 // KernelAPI provides system level function calls supported by arcology platform.
-package tests
+package exectest
 
 import (
 	"strconv"

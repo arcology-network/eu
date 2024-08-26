@@ -1,4 +1,4 @@
-package committertest
+package stgtest
 
 // "github.com/arcology-network/concurrent-evm/core/rawdb"
 

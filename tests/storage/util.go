@@ -16,7 +16,7 @@
  */
 
 // Generate a random account, testing only
-package committertest
+package stgtest
 
 import (
 	"fmt"
