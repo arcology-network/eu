@@ -20,10 +20,10 @@ package eth
 import (
 	"reflect"
 
-	"github.com/arcology-network/common-lib/types/storage/commutative"
-	"github.com/arcology-network/common-lib/types/storage/noncommutative"
-	stgcommcom "github.com/arcology-network/common-lib/types/storage/platform"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
+	stgcommcom "github.com/arcology-network/storage-committer/platform"
+	"github.com/arcology-network/storage-committer/type/commutative"
+	"github.com/arcology-network/storage-committer/type/noncommutative"
+	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
 // CreateNewAccount creates a new account in the write cache.

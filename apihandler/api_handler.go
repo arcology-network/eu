@@ -26,8 +26,8 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/common-lib/exp/slice"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	eucommon "github.com/arcology-network/eu/common"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	apicontainer "github.com/arcology-network/eu/apihandler/container"
@@ -48,15 +48,15 @@ type APIHandler struct {
 
 	handlerDict map[[20]byte]intf.ApiCallHandler // APIs under the atomic namespace
 
-	writeCachePool *mempool.Mempool[*cache.WriteCache]
-	localCache     *cache.WriteCache // The private cache for the current APIHandler
+	writeCachePool *mempool.Mempool[*tempcache.WriteCache]
+	localCache     *tempcache.WriteCache // The private tempcache for the current APIHandler
 
 	auxDict map[string]interface{} // Auxiliary data generated during the execution of the APIHandler
 
 	execResult *eucommon.Result
 }
 
-func NewAPIHandler(writeCachePool *mempool.Mempool[*cache.WriteCache]) *APIHandler {
+func NewAPIHandler(writeCachePool *mempool.Mempool[*tempcache.WriteCache]) *APIHandler {
 	api := &APIHandler{
 		writeCachePool: writeCachePool,
 		eu:             nil,
@@ -88,12 +88,12 @@ func NewAPIHandler(writeCachePool *mempool.Mempool[*cache.WriteCache]) *APIHandl
 
 // Initliaze a new APIHandler from an existing writeCache. This is different from the NewAPIHandler() function in that it does not create a new writeCache.
 func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, deployer ethcommon.Address, schedule interface{}) intf.EthApiRouter {
-	// localCache := writeCachePool.(*mempool.Mempool[*cache.WriteCache]).New()
+	// localCache := writeCachePool.(*mempool.Mempool[*tempcache.WriteCache]).New()
 	api := NewAPIHandler(this.writeCachePool)
 	api.SetDeployer(deployer)
-	// api.writeCachePool = writeCachePool.(*mempool.Mempool[*cache.WriteCache])
+	// api.writeCachePool = writeCachePool.(*mempool.Mempool[*tempcache.WriteCache])
 	api.writeCachePool = this.writeCachePool
-	api.localCache = localCache.(*cache.WriteCache)
+	api.localCache = localCache.(*tempcache.WriteCache)
 	api.depth = this.depth + 1
 	api.deployer = deployer
 	api.schedule = schedule
@@ -110,10 +110,10 @@ func (this *APIHandler) Cascade() intf.EthApiRouter {
 	api.schedule = this.schedule
 	api.auxDict = make(map[string]interface{})
 
-	// writeCache := this.writeCachePool.New() // Get a new write cache from the shared write cache pool.
-	writeCache := cache.NewWriteCache(this.localCache, 32, 1)
+	// writeCache := this.writeCachePool.New() // Get a new write tempcache from the shared write tempcache pool.
+	writeCache := tempcache.NewWriteCache(this.localCache, 32, 1)
 
-	// Use the current write cache as the read-only data store for the replicated APIHandler
+	// Use the current write tempcache as the read-only data store for the replicated APIHandler
 	return api.SetWriteCache(writeCache.SetReadOnlyBackend(this.localCache))
 }
 
@@ -131,7 +131,7 @@ func (this *APIHandler) SetSchedule(schedule interface{}) { this.schedule = sche
 
 func (this *APIHandler) WriteCache() interface{} { return this.localCache }
 func (this *APIHandler) SetWriteCache(writeCache interface{}) intf.EthApiRouter {
-	this.localCache = writeCache.(*cache.WriteCache)
+	this.localCache = writeCache.(*tempcache.WriteCache)
 	return this
 }
 

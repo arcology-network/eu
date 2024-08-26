@@ -22,10 +22,10 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	"github.com/arcology-network/eu/eth"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	statestore "github.com/arcology-network/storage-committer"

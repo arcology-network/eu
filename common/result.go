@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	eucommon "github.com/arcology-network/common-lib/types"
-	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
+	commontype "github.com/arcology-network/common-lib/types"
+	stgcommon "github.com/arcology-network/storage-committer/common"
+	"github.com/arcology-network/storage-committer/type/univalue"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	ethcoretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -27,7 +27,7 @@ type Result struct {
 	immuned          []*univalue.Univalue //These transitions will take effect if the execution fails.
 	Receipt          *ethcoretypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
-	StdMsg           *eucommon.StandardMessage
+	StdMsg           *commontype.StandardMessage
 	Err              error
 }
 

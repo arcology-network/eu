@@ -18,10 +18,10 @@
 package eth
 
 import (
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	intf "github.com/arcology-network/eu/interface"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -50,7 +50,7 @@ func NewImplStateDB(api intf.EthApiRouter) *ImplStateDB {
 }
 
 func (this *ImplStateDB) CreateAccount(addr evmcommon.Address) {
-	createAccount(this.api.WriteCache().(*cache.WriteCache), addr, this.tid)
+	createAccount(this.api.WriteCache().(*tempcache.WriteCache), addr, this.tid)
 }
 
 func (this *ImplStateDB) AddBalance(addr evmcommon.Address, amount *uint256.Int) {
@@ -64,7 +64,7 @@ func (this *ImplStateDB) SubBalance(addr evmcommon.Address, amount *uint256.Int)
 // A hlper function to update the balance of an account, not part of the original interface
 func (this *ImplStateDB) updateBalance(addr evmcommon.Address, amount *uint256.Int, isPositive bool) {
 	if !this.Exist(addr) {
-		createAccount(this.api.WriteCache().(*cache.WriteCache), addr, this.tid)
+		createAccount(this.api.WriteCache().(*tempcache.WriteCache), addr, this.tid)
 	}
 
 	if amount.IsZero() {
@@ -72,7 +72,7 @@ func (this *ImplStateDB) updateBalance(addr evmcommon.Address, amount *uint256.I
 	}
 
 	delta := commutative.NewU256Delta(amount, isPositive) // Create a delta
-	if _, err := this.api.WriteCache().(*cache.WriteCache).Write(this.tid, getBalancePath(this.api.WriteCache().(*cache.WriteCache), addr), delta); err != nil {
+	if _, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.tid, getBalancePath(this.api.WriteCache().(*tempcache.WriteCache), addr), delta); err != nil {
 		panic("Error: Failed to updateBalance() with delta")
 	}
 }
@@ -82,7 +82,7 @@ func (this *ImplStateDB) GetBalance(addr evmcommon.Address) *uint256.Int {
 		return uint256.NewInt(0)
 	}
 
-	value, _, _ := this.api.WriteCache().(*cache.WriteCache).Read(this.tid, getBalancePath(this.api.WriteCache().(*cache.WriteCache), addr), new(commutative.U256))
+	value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.tid, getBalancePath(this.api.WriteCache().(*tempcache.WriteCache), addr), new(commutative.U256))
 	v := value.(uint256.Int)
 	return &v // v.(*commutative.U256).Value().(*big.Int)
 }
@@ -92,7 +92,7 @@ func (this *ImplStateDB) PeekBalance(addr evmcommon.Address) *uint256.Int {
 		return uint256.NewInt(0)
 	}
 
-	value, _ := this.api.WriteCache().(*cache.WriteCache).Peek(getBalancePath(this.api.WriteCache().(*cache.WriteCache), addr), new(commutative.U256))
+	value, _ := this.api.WriteCache().(*tempcache.WriteCache).Peek(getBalancePath(this.api.WriteCache().(*tempcache.WriteCache), addr), new(commutative.U256))
 	v := value.(uint256.Int)
 	return &v
 }
@@ -109,19 +109,19 @@ func (this *ImplStateDB) GetNonce(addr evmcommon.Address) uint64 {
 		return 0
 	}
 
-	nonce, _ := this.api.WriteCache().(*cache.WriteCache).Peek(getNoncePath(this.api.WriteCache().(*cache.WriteCache), addr), new(commutative.Uint64))
+	nonce, _ := this.api.WriteCache().(*tempcache.WriteCache).Peek(getNoncePath(this.api.WriteCache().(*tempcache.WriteCache), addr), new(commutative.Uint64))
 	return nonce.(uint64) + this.CalculateNonceOffset(addr, nonce.(uint64)) // Add the nonce offset
 }
 
 func (this *ImplStateDB) SetNonce(addr evmcommon.Address, nonce uint64) {
 	if !this.Exist(addr) {
-		createAccount(this.api.WriteCache().(*cache.WriteCache), addr, this.tid)
+		createAccount(this.api.WriteCache().(*tempcache.WriteCache), addr, this.tid)
 	}
 	// fmt.Println("SetNonce:", addr, ":", nonce)
 
-	// This original implementation will set the nonce to the given value, but here we just write the nonce delta, which is 1 to the cache, becuase the nonce increment is always 1
+	// This original implementation will set the nonce to the given value, but here we just write the nonce delta, which is 1 to the tempcache, becuase the nonce increment is always 1
 	// This is Arcology's way to handle the nonce, and the actual nonce will be calculated when it is read or at commit time.
-	if _, err := this.api.WriteCache().(*cache.WriteCache).Write(this.tid, getNoncePath(this.api.WriteCache().(*cache.WriteCache), addr), commutative.NewUint64Delta(1)); err != nil {
+	if _, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.tid, getNoncePath(this.api.WriteCache().(*tempcache.WriteCache), addr), commutative.NewUint64Delta(1)); err != nil {
 		panic(err)
 	}
 }
@@ -140,17 +140,17 @@ func (this *ImplStateDB) GetCode(addr evmcommon.Address) []byte {
 		return nil
 	}
 
-	value, _, _ := this.api.WriteCache().(*cache.WriteCache).Read(this.tid, getCodePath(this.api.WriteCache().(*cache.WriteCache), addr), new(noncommutative.Bytes))
+	value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.tid, getCodePath(this.api.WriteCache().(*tempcache.WriteCache), addr), new(noncommutative.Bytes))
 	return value.([]byte)
 
 }
 
 func (this *ImplStateDB) SetCode(addr evmcommon.Address, code []byte) {
 	if !this.Exist(addr) {
-		createAccount(this.api.WriteCache().(*cache.WriteCache), addr, this.tid)
+		createAccount(this.api.WriteCache().(*tempcache.WriteCache), addr, this.tid)
 	}
 
-	if _, err := this.api.WriteCache().(*cache.WriteCache).Write(this.tid, getCodePath(this.api.WriteCache().(*cache.WriteCache), addr), noncommutative.NewBytes(code)); err != nil {
+	if _, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.tid, getCodePath(this.api.WriteCache().(*tempcache.WriteCache), addr), noncommutative.NewBytes(code)); err != nil {
 		panic(err)
 	}
 }
@@ -173,7 +173,7 @@ func (this *ImplStateDB) AddSlotToAccessList(addr evmcommon.Address, slot evmcom
 
 // Get from DB directly, bypassing ccurl since it make have some temporary states
 func (this *ImplStateDB) GetCommittedState(addr evmcommon.Address, key evmcommon.Hash) evmcommon.Hash {
-	if value, _ := this.api.WriteCache().(*cache.WriteCache).ReadCommitted(this.tid, getStorageKeyPath(this.api, addr, key), new(noncommutative.Bytes)); value != nil {
+	if value, _ := this.api.WriteCache().(*tempcache.WriteCache).ReadCommitted(this.tid, getStorageKeyPath(this.api, addr, key), new(noncommutative.Bytes)); value != nil {
 		// v, _, _ := value.(interfaces.Type).Get()
 		return evmcommon.BytesToHash(value.([]byte))
 	}
@@ -181,7 +181,7 @@ func (this *ImplStateDB) GetCommittedState(addr evmcommon.Address, key evmcommon
 }
 
 func (this *ImplStateDB) GetState(addr evmcommon.Address, key evmcommon.Hash) evmcommon.Hash {
-	if value, _, _ := this.api.WriteCache().(*cache.WriteCache).Read(this.tid, getStorageKeyPath(this.api, addr, key), new(noncommutative.Bytes)); value != nil {
+	if value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.tid, getStorageKeyPath(this.api, addr, key), new(noncommutative.Bytes)); value != nil {
 		return evmcommon.BytesToHash(value.([]byte))
 	}
 	return evmcommon.Hash{}
@@ -189,17 +189,17 @@ func (this *ImplStateDB) GetState(addr evmcommon.Address, key evmcommon.Hash) ev
 
 func (this *ImplStateDB) SetState(addr evmcommon.Address, key, value evmcommon.Hash) {
 	if !this.Exist(addr) {
-		createAccount(this.api.WriteCache().(*cache.WriteCache), addr, this.tid)
+		createAccount(this.api.WriteCache().(*tempcache.WriteCache), addr, this.tid)
 	}
 
 	path := getStorageKeyPath(this.api, addr, key)
-	if _, err := this.api.WriteCache().(*cache.WriteCache).Write(this.tid, path, noncommutative.NewBytes(value.Bytes())); err != nil {
+	if _, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.tid, path, noncommutative.NewBytes(value.Bytes())); err != nil {
 		panic(err)
 	}
 }
 
 func (this *ImplStateDB) Exist(addr evmcommon.Address) bool {
-	flag := accountExist(this.api.WriteCache().(*cache.WriteCache), addr, this.tid)
+	flag := accountExist(this.api.WriteCache().(*tempcache.WriteCache), addr, this.tid)
 	// fmt.Println(addr, flag)
 	return flag
 }

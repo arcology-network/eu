@@ -20,12 +20,12 @@ package eth
 import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/types"
-	ccurlcommon "github.com/arcology-network/common-lib/types/storage/common"
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+	ccurlcommon "github.com/arcology-network/storage-committer/common"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	// adaptorcommon "github.com/arcology-network/storage-committer/storage/writecache"
+	// adaptorcommon ""github.com/arcology-network/storage-committer/storage/tempcache""
 	intf "github.com/arcology-network/eu/interface"
 )
 
@@ -54,10 +54,10 @@ func (this *PathBuilder) New(txIndex uint32, deploymentAddr types.Address) bool 
 
 func (this *PathBuilder) newStorageRoot(account types.Address, txIndex uint32) bool {
 	accountRoot := common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(account), "/")
-	if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(accountRoot) {
-		_, err := CreateNewAccount(txIndex, string(account), this.apiRouter.WriteCache().(*cache.WriteCache))
+	if !this.apiRouter.WriteCache().(*tempcache.WriteCache).IfExists(accountRoot) {
+		_, err := CreateNewAccount(txIndex, string(account), this.apiRouter.WriteCache().(*tempcache.WriteCache))
 		return err == nil
-		// return common.FilterFirst(this.apiRouter.WriteCache().(*cache.WriteCache).CreateNewAccount() != nil // Create a new account
+		// return common.FilterFirst(this.apiRouter.WriteCache().(*tempcache.WriteCache).CreateNewAccount() != nil // Create a new account
 	}
 	return true // ALready exists
 }
@@ -65,8 +65,8 @@ func (this *PathBuilder) newStorageRoot(account types.Address, txIndex uint32) b
 func (this *PathBuilder) newContainerRoot(account types.Address, txIndex uint32) bool {
 	containerRoot := this.key(account)
 
-	if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(containerRoot) {
-		_, err := this.apiRouter.WriteCache().(*cache.WriteCache).Write(txIndex, containerRoot, commutative.NewPath()) // Create a new container
+	if !this.apiRouter.WriteCache().(*tempcache.WriteCache).IfExists(containerRoot) {
+		_, err := this.apiRouter.WriteCache().(*tempcache.WriteCache).Write(txIndex, containerRoot, commutative.NewPath()) // Create a new container
 		return err == nil
 	}
 	return true // Already exists

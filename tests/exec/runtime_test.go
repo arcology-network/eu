@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	scheduler "github.com/arcology-network/scheduler"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 )
 
 func TestResettable(t *testing.T) {
@@ -51,7 +51,7 @@ func TestPropertiesToCalleeStruct(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	trans := eu.Api().WriteCache().(*cache.WriteCache).Export()
+	trans := eu.Api().WriteCache().(*tempcache.WriteCache).Export()
 
 	// Extract callees from the transition set and save them to a dictionary.
 	dict := new(scheduler.Callee).ToCallee(trans)

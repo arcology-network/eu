@@ -24,9 +24,9 @@ package stgtest
 // 	storage "github.com/arcology-network/common-lib/storage"
 // 	"github.com/arcology-network/common-lib/common"
 // 	stgcomm "github.com/arcology-network/storage-committer"
-// 	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
+// 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 // 	importer "github.com/arcology-network/storage-committer/storage/committer"
-// 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+// 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 // 	storage "github.com/arcology-network/storage-committer/storage/proxy"
 // )
 

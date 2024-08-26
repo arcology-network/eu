@@ -24,9 +24,9 @@ package stgtest
 // 	"time"
 
 // 	storage "github.com/arcology-network/common-lib/storage"
-// 	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
+// 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 // 	storage "github.com/arcology-network/storage-committer/storage/proxy"
-// 	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
+// 	univalue "github.com/arcology-network/storage-committer/type/univalue"
 // )
 
 // func TestReadonlyStorageLocal(t *testing.T) {

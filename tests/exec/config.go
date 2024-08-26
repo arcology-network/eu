@@ -8,15 +8,15 @@ import (
 
 	commonlibcommon "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/mempool"
-	commontypes "github.com/arcology-network/common-lib/types"
-	eucommon "github.com/arcology-network/common-lib/types"
-	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+
+	commontype "github.com/arcology-network/common-lib/types"
 	statestore "github.com/arcology-network/storage-committer"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -76,9 +76,9 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	sstore := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
 
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(sstore.WriteCache, 32, 1) // Generation writecache
-	}, func(cache *cache.WriteCache) { cache.Clear() }))
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
+		return tempcache.NewWriteCache(sstore.WriteCache, 32, 1) // Generation writecache
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -91,7 +91,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	}
 
 	// Apply the transitions to the storage.
-	_, transitions := cache.NewWriteCacheFilter(api.WriteCache()).ByType()
+	_, transitions := tempcache.NewWriteCacheFilter(api.WriteCache()).ByType()
 
 	store := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
 	committer := stgcomm.NewStateCommitter(datastore, store.GetWriters())
@@ -100,9 +100,9 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	committer.Commit(20)
 
 	// Init a new API
-	api = apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(sstore, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }))
+	api = apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
+		return tempcache.NewWriteCache(sstore, 32, 1)
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
 
 	statedb = ethimpl.NewImplStateDB(api)
 
@@ -183,17 +183,17 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 
 	// ================================== Deploy the contract ==================================
 	msg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, true)
-	StdMsg := &eucommon.StandardMessage{
+	StdMsg := &commontype.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
-		Source: commontypes.TX_SOURCE_LOCAL,
+		Source: commontype.TX_SOURCE_LOCAL,
 	}
 
 	testEu := NewTestEU(Coinbase, Alice, Bob)
 
 	receipt, execResult, err := testEu.eu.Run(StdMsg, adaptorcommon.NewEVMBlockContext(testEu.config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
-	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
+	_, transitions := tempcache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
 	// fmt.Print(v)
 	if receipt.Status != 1 || err != nil || execResult.Err != nil {
@@ -207,7 +207,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	testEu.committer.Precommit([]uint32{1})
 	testEu.committer.Commit(20)
 
-	// testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
+	// testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
 
 	return testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
@@ -218,23 +218,23 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
-	executor.Api().WriteCache().(*cache.WriteCache).Clear()
+	executor.Api().WriteCache().(*tempcache.WriteCache).Clear()
 
-	// localCache := cache.NewWriteCache(datastore, 32, 1)
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(datastore, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }))
+	// localCache := tempcache.NewWriteCache(datastore, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
+		return tempcache.NewWriteCache(datastore, 32, 1)
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
 	eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
 
 	data := crypto.Keccak256([]byte(funcName))[:4]
 	msg := core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(amount), 1e15, new(big.Int).SetUint64(1), data, nil, false)
-	StdMsg := &eucommon.StandardMessage{
+	StdMsg := &commontype.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
-		Source: commontypes.TX_SOURCE_LOCAL,
+		Source: commontype.TX_SOURCE_LOCAL,
 	}
 
 	receipt, execResult, err := executor.Run(StdMsg, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
@@ -254,11 +254,11 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 
 func DepolyContract(eu *eu.EU, committer *stgcomm.StateCommitter, config *adaptorcommon.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *adaptorcommon.Config, *eu.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
-	StdMsg := &eucommon.StandardMessage{
+	StdMsg := &commontype.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
-		Source: commontypes.TX_SOURCE_LOCAL,
+		Source: commontype.TX_SOURCE_LOCAL,
 	}
 
 	receipt, _, err := eu.Run(StdMsg, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
@@ -271,7 +271,7 @@ func DepolyContract(eu *eu.EU, committer *stgcomm.StateCommitter, config *adapto
 		return errors.New("Error: Deployment failed!!!" + errmsg), config, eu, nil
 	}
 
-	_, transitionsFiltered := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
+	_, transitionsFiltered := tempcache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 	// committer := eu.Api().Ccurl()
 	committer.Import(transitionsFiltered)
 	committer.Precommit([]uint32{1})
@@ -284,11 +284,11 @@ func CallContract(eu *eu.EU, contractAddress common.Address, inputData []byte, n
 	// inputData = append(data, inputData...)
 
 	msg := core.NewMessage(Alice, &contractAddress, 10+nonceIncrement, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), inputData, nil, false)
-	StdMsg := &eucommon.StandardMessage{
+	StdMsg := &commontype.StandardMessage{
 		ID:     1,
 		TxHash: [32]byte{1, 1, 1},
 		Native: &msg, // Build the message
-		Source: commontypes.TX_SOURCE_LOCAL,
+		Source: commontype.TX_SOURCE_LOCAL,
 	}
 
 	config := MainTestConfig()

@@ -25,11 +25,11 @@ import (
 
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	"github.com/arcology-network/eu/eth"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	statestore "github.com/arcology-network/storage-committer"

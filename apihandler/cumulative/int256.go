@@ -21,10 +21,10 @@ package api
 // 	"encoding/hex"
 
 // 	"github.com/arcology-network/common-lib/codec"
-// 	"github.com/arcology-network/common-lib/types"
+// 	"github.com/arcology-network/storage-committer"
 // 	"github.com/holiman/uint256"
 
-// 	"github.com/arcology-network/storage-committer/commutative"
+// 	"github.com/arcology-network/storage-committer/type/commutative"
 // 	evmcommon "github.com/ethereum/go-ethereum/common"
 // 	abi "github.com/arcology-network/eu/abi"
 // 	"github.com/arcology-network/eu/common"

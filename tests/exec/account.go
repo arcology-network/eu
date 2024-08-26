@@ -4,11 +4,11 @@ package exectest
 import (
 	"strconv"
 
-	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
 	eu "github.com/arcology-network/eu"
 	adaptorcommon "github.com/arcology-network/eu/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
+	"github.com/arcology-network/storage-committer/type/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 

@@ -31,16 +31,16 @@ import (
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/merkle"
-	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
-	platform "github.com/arcology-network/common-lib/types/storage/platform"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	platform "github.com/arcology-network/storage-committer/platform"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -117,7 +117,7 @@ func TestConcurrentDB(t *testing.T) {
 
 // TestTrieUpdates tests the updates to the trie data structure.
 // It creates multiple accounts and performs write operations on their storage.
-// It checks the correctness of the storage updates and cache management.
+// It checks the correctness of the storage updates and tempcache management.
 func TestTrieUpdates(t *testing.T) {
 	store := chooseDataStore()
 
@@ -236,7 +236,7 @@ func TestEthStorageConnection(t *testing.T) {
 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
-	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform()) // Reset the write cache
+	writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform()) // Reset the write tempcache
 	v, _, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
 	if v == nil {
 		t.Error(err)

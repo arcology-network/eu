@@ -25,9 +25,9 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -106,7 +106,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	mainTxID := uint32(this.Api().GetEU().(interface{ ID() uint32 }).ID())
 	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) { (*v).SetTx(mainTxID) })
 
-	this.Api().WriteCache().(*cache.WriteCache).Insert(transitions) // Merge the write cache to the main cache
+	this.Api().WriteCache().(*tempcache.WriteCache).Insert(transitions) // Merge the write tempcache to the main tempcache
 	return []byte{}, true, slice.Sum[int64, int64](fees)
 }
 

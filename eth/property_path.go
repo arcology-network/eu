@@ -20,8 +20,8 @@ package eth
 import (
 	"encoding/hex"
 
-	scheduler "github.com/arcology-network/common-lib/types/scheduler"
-	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
+	scheduler "github.com/arcology-network/scheduler"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )

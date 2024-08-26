@@ -23,15 +23,15 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
-	"github.com/arcology-network/common-lib/types/storage/univalue"
 	statestore "github.com/arcology-network/storage-committer"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// "github.com/arcology-network/storage-committer/interfaces"
-	interfaces "github.com/arcology-network/common-lib/types/storage/common"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
+	interfaces "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/storage/proxy"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 )
 
 func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*univalue.Univalue, error) {
@@ -98,7 +98,7 @@ func Create_Ctrn_1(account string, store interfaces.ReadOnlyStore) ([]byte, erro
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
-func CheckPaths(account string, writeCache *cache.WriteCache) error {
+func CheckPaths(account string, writeCache *tempcache.WriteCache) error {
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
 	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")

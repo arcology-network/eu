@@ -19,7 +19,7 @@ package stgtest
 
 import (
 	// "github.com/arcology-network/storage-committer/interfaces"
-	interfaces "github.com/arcology-network/common-lib/types/storage/common"
+	interfaces "github.com/arcology-network/storage-committer/common"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	// trie "github.com/ethereum/go-ethereum/trie"

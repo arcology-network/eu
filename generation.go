@@ -5,12 +5,12 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	stgcommon "github.com/arcology-network/common-lib/types/storage/common"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	adaptorcommon "github.com/arcology-network/eu/common"
+	eucommon "github.com/arcology-network/eu/common"
 	intf "github.com/arcology-network/eu/interface"
 	scheduler "github.com/arcology-network/scheduler"
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
+	stgcommon "github.com/arcology-network/storage-committer/common"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 	evmcore "github.com/ethereum/go-ethereum/core"
 )
 
@@ -92,7 +92,7 @@ func (this *Generation) Add(job *JobSequence) bool {
 // their contracts at different addresses.
 
 func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRouter) []*univalue.Univalue {
-	config := execCoinbase.(*adaptorcommon.Config)
+	config := execCoinbase.(*eucommon.Config)
 
 	seqIDs := make([][]uint32, len(this.jobSeqs))
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))

@@ -24,19 +24,20 @@ import (
 	"math/big"
 
 	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/types"
+
 	// "github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/common-lib/types"
 
-	stgtype "github.com/arcology-network/common-lib/types/storage/common"
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	abi "github.com/arcology-network/eu/abi"
 	"github.com/arcology-network/eu/common"
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
+	stgtype "github.com/arcology-network/storage-committer/common"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/holiman/uint256"
@@ -180,7 +181,7 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, input []byte
 		return []byte{}, false, 0
 	}
 
-	typedv, fees := this.api.WriteCache().(*cache.WriteCache).PeekCommitted(path, new(commutative.Path))
+	typedv, fees := this.api.WriteCache().(*tempcache.WriteCache).PeekCommitted(path, new(commutative.Path))
 	if typedv != nil {
 		type measurable interface{ Length() int }
 		numKeys := uint64(typedv.(stgtype.Type).Value().(measurable).Length())
@@ -430,12 +431,12 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, input []byte) ([]byte,
 
 	tx := this.api.GetEU().(interface{ ID() uint32 }).ID()
 	for {
-		if _, _, err := this.api.WriteCache().(*cache.WriteCache).PopBack(tx, path, nil); err != nil {
+		if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).PopBack(tx, path, nil); err != nil {
 			break
 		}
 	}
 
-	typedv, univ, _ := this.api.WriteCache().(*cache.WriteCache).Read(tx, path, new(commutative.Path))
+	typedv, univ, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(tx, path, new(commutative.Path))
 	typedv.(*deltaset.DeltaSet[string]).Commit()
 	univ.(*univalue.Univalue).IncrementWrites(1)
 

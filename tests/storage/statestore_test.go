@@ -26,13 +26,13 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
 
-	stgcomm "github.com/arcology-network/common-lib/types/storage/common"
-	"github.com/arcology-network/common-lib/types/storage/commutative"
-	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
 	statestore "github.com/arcology-network/storage-committer"
+	stgcomm "github.com/arcology-network/storage-committer/common"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	"github.com/arcology-network/storage-committer/type/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 )
 
 func TestRandomOrderImport(t *testing.T) {

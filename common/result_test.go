@@ -22,11 +22,11 @@ import (
 	"math/big"
 	"testing"
 
-	eucommon "github.com/arcology-network/common-lib/types"
-	intf "github.com/arcology-network/common-lib/types/storage/common"
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
+	commontype "github.com/arcology-network/common-lib/types"
+	intf "github.com/arcology-network/storage-committer/common"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 	ethcore "github.com/ethereum/go-ethereum/core"
 	ethcoretypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -50,7 +50,7 @@ func TestResultPostprocessor(t *testing.T) {
 			univalue.NewUnivalue(0, "blcc:/"+hex.EncodeToString(other[:])+"/random", 0, 0, 0, noncommutative.NewString("Random"), nil),
 			univalue.NewUnivalue(0, "blcc:/"+hex.EncodeToString(other[:])+"/balance", 0, 0, 0, commutative.NewU256Delta(uint256.NewInt(50), false), nil),
 		},
-		StdMsg: &eucommon.StandardMessage{
+		StdMsg: &commontype.StandardMessage{
 			Native: &ethcore.Message{
 				GasPrice: big.NewInt(1),
 			},

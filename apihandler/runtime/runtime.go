@@ -29,13 +29,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
 
-	schtype "github.com/arcology-network/common-lib/types/scheduler"
-	"github.com/arcology-network/common-lib/types/storage/commutative"
-	"github.com/arcology-network/common-lib/types/storage/noncommutative"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	adaptorcommon "github.com/arcology-network/eu/common"
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
+	schtype "github.com/arcology-network/scheduler"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	"github.com/arcology-network/storage-committer/type/commutative"
+	"github.com/arcology-network/storage-committer/type/noncommutative"
 )
 
 type RuntimeHandlers struct {
@@ -94,7 +94,7 @@ func (this *RuntimeHandlers) pid(caller evmcommon.Address, input []byte) ([]byte
 
 // This function rolls back the storage to the previous generation. It should be used with extreme caution.
 func (this *RuntimeHandlers) rollback(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	cache.NewWriteCacheFilter(this.api.WriteCache()).RemoveByAddress(codec.Bytes20(caller).Hex())
+	tempcache.NewWriteCacheFilter(this.api.WriteCache()).RemoveByAddress(codec.Bytes20(caller).Hex())
 	return []byte{}, true, 0
 }
 
@@ -158,12 +158,12 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	// Parse the function signatures.
 	signatures, err := abi.DecodeTo(signBytes[32:], 0, [][4]byte{}, 2, math.MaxInt)
 
-	cache := this.api.WriteCache().(*cache.WriteCache)
+	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
 	txID := this.api.GetEU().(interface{ ID() uint32 }).ID()
 
 	// Create the parent path for the properties.
 	propertyPath := eth.FuncPropertyPath(caller, sourceFunc)
-	if _, err = cache.Write(txID, propertyPath, commutative.NewPath()); err != nil {
+	if _, err = tempcache.Write(txID, propertyPath, commutative.NewPath()); err != nil {
 		return []byte{}, err == nil, 0
 	}
 
@@ -174,7 +174,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	if method == schtype.PARALLEL_EXECUTION {
 		globalMethod = schtype.SEQUENTIAL_EXECUTION
 	}
-	_, err = cache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod})) //
+	_, err = tempcache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod})) //
 
 	// Users can add some excepted callees so they can be handled differently.
 	callees := slice.Transform(signatures, func(i int, signature [4]byte) string { // Get the excepted callees.
@@ -182,7 +182,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	})
 
 	path = eth.ExceptPaths(caller, sourceFunc)
-	_, err = cache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
+	_, err = tempcache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
 	return []byte{}, err == nil, 0
 }
 
@@ -197,14 +197,14 @@ func (this *RuntimeHandlers) deferred(caller, _ evmcommon.Address, input []byte)
 	}
 
 	funSign := new(codec.Bytes4).FromBytes(input[:4])
-	cache := this.api.WriteCache().(*cache.WriteCache)
+	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
 	txID := this.api.GetEU().(interface{ ID() uint32 }).ID()
 
 	// Get the function signature.
 	propertyPath := eth.FuncPropertyPath(caller, funSign)
-	cache.Write(txID, propertyPath, commutative.NewPath())
+	tempcache.Write(txID, propertyPath, commutative.NewPath())
 
 	deferPath := eth.DeferrablePath(caller, funSign)
-	_, err := cache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
+	_, err := tempcache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
 	return []byte{}, err == nil, 0
 }

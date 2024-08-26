@@ -25,16 +25,16 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	stgcommcommon "github.com/arcology-network/common-lib/types/storage/common"
-	commutative "github.com/arcology-network/common-lib/types/storage/commutative"
-	noncommutative "github.com/arcology-network/common-lib/types/storage/noncommutative"
-	platform "github.com/arcology-network/common-lib/types/storage/platform"
-	univalue "github.com/arcology-network/common-lib/types/storage/univalue"
-	cache "github.com/arcology-network/common-lib/types/storage/writecache"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	platform "github.com/arcology-network/storage-committer/platform"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
+	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"golang.org/x/crypto/sha3"
 	// "github.com/google/btree"
@@ -74,7 +74,7 @@ func TestWriteWithNewWriteCacheSlowWrite(b *testing.T) {
 	committer.Commit(10)
 	fmt.Println("Commit time:", time.Since(t0))
 
-	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	k := RandomKey(9999999)
 	v := noncommutative.NewInt64(int64(9999999))
 	t0 = time.Now()
@@ -84,7 +84,7 @@ func TestWriteWithNewWriteCacheSlowWrite(b *testing.T) {
 	fmt.Println("Second Write time:", 1, "keys in", time.Since(t0))
 
 	keys = RandomKeys(11, 12)
-	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	t0 = time.Now()
 	for i := 0; i < len(keys); i++ {
 		writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+keys[i], noncommutative.NewInt64(int64(i)))
@@ -135,14 +135,14 @@ func TestWriteWithNewWriteCache(b *testing.T) {
 	fmt.Println("Commit time:", time.Since(t0))
 
 	t0 = time.Now()
-	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	keys = RandomKeys(len(keys), len(keys)+1)
 	for i := 0; i < len(keys); i++ {
 		if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+keys[i], noncommutative.NewInt64(int64(i))); err != nil {
 			b.Error(err)
 		}
 
-		// if _, err := cache.NewWriteCache(store, 1, 1, platform.NewPlatform()).Write(0, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-1/bob-elem-"+keys[i], noncommutative.NewInt64(int64(i+len(keys)))); err != nil {
+		// if _, err := tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform()).Write(0, "blcc://eth1.0/account/"+bob+"/storage/container/ctrn-1/bob-elem-"+keys[i], noncommutative.NewInt64(int64(i+len(keys)))); err != nil {
 		// 	b.Error(err)
 		// }
 	}
@@ -360,7 +360,7 @@ func BenchmarkPathReadAndWrites(b *testing.B) {
 	}
 	fmt.Println("Read ", len(keys), "Keys in:", time.Since(t0))
 
-	// // writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform()) // a new write cache
+	// // writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform()) // a new write tempcache
 	// // t0 = time.Now()
 	for i := 0; i < 1; i++ {
 		if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/"+keys[i], values[i]); err != nil {
