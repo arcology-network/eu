@@ -101,7 +101,8 @@ func (this *ImplStateDB) PeekBalance(addr evmcommon.Address) *uint256.Int {
 // but it is not used in Arcology, since the balance is always updated with a delta
 // and the actual balance is calculated when it is read or at commit time !!!
 func (this *ImplStateDB) SetBalance(addr evmcommon.Address, amount *uint256.Int) {
-	panic("Error: SetBalance() is not supported in Arcology") // The balance is always updated with a delta in Arcology.
+	this.updateBalance(addr, amount, true)
+	// panic("Error: SetBalance() is not supported in Arcology") // The balance is always updated with a delta in Arcology.
 }
 
 func (this *ImplStateDB) GetNonce(addr evmcommon.Address) uint64 {
