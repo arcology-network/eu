@@ -61,7 +61,8 @@ func (this *ImplStateDB) SubBalance(addr evmcommon.Address, amount *uint256.Int)
 	this.updateBalance(addr, amount, false) // NEGATIVE
 }
 
-// A hlper function to update the balance of an account, not part of the original interface
+// A helper function to update the balance of an account, not part of the original interface
+// Its Ethereum counterpart is in the (s *stateObject) setBalance(amount *uint256.Int) function.
 func (this *ImplStateDB) updateBalance(addr evmcommon.Address, amount *uint256.Int, isPositive bool) {
 	if !this.Exist(addr) {
 		createAccount(this.api.WriteCache().(*tempcache.WriteCache), addr, this.tid)
@@ -97,12 +98,11 @@ func (this *ImplStateDB) PeekBalance(addr evmcommon.Address) *uint256.Int {
 	return &v
 }
 
-// NOTE: No function should ever call this function, it is part of the original interface
-// but it is not used in Arcology, since the balance is always updated with a delta
-// and the actual balance is calculated when it is read or at commit time !!!
+// NOTE: No function should ever call this function, except the initializer.
+// The balance is always updated with a delta and the actual balance is calculated
+// when it is read or at commit time !!!
 func (this *ImplStateDB) SetBalance(addr evmcommon.Address, amount *uint256.Int) {
 	this.updateBalance(addr, amount, true)
-	// panic("Error: SetBalance() is not supported in Arcology") // The balance is always updated with a delta in Arcology.
 }
 
 func (this *ImplStateDB) GetNonce(addr evmcommon.Address) uint64 {
