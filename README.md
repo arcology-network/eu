@@ -1,26 +1,37 @@
 <h1> eu  <img align="center" height="50" src="./img/cpu.svg">  </h1>
 
-The EU project introduces an Abstract Execution Unit that serves as a transaction processing unit on the Arcology network. This module is designed to be VM-agnostic, providing a versatile solution for transaction processing. The module comprises two fundamental components.
+The EU project introduces an Abstract Execution Unit that serves as a transaction processing unit on the Arcology network. This module is designed to be VM-agnostic, providing a versatile solution for transaction processing. The module comprises the following components:
 
-- **[Parallelized EVM](https://github.com/arcology-network/concurrent-evm):** A module responsible for parallelizing the Ethereum Virtual Machine (EVM) on Arcology Network.
+- **[Parallelized EVM](https://github.com/arcology-network/concurrent-evm):** The parallelized Ethereum Virtual Machine (EVM) on Arcology Network.
 
-- **[evm-adaptor](https://github.com/arcology-network/evm-adaptor):** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
+- **evm-adaptor:** A module functioning as a middleware to connect to the parallelized EVM, managing executable messages as input and producing state transitions as output.
 
 - A local Write Cache to temporarily store data before persist them to the stateDB
-<br />
+  
+- A new StateDB implementation to redirect all state accesses to Arcology's concurrency state management system.
 
-![](./img/eu.png)
+<br /> ![](./img/eu.png) <br />
 
-<br />
 <h2> Input and Output  <img align="center" height="32" src="./img/circle-top.svg">  </h2>
 
 - **Input:** Executable messages from either the executor module or the Multiprocessor API calls.
 
 - **Output:** State transitions generated as output from the evm-adaptor module.
 
+<h2> Concurrent Container Handler </h2>
+
+The [Concurrent lib](https://github.com/arcology-network/concurrentlib) provides a variety of concurrent containers and tools in the [Solidity API](https://doc.arcology.network/arcology-concurrent-programming-guide/overview) interfaces, assisting developers in creating contracts capable of full parallel processing. The EVM adaptor functions as the module that **connects concurrent API calls to Arcology's concurrent state management** module through a set of handlers.
+
+   - Byte Array Handler
+   - Cumulative Uint256 Handler
+   - Cumulative Uint64 Handler
+   - Runtime Handler
+   - IO Handler
+   - Multiprocessor Handler
+  
 <h2> Nested EUs  <img align="center" height="32" src="./img/layers-minimalistic.svg">  </h2>
 
-As mentioned in the eevm-adaptor project, it is possible to start a new EVM within another. The consequence is that nesting EVMs becomes possible. 
+It is possible to start a new EVM within another. The consequence is that nesting EVMs becomes possible. 
 
 The Multiprocessor module handles the EVM instances manually initiated using the the [concurrent API](https://github.com/arcology-network/concurrentlib). Once called, the hosting VM will initiates a `Multiprocessor` and specifying the maximum level of parallelism it can expect. The child EVMs will be terminated when all executions are completed.
 

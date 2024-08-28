@@ -21,7 +21,7 @@ import (
 	"math"
 	"math/big"
 
-	adaptorintf "github.com/arcology-network/evm-adaptor/interface"
+	adaptorintf "github.com/arcology-network/eu/interface"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -64,6 +64,21 @@ func NewConfig() *Config {
 		Coinbase:    &evmcommon.Address{},
 		GasLimit:    math.MaxUint64,
 		Difficulty:  big.NewInt(0),
+	}
+	cfg.Chain = new(DummyChain)
+	return cfg
+}
+
+func NewConfigFromBlockContext(context vm.BlockContext) *Config {
+	cfg := &Config{
+		ChainConfig: params.MainnetChainConfig,
+		VMConfig:    &vm.Config{},
+		BlockNumber: context.BlockNumber,
+		ParentHash:  evmcommon.Hash{},
+		Time:        big.NewInt(int64(context.Time)),
+		Coinbase:    &context.Coinbase,
+		GasLimit:    context.GasLimit,
+		Difficulty:  context.Difficulty,
 	}
 	cfg.Chain = new(DummyChain)
 	return cfg

@@ -2,24 +2,28 @@ module github.com/arcology-network/eu
 
 go 1.22
 
-replace github.com/ethereum/go-ethereum v1.13.1 => ../concurrent-evm/
+replace github.com/arcology-network/scheduler => ../scheduler/
+
+replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
 
 replace github.com/arcology-network/common-lib => ../common-lib/
-
-replace github.com/arcology-network/evm-adaptor => ../evm-adaptor/
 
 replace github.com/arcology-network/storage-committer => ../storage-committer/
 
 require (
-	github.com/arcology-network/common-lib v1.9.1-0.20240526090033-4c2ee0f20f15
-	github.com/arcology-network/evm-adaptor v1.9.1-0.20240526092000-4f22a0702216
+	github.com/arcology-network/common-lib v1.9.1-0.20240828101906-f4d64ec48d31
+	github.com/arcology-network/scheduler v0.0.0-00010101000000-000000000000
 	github.com/arcology-network/storage-committer v0.0.0-00010101000000-000000000000
-	github.com/ethereum/go-ethereum v1.13.1
+	github.com/elliotchance/orderedmap v1.5.1
+	github.com/ethereum/go-ethereum v1.14.8
+	github.com/google/btree v1.1.2
 	github.com/holiman/uint256 v1.2.4
 	golang.org/x/crypto v0.20.0
+	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
 )
 
 require (
+	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
@@ -35,18 +39,23 @@ require (
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/consensys/bavard v0.1.13 // indirect
 	github.com/consensys/gnark-crypto v0.12.1 // indirect
+	github.com/crate-crypto/go-ipa v0.0.0-20231025140028-3c0104f4b233 // indirect
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
-	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240227051544-1ec5013384e8 // indirect
+	github.com/dgraph-io/badger v1.6.2 // indirect
+	github.com/dgraph-io/ristretto v0.1.1 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20240603085035-9c8f6081266e // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
+	github.com/gballet/go-verkle v0.1.1-0.20231031103413-a67434b50f46 // indirect
 	github.com/getsentry/sentry-go v0.25.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
-	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
-	github.com/google/btree v1.1.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
@@ -73,7 +82,6 @@ require (
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect

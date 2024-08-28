@@ -22,12 +22,12 @@ import (
 
 	common "github.com/arcology-network/common-lib/common"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	scheduler "github.com/arcology-network/eu/new-scheduler"
-	adaptorcommon "github.com/arcology-network/evm-adaptor/common"
-	intf "github.com/arcology-network/evm-adaptor/interface"
-	arbitrator "github.com/arcology-network/storage-committer/arbitrator"
-	ccurlcommon "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/univalue"
+	eucommon "github.com/arcology-network/eu/common"
+	intf "github.com/arcology-network/eu/interface"
+	scheduler "github.com/arcology-network/scheduler"
+	arbitrator "github.com/arcology-network/scheduler/arbitrator"
+	stgcommon "github.com/arcology-network/storage-committer/common"
+	univalue "github.com/arcology-network/storage-committer/type/univalue"
 	evmcore "github.com/ethereum/go-ethereum/core"
 )
 
@@ -109,7 +109,7 @@ func (this *Generation) Add(job *JobSequence) bool {
 // their contracts at different addresses.
 
 func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRouter) []*univalue.Univalue {
-	config := execCoinbase.(*adaptorcommon.Config)
+	config := execCoinbase.(*eucommon.Config)
 
 	seqIDs := make([][]uint32, len(this.jobSeqs))
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))
@@ -130,7 +130,7 @@ func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRo
 	// Mark the conflicts in the job sequences.
 	cleanTrans := slice.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
 		if _, ok := seqDict[(*seq).ID]; ok { // A conflict transaction
-			(*seq).FlagConflict(txDict, errors.New(ccurlcommon.WARN_ACCESS_CONFLICT))
+			(*seq).FlagConflict(txDict, errors.New(stgcommon.WARN_ACCESS_CONFLICT))
 		}
 		return (*seq).GetClearedTransition() // Return the conflict-free transitions
 	})
