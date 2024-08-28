@@ -61,7 +61,8 @@ func (this *ImplStateDB) SubBalance(addr evmcommon.Address, amount *uint256.Int)
 	this.updateBalance(addr, amount, false) // NEGATIVE
 }
 
-// A hlper function to update the balance of an account, not part of the original interface
+// A helper function to update the balance of an account, not part of the original interface
+// Its Ethereum counterpart is in the (s *stateObject) setBalance(amount *uint256.Int) function.
 func (this *ImplStateDB) updateBalance(addr evmcommon.Address, amount *uint256.Int, isPositive bool) {
 	if !this.Exist(addr) {
 		createAccount(this.api.WriteCache().(*tempcache.WriteCache), addr, this.tid)
