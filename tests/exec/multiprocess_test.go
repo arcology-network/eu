@@ -1,4 +1,4 @@
-s/*
+/*
  *   Copyright (c) 2024 Arcology Network
 
  *   This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@ s/*
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package tests
+package exectest
 
 import (
 	"os"
