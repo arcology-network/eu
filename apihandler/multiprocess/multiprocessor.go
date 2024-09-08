@@ -103,7 +103,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	}
 
 	// Unify tx IDs
-	mainTxID := uint32(this.Api().GetEU().(interface{ ID() uint32 }).ID())
+	mainTxID := uint64(this.Api().GetEU().(interface{ ID() uint64 }).ID())
 	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) { (*v).SetTx(mainTxID) })
 
 	this.Api().WriteCache().(*tempcache.WriteCache).Insert(transitions) // Merge the write tempcache to the main tempcache

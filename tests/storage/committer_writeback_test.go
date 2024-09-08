@@ -52,18 +52,18 @@ func TestEmptyNodeSet(t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	// acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{})
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{})
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 }
 
@@ -83,7 +83,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 	committer.SetStore(store)
 	// create a path
@@ -96,7 +96,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(addPath).Encode()).(univalue.Univalues))
 	// committer.Import(committer.Decode(univalue.Univalues(addPath).Encode()))
 
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 	committer.SetStore(store)
 
@@ -107,7 +107,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(addTrans).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
 	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v == nil {
@@ -130,7 +130,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(append(addTrans, deleteTrans...))
 
-	committer.Precommit([]uint32{1, 2})
+	committer.Precommit([]uint64{1, 2})
 	committer.Commit(10)
 
 	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v != nil {
@@ -153,7 +153,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	committer.SetStore(store)
@@ -167,7 +167,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
 	committer.SetStore(store)
@@ -199,7 +199,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(out).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	committer.SetStore(store)
@@ -217,7 +217,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(out).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
 	writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform())
@@ -270,7 +270,7 @@ func TestStateUpdate(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(initTrans).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 	committer.SetStore(store)
 
@@ -291,7 +291,7 @@ func TestStateUpdate(t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((append(tx0Out, tx1Out...)))
 
-	committer.Precommit([]uint32{0, 1})
+	committer.Precommit([]uint64{0, 1})
 	committer.Commit(10)
 	//need to encode delta only now it encodes everything
 
@@ -329,7 +329,7 @@ func TestStateUpdate(t *testing.T) {
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
 
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
 	if v, _, _ := writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
@@ -356,7 +356,7 @@ func TestCommitUint256(b *testing.T) {
 
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
-	committer.Precommit([]uint32{0})
+	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 
 	writeCache = NewWriteCacheWithAcounts(store)
@@ -367,7 +367,7 @@ func TestCommitUint256(b *testing.T) {
 
 	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
-	committer.Precommit([]uint32{0})
+	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 
 	writeCache = NewWriteCacheWithAcounts(store)
@@ -388,7 +388,7 @@ func TestCommitUint256(b *testing.T) {
 
 	trans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
-	committer.Precommit([]uint32{0})
+	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 
 	writeCache = NewWriteCacheWithAcounts(store)

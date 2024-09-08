@@ -159,7 +159,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	signatures, err := abi.DecodeTo(signBytes[32:], 0, [][4]byte{}, 2, math.MaxInt)
 
 	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
-	txID := this.api.GetEU().(interface{ ID() uint32 }).ID()
+	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
 	// Create the parent path for the properties.
 	propertyPath := eth.FuncPropertyPath(caller, sourceFunc)
@@ -198,7 +198,7 @@ func (this *RuntimeHandlers) deferred(caller, _ evmcommon.Address, input []byte)
 
 	funSign := new(codec.Bytes4).FromBytes(input[:4])
 	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
-	txID := this.api.GetEU().(interface{ ID() uint32 }).ID()
+	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
 	// Get the function signature.
 	propertyPath := eth.FuncPropertyPath(caller, funSign)

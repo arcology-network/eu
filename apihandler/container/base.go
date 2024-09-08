@@ -139,7 +139,7 @@ func (this *BaseHandlers) Api() intf.EthApiRouter { return this.api }
 // Create a new container. This function is called when the constructor of the base contract is called in the concurrentlib.
 func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	connected := this.pathBuilder.New(
-		this.api.GetEU().(interface{ ID() uint32 }).ID(), // Tx ID for conflict detection
+		this.api.GetEU().(interface{ ID() uint64 }).ID(), // Tx ID for conflict detection
 		types.Address(codec.Bytes20(caller).Hex()),       // Main contract address
 	)
 
@@ -429,7 +429,7 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, input []byte) ([]byte,
 		return []byte{}, false, 0
 	}
 
-	tx := this.api.GetEU().(interface{ ID() uint32 }).ID()
+	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	for {
 		if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).PopBack(tx, path, nil); err != nil {
 			break

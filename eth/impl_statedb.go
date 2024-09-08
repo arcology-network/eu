@@ -35,7 +35,7 @@ import (
 type ImplStateDB struct {
 	refund           uint64
 	txHash           evmcommon.Hash
-	tid              uint32 // tx id
+	tid              uint64 // tx id
 	logs             map[evmcommon.Hash][]*evmtypes.Log
 	transientStorage transientStorage
 	api              intf.EthApiRouter
@@ -252,7 +252,7 @@ func (this *ImplStateDB) SlotInAccessList(addr evmcommon.Address, slot evmcommon
 	return true, true
 }
 
-func (this *ImplStateDB) PrepareFormer(txHash, bhash evmcommon.Hash, ti uint32) {
+func (this *ImplStateDB) PrepareFormer(txHash, bhash evmcommon.Hash, ti uint64) {
 	this.refund = 0
 	this.txHash = txHash
 	this.tid = ti

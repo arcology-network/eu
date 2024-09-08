@@ -42,7 +42,7 @@ func NewEU(chainConfig *params.ChainConfig, vmConfig vm.Config, statedb vm.State
 	return eu
 }
 
-func (this *EU) ID() uint32         { return uint32(this.StdMsg.ID) }
+func (this *EU) ID() uint64         { return uint64(this.StdMsg.ID) }
 func (this *EU) TxHash() [32]byte   { return this.StdMsg.TxHash }
 func (this *EU) GasPrice() *big.Int { return this.StdMsg.Native.GasPrice }
 func (this *EU) Coinbase() [20]byte { return this.evm.Context.Coinbase }
@@ -63,7 +63,7 @@ func (this *EU) SetRuntimeContext(statedb vm.StateDB, api intf.EthApiRouter) {
 }
 
 func (this *EU) Run(stdmsg *commontype.StandardMessage, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
-	this.statedb.(*eth.ImplStateDB).PrepareFormer(stdmsg.TxHash, ethcommon.Hash{}, uint32(stdmsg.ID))
+	this.statedb.(*eth.ImplStateDB).PrepareFormer(stdmsg.TxHash, ethcommon.Hash{}, uint64(stdmsg.ID))
 
 	this.evm.Context = blockContext
 	this.evm.TxContext = txContext

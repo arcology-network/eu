@@ -29,7 +29,7 @@ func (this *ImplStateDB) CalculateNonceOffset(addr evmcommon.Address, nonce uint
 		return 0
 	}
 
-	id := uint64(this.api.GetEU().(interface{ ID() uint32 }).ID())
+	id := uint64(this.api.GetEU().(interface{ ID() uint64 }).ID())
 	encoded := slice.Flatten([][]byte{
 		this.api.GetDeployer().Bytes(),
 		codec.Uint64(id).Encode(),

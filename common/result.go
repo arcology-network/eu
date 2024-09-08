@@ -19,7 +19,7 @@ import (
 // The result of an execution. It includes the group ID, the transaction index, the transaction hash, the sender, the coinbase, the raw state accesses, the immune transitions, the receipt, the EVM result, the standard message, and the error.
 type Result struct {
 	GroupID          uint32 // == Group ID
-	TxIndex          uint32
+	TxIndex          uint64
 	TxHash           [32]byte
 	From             [20]byte
 	Coinbase         [20]byte

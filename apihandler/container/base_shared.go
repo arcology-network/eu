@@ -34,7 +34,7 @@ func (this *BaseHandlers) Length(path string) (uint64, bool, int64) {
 		return 0, false, 0
 	}
 
-	if path, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint32 }).ID(), path, new(commutative.Path)); path != nil {
+	if path, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(commutative.Path)); path != nil {
 		return path.(*deltaset.DeltaSet[string]).NonNilCount(), true, 0
 	}
 	return 0, false, 0
@@ -46,7 +46,7 @@ func (this *BaseHandlers) FullLength(path string) (uint64, bool, int64) {
 		return 0, false, 0
 	}
 
-	if path, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint32 }).ID(), path, new(commutative.Path)); path != nil {
+	if path, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(commutative.Path)); path != nil {
 		return path.(*deltaset.DeltaSet[string]).Length(), true, 0
 	}
 	return 0, false, 0
@@ -70,7 +70,7 @@ func (this *BaseHandlers) ReadAll(path string) ([][]byte, []bool, []int64) {
 // Get the index of the element by its key
 func (this *BaseHandlers) GetByIndex(path string, idx uint64) ([]byte, bool, int64) {
 	if value, _, err := this.api.WriteCache().(*tempcache.WriteCache).ReadAt(
-		this.api.GetEU().(interface{ ID() uint32 }).ID(),
+		this.api.GetEU().(interface{ ID() uint64 }).ID(),
 		path,
 		idx,
 		new(noncommutative.Bytes),
@@ -87,7 +87,7 @@ func (this *BaseHandlers) SetByIndex(path string, idx uint64, bytes []byte) (boo
 	}
 
 	value := common.IfThen(bytes == nil, nil, noncommutative.NewBytes(bytes))
-	if _, err := this.api.WriteCache().(*tempcache.WriteCache).WriteAt(this.api.GetEU().(interface{ ID() uint32 }).ID(), path, idx, value); err == nil {
+	if _, err := this.api.WriteCache().(*tempcache.WriteCache).WriteAt(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, idx, value); err == nil {
 		return true, 0
 	}
 	return false, 0
@@ -95,7 +95,7 @@ func (this *BaseHandlers) SetByIndex(path string, idx uint64, bytes []byte) (boo
 
 // Get the element by its key
 func (this *BaseHandlers) GetByKey(path string) ([]byte, bool, int64) {
-	if value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint32 }).ID(), path, new(noncommutative.Bytes)); value != nil {
+	if value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(noncommutative.Bytes)); value != nil {
 		return value.([]byte), true, 0
 	}
 	return []byte{}, false, 0
@@ -105,7 +105,7 @@ func (this *BaseHandlers) GetByKey(path string) ([]byte, bool, int64) {
 func (this *BaseHandlers) SetByKey(path string, bytes []byte) (bool, int64) {
 	if len(path) > 0 {
 		value := common.IfThen(bytes == nil, nil, noncommutative.NewBytes(bytes))
-		if _, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint32 }).ID(), path, value); err == nil {
+		if _, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, value); err == nil {
 			return true, 0
 		}
 	}
@@ -115,7 +115,7 @@ func (this *BaseHandlers) SetByKey(path string, bytes []byte) (bool, int64) {
 // Get the index of a key
 func (this *BaseHandlers) KeyAt(path string, index uint64) (string, int64) {
 	if len(path) > 0 {
-		key, _ := this.api.WriteCache().(*tempcache.WriteCache).KeyAt(this.api.GetEU().(interface{ ID() uint32 }).ID(), path, index, new(noncommutative.Bytes))
+		key, _ := this.api.WriteCache().(*tempcache.WriteCache).KeyAt(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, index, new(noncommutative.Bytes))
 		return key, 0
 	}
 	return "", 0
@@ -124,7 +124,7 @@ func (this *BaseHandlers) KeyAt(path string, index uint64) (string, int64) {
 // Get the index of a key
 func (this *BaseHandlers) IndexOf(path string, key string) (uint64, int64) {
 	if len(path) > 0 {
-		index, _ := this.api.WriteCache().(*tempcache.WriteCache).IndexOf(this.api.GetEU().(interface{ ID() uint32 }).ID(), path, key, new(noncommutative.Bytes))
+		index, _ := this.api.WriteCache().(*tempcache.WriteCache).IndexOf(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, key, new(noncommutative.Bytes))
 		return index, 0
 	}
 	return math.MaxUint64, 0

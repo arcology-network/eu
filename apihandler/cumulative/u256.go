@@ -85,7 +85,7 @@ func (this *U256CumHandler) Call(caller, callee [20]byte, input []byte, origin [
 }
 
 func (this *U256CumHandler) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	txIndex := this.api.GetEU().(interface{ ID() uint32 }).ID()
+	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	if !this.connector.New(txIndex, types.Address(codec.Bytes20(caller).Hex())) { // A new container
 		return []byte{}, false, 0
 	}
@@ -111,7 +111,7 @@ func (this *U256CumHandler) get(caller evmcommon.Address, input []byte) ([]byte,
 	}
 
 	keyPath := path + string(this.key) // Element ID
-	if value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint32 }).ID(), keyPath, new(commutative.U256)); value == nil {
+	if value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), keyPath, new(commutative.U256)); value == nil {
 		return []byte{}, false, 0
 	} else {
 		updated := value.(uint256.Int)
@@ -163,7 +163,7 @@ func (this *U256CumHandler) set(caller evmcommon.Address, input []byte, isPositi
 
 	value := commutative.NewU256Delta(delta.(*uint256.Int), isPositive)
 
-	txIndex := this.api.GetEU().(interface{ ID() uint32 }).ID()
+	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	keyPath := path + string(this.key) // Element ID
 	_, err = this.api.WriteCache().(*tempcache.WriteCache).Write(txIndex, keyPath, value)
 	return []byte{}, err == nil, 0
@@ -176,7 +176,7 @@ func (this *U256CumHandler) min(caller evmcommon.Address, input []byte) ([]byte,
 	}
 
 	// Min and Max are read only variable
-	txIndex := this.api.GetEU().(interface{ ID() uint32 }).ID()
+	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	keyPath := path + string(this.key) // Element ID
 	if value, _ := this.api.WriteCache().(*tempcache.WriteCache).Find(txIndex, keyPath, new(commutative.U256)); value != nil {
 		minv := value.(*commutative.U256).Min().(uint256.Int)
@@ -193,7 +193,7 @@ func (this *U256CumHandler) max(caller evmcommon.Address, input []byte) ([]byte,
 		return []byte{}, false, 0
 	}
 
-	txIndex := this.api.GetEU().(interface{ ID() uint32 }).ID()
+	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	keyPath := path + string(this.key) // Element ID
 	if value, _ := this.api.WriteCache().(*tempcache.WriteCache).Find(txIndex, keyPath, new(commutative.U256)); value != nil {
 		maxv := value.(*commutative.U256).Max().(uint256.Int)
