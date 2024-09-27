@@ -259,6 +259,8 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 		[]byte{}, 2, math.MaxInt,
 	)
 
+	// fmt.Println(value)
+
 	if err == nil {
 		str := hex.EncodeToString(key)
 		successful, _ := this.SetByKey(path+str, value)

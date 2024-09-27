@@ -29,16 +29,16 @@ type TxAccessRecords struct {
 	Accesses []*univalue.Univalue
 }
 
-func (this *TxAccessRecords) HeaderSize() uint32 {
+func (this *TxAccessRecords) HeaderSize() uint64 {
 	return 4 * codec.UINT32_LEN
 }
 
-func (this *TxAccessRecords) Size() uint32 {
+func (this *TxAccessRecords) Size() uint64 {
 	return this.HeaderSize() +
 		codec.String(this.Hash).Size() +
 		codec.UINT32_LEN +
 		// codec.Bytes(this.Accesses).Size()
-		uint32(univalue.Univalues(this.Accesses).Size())
+		univalue.Univalues(this.Accesses).Size()
 }
 
 func (this *TxAccessRecords) Encode() []byte {
@@ -54,11 +54,11 @@ func (this *TxAccessRecords) EncodeToBuffer(buffer []byte) int {
 
 	offset := codec.Encoder{}.FillHeader(
 		buffer,
-		[]uint32{
+		[]uint64{
 			codec.String(this.Hash).Size(),
-			codec.Uint32(this.ID).Size(),
+			codec.Uint64(this.ID).Size(),
 			// codec.Bytes(this.Accesses).Size(),
-			uint32(univalue.Univalues(this.Accesses).Size()),
+			univalue.Univalues(this.Accesses).Size(),
 		},
 	)
 
@@ -78,11 +78,11 @@ func (this *TxAccessRecords) Decode(buffer []byte) *TxAccessRecords {
 
 type TxAccessRecordSet []*TxAccessRecords
 
-func (this *TxAccessRecordSet) HeaderSize() uint32 {
-	return uint32((len(*this) + 1) * codec.UINT32_LEN)
+func (this *TxAccessRecordSet) HeaderSize() uint64 {
+	return uint64(len(*this)+1) * codec.UINT32_LEN
 }
 
-func (this *TxAccessRecordSet) Size() uint32 {
+func (this *TxAccessRecordSet) Size() uint64 {
 	total := this.HeaderSize()        // Header length
 	for i := 0; i < len(*this); i++ { // Body  length
 		total += (*this)[i].Size()
@@ -92,10 +92,10 @@ func (this *TxAccessRecordSet) Size() uint32 {
 
 // Fill in the header info
 func (this *TxAccessRecordSet) FillHeader(buffer []byte) {
-	offset := uint32(0)
+	offset := uint64(0)
 	codec.Uint32(len(*this)).EncodeToBuffer(buffer)
 	for i := 0; i < len(*this); i++ {
-		codec.Uint32(offset).EncodeToBuffer(buffer[(i+1)*codec.UINT32_LEN:])
+		codec.Uint32(offset).EncodeToBuffer(buffer[uint64(i+1)*codec.UINT32_LEN:])
 		offset += (*this)[i].Size()
 	}
 }
@@ -105,7 +105,7 @@ func (this *TxAccessRecordSet) Encode() []byte {
 	this.FillHeader(buffer)
 
 	headerLen := this.HeaderSize()
-	offsets := make([]uint32, len(*this)+1)
+	offsets := make([]uint64, len(*this)+1)
 	offsets[0] = 0
 	for i := 0; i < len(*this); i++ {
 		offsets[i+1] = offsets[i] + (*this)[i].Size()

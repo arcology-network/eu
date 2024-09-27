@@ -1,7 +1,6 @@
 package exectest
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -26,11 +25,17 @@ func TestInstances(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
-	result, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "NumConcurrentInstanceTest", "call()", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "NumConcurrentInstanceTest", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Println(result.ReturnData)
+	// fmt.Println(result.ReturnData)
+
+	// _, err, _, _ = DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "NumConcurrentInstanceTest", "call2()", []byte{}, false)
+	// if err != nil {
+	// 	t.Error(err)
+	// }
+	// fmt.Println(result.ReturnData)
 }
 
 func TestDeferred(t *testing.T) {

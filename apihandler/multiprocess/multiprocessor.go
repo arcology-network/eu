@@ -90,7 +90,8 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 		if !successful { // Assign the fee to the fees array
 			ethMsgs[i], erros[i] = nil, errors.New("Error: Failed to get the function call data")
 		}
-		ethMsgs[i], erros[i] = this.WrapEthMsg(caller, funCall) // Convert the function call data to an ethereum message.
+		// Convert the function call data to an ethereum message for execution.
+		ethMsgs[i], erros[i] = this.WrapEthMsg(caller, funCall)
 	})
 
 	// Generate the configuration for the sub processes based on the current block context.

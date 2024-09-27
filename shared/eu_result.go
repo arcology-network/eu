@@ -34,16 +34,16 @@ type EuResult struct {
 	GasUsed uint64
 }
 
-func (this *EuResult) HeaderSize() uint32 {
+func (this *EuResult) HeaderSize() uint64 {
 	return 8 * codec.UINT32_LEN
 }
 
-func (this *EuResult) Size() uint32 {
+func (this *EuResult) Size() uint64 {
 	return this.HeaderSize() +
-		uint32(len(this.H)) +
+		uint64(len(this.H)) +
 		codec.UINT32_LEN +
 		// codec.Bytes(this.Trans).Size() +
-		uint32(univalue.Univalues(this.Trans).Size()) +
+		uint64(univalue.Univalues(this.Trans).Size()) +
 		codec.Bytes(this.TransitTypes).Size() +
 		// this.DC.Size() +
 		codec.UINT64_LEN +
@@ -63,11 +63,11 @@ func (this *EuResult) EncodeToBuffer(buffer []byte) int {
 
 	offset := codec.Encoder{}.FillHeader(
 		buffer,
-		[]uint32{
+		[]uint64{
 			codec.String(this.H).Size(),
 			codec.Uint32(this.ID).Size(),
 			// codec.Bytes(this.Transitions).Size(),
-			uint32(univalue.Univalues(this.Trans).Size()),
+			univalue.Univalues(this.Trans).Size(),
 			codec.Bytes(this.TransitTypes).Size(),
 			// this.DC.Size(),
 			codec.UINT64_LEN,
@@ -123,11 +123,11 @@ func (tar *TxAccessRecords) GobDecode(buffer []byte) error {
 
 type Euresults []*EuResult
 
-func (this *Euresults) HeaderSize() uint32 {
-	return uint32((len(*this) + 1) * codec.UINT32_LEN) // Header length
+func (this *Euresults) HeaderSize() uint64 {
+	return uint64(len(*this)+1) * codec.UINT32_LEN // Header length
 }
 
-func (this *Euresults) Size() uint32 {
+func (this *Euresults) Size() uint64 {
 	total := this.HeaderSize()
 	for i := 0; i < len(*this); i++ {
 		total += (*this)[i].Size()
@@ -139,9 +139,9 @@ func (this *Euresults) Size() uint32 {
 func (this *Euresults) FillHeader(buffer []byte) {
 	codec.Uint32(len(*this)).EncodeToBuffer(buffer)
 
-	offset := uint32(0)
+	offset := uint64(0)
 	for i := 0; i < len(*this); i++ {
-		codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*(i+1):])
+		codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*uint64(i+1):])
 		offset += (*this)[i].Size()
 	}
 }
@@ -150,7 +150,7 @@ func (this Euresults) GobEncode() ([]byte, error) {
 	buffer := make([]byte, this.Size())
 	this.FillHeader(buffer)
 
-	offsets := make([]uint32, len(this)+1)
+	offsets := make([]uint64, len(this)+1)
 	offsets[0] = 0
 	for i := 0; i < len(this); i++ {
 		offsets[i+1] = offsets[i] + this[i].Size()

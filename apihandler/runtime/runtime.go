@@ -167,6 +167,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 		return []byte{}, err == nil, 0
 	}
 
+	// Either the function is parallel or sequential.
 	path := eth.ExecutionMethodPath(caller, sourceFunc)
 
 	// If local method is parallel, global method is sequential and vice versa.
