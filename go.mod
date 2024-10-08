@@ -2,18 +2,18 @@ module github.com/arcology-network/eu
 
 go 1.22
 
-replace github.com/arcology-network/scheduler => ../scheduler/
+// replace github.com/arcology-network/scheduler => ../scheduler/
 
 replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
 
-replace github.com/arcology-network/common-lib => ../common-lib/
+// replace github.com/arcology-network/common-lib => ../common-lib/
 
 replace github.com/arcology-network/storage-committer => ../storage-committer/
 
 require (
 	github.com/arcology-network/common-lib v1.9.1-0.20240828101906-f4d64ec48d31
-	github.com/arcology-network/scheduler v0.0.0-00010101000000-000000000000
-	github.com/arcology-network/storage-committer v0.0.0-00010101000000-000000000000
+	github.com/arcology-network/scheduler v0.0.0-20241008080722-e805dc833334
+	github.com/arcology-network/storage-committer v1.9.1-0.20241008080418-618c462bbca5
 	github.com/elliotchance/orderedmap v1.5.1
 	github.com/ethereum/go-ethereum v1.14.8
 	github.com/google/btree v1.1.2
