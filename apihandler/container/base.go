@@ -65,9 +65,15 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	signature := [4]byte{}
 	copy(signature[:], input)
 
+	// fmt.Println(signature)
+
 	switch signature {
-	case [4]byte{0xcd, 0xbf, 0x60, 0x8d}:
+
+	case [4]byte{0x66, 0x54, 0x85, 0x21}:
 		return this.new(caller, input[4:]) // Create a new container
+
+	// case [4]byte{0xcd, 0xbf, 0x60, 0x8d}:
+	// 	return this.new(caller, input[4:]) // Create a new container
 
 	case [4]byte{0xf1, 0x06, 0x84, 0x54}:
 		return this.pid(caller, input[4:]) // Get the pesudo process ID.
@@ -137,17 +143,20 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 func (this *BaseHandlers) Api() intf.EthApiRouter { return this.api }
 
 // Create a new container. This function is called when the constructor of the base contract is called in the concurrentlib.
-func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	connected := this.pathBuilder.New(
+func (this *BaseHandlers) new(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
+	addr := codec.Bytes20(caller).Hex()
+	connected, _ := this.pathBuilder.New(
 		this.api.GetEU().(interface{ ID() uint64 }).ID(), // Tx ID for conflict detection
-		types.Address(codec.Bytes20(caller).Hex()),       // Main contract address
+		types.Address(addr), // Main contract address
 	)
+
+	this.setByKey(caller)
 
 	this.api.SetDeployer(caller)   // Store the MP address to the API
 	return caller[:], connected, 0 // Create a new container
 }
 
-func (this *BaseHandlers) pid(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+func (this *BaseHandlers) pid(_ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	pidNum := this.api.Pid()
 	return []byte(hex.EncodeToString(pidNum[:])), true, 0
 }

@@ -45,9 +45,9 @@ func NewPathBuilder(subDir string, api intf.EthApiRouter) *PathBuilder {
 }
 
 // Make Arcology paths under the current account
-func (this *PathBuilder) New(txIndex uint64, deploymentAddr types.Address) bool {
+func (this *PathBuilder) New(txIndex uint64, deploymentAddr types.Address) (bool, string) {
 	if !this.newStorageRoot(deploymentAddr, txIndex) { // Create the root path if has been created yet.
-		return false
+		return false, ""
 	}
 	return this.newContainerRoot(deploymentAddr, txIndex) //
 }
@@ -62,14 +62,14 @@ func (this *PathBuilder) newStorageRoot(account types.Address, txIndex uint64) b
 	return true // ALready exists
 }
 
-func (this *PathBuilder) newContainerRoot(account types.Address, txIndex uint64) bool {
+func (this *PathBuilder) newContainerRoot(account types.Address, txIndex uint64) (bool, string) {
 	containerRoot := this.key(account)
 
 	if !this.apiRouter.WriteCache().(*tempcache.WriteCache).IfExists(containerRoot) {
 		_, err := this.apiRouter.WriteCache().(*tempcache.WriteCache).Write(txIndex, containerRoot, commutative.NewPath()) // Create a new container
-		return err == nil
+		return err == nil, ""
 	}
-	return true // Already exists
+	return true, containerRoot // Already exists
 }
 
 func (this *PathBuilder) Key(caller [20]byte) string { // container ID

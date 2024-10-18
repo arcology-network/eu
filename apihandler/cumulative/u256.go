@@ -86,7 +86,7 @@ func (this *U256CumHandler) Call(caller, callee [20]byte, input []byte, origin [
 
 func (this *U256CumHandler) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
-	if !this.connector.New(txIndex, types.Address(codec.Bytes20(caller).Hex())) { // A new container
+	if ok, _ := this.connector.New(txIndex, types.Address(codec.Bytes20(caller).Hex())); !ok { // A new container
 		return []byte{}, false, 0
 	}
 
