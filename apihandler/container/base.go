@@ -65,8 +65,6 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	signature := [4]byte{}
 	copy(signature[:], input)
 
-	// fmt.Println(signature)
-
 	switch signature {
 
 	case [4]byte{0x66, 0x54, 0x85, 0x21}:
@@ -101,6 +99,8 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 
 	case [4]byte{0x7f, 0xed, 0x84, 0xf2}:
 		return this.getByKey(caller, input[4:]) // Get the element by its key.
+
+	// bdf47d22
 
 	case [4]byte{0xc2, 0x78, 0xb7, 0x99}:
 		return this.setByKey(caller, input[4:]) // Set the element by its key.
@@ -145,12 +145,14 @@ func (this *BaseHandlers) Api() intf.EthApiRouter { return this.api }
 // Create a new container. This function is called when the constructor of the base contract is called in the concurrentlib.
 func (this *BaseHandlers) new(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	addr := codec.Bytes20(caller).Hex()
-	connected, _ := this.pathBuilder.New(
+	connected, pathStr := this.pathBuilder.New(
 		this.api.GetEU().(interface{ ID() uint64 }).ID(), // Tx ID for conflict detection
 		types.Address(addr), // Main contract address
 	)
 
-	this.setByKey(caller)
+	// Add the type info to the container here.
+	path, _ := this.api.WriteCache().(*tempcache.WriteCache).PeekRaw(pathStr, commutative.Path{})
+	path.(*commutative.Path).Type = 0
 
 	this.api.SetDeployer(caller)   // Store the MP address to the API
 	return caller[:], connected, 0 // Create a new container
@@ -201,25 +203,6 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, input []byte
 	return []byte{}, false, int64(fees)
 }
 
-// getByIndex the element by its index
-func (this *BaseHandlers) getByIndex(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	path := this.pathBuilder.Key(caller) // Build container path
-	if len(path) == 0 {
-		return []byte{}, false, 0
-	}
-
-	idx, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
-	if err != nil {
-		return []byte{}, false, 0
-	}
-
-	values, successful, _ := this.GetByIndex(path, idx)
-	if len(values) > 0 && successful {
-		return values, true, 0
-	}
-	return []byte{}, false, 0
-}
-
 func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller) // Build container path
 	if len(path) == 0 {
@@ -236,26 +219,6 @@ func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]by
 	return []byte{}, false, 0
 }
 
-// Set the element by its index. This function is different from the SetByKey function in that if
-// the index is out of range, the function will return false.
-func (this *BaseHandlers) setByIndex(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	path := this.pathBuilder.Key(caller) // Build container path
-
-	idx, bytes, err := abi.Parse2(input,
-		uint64(0), 1, 32,
-		[]byte{}, 2, math.MaxInt,
-	)
-
-	if err != nil {
-		return []byte{}, false, 0
-	}
-
-	if successful, fee := this.SetByIndex(path, idx, bytes); successful {
-		return []byte{}, true, fee
-	}
-	return []byte{}, false, 0
-}
-
 // Push a new element into the container. If the key does not exist, it will be created and the value will be set.
 func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
@@ -267,8 +230,6 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 		[]byte{}, 2, math.MaxInt,
 		[]byte{}, 2, math.MaxInt,
 	)
-
-	// fmt.Println(value)
 
 	if err == nil {
 		str := hex.EncodeToString(key)
@@ -294,7 +255,6 @@ func (this *BaseHandlers) indexByKey(caller evmcommon.Address, input []byte) ([]
 	return []byte{}, false, 0
 }
 
-// 4223b5c2
 func (this *BaseHandlers) keyByIndex(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 	if len(path) == 0 {
@@ -305,17 +265,6 @@ func (this *BaseHandlers) keyByIndex(caller evmcommon.Address, input []byte) ([]
 		key, _ := this.KeyAt(path, index)
 		v, _ := hex.DecodeString(key)
 		return v, true, 0
-	}
-	return []byte{}, false, 0
-}
-
-func (this *BaseHandlers) delByIndex(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	path := this.pathBuilder.Key(caller) // Build container path
-	idx, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
-	if err == nil {
-		if successful, fee := this.SetByIndex(path, idx, nil); successful {
-			return []byte{}, true, fee
-		}
 	}
 	return []byte{}, false, 0
 }
