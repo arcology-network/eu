@@ -23,6 +23,7 @@ import (
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
 	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	// adaptorcommon ""github.com/arcology-network/storage-committer/storage/tempcache""
@@ -82,4 +83,14 @@ func (this *PathBuilder) key(account types.Address) string { // container ID
 
 func (this *PathBuilder) Root() string { // container ID
 	return common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, this.subDir, "/")
+}
+
+func (this *PathBuilder) GetPathType(caller evmcommon.Address) uint8 {
+	pathStr := this.Key(caller) // Container path
+	if len(pathStr) == 0 {
+		return 0
+	}
+
+	path, _ := this.apiRouter.WriteCache().(*tempcache.WriteCache).PeekRaw(pathStr, commutative.Path{})
+	return path.(*commutative.Path).Type
 }
