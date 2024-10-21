@@ -73,9 +73,6 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	case [4]byte{0xe5, 0xe2, 0x14, 0xb5}:
 		return this.init(caller, input[4:]) // Set the bounds of the elements in the container.
 
-	// case [4]byte{0xcd, 0xbf, 0x60, 0x8d}:
-	// 	return this.new(caller, input[4:]) // Create a new container
-
 	case [4]byte{0xf1, 0x06, 0x84, 0x54}:
 		return this.pid(caller, input[4:]) // Get the pesudo process ID.
 
@@ -94,22 +91,11 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	case [4]byte{0xb7, 0xc5, 0x64, 0x6c}:
 		return this.keyByIndex(caller, input[4:]) // Get the key of the element by its index.
 
-	case [4]byte{0x8e, 0x7c, 0xb6, 0xe1}:
-		return this.getByIndex(caller, input[4:]) // Get the element by its index.
-
-	case [4]byte{0xaf, 0x4b, 0xaa, 0x7d}:
-		return this.setByIndex(caller, input[4:]) // Set the element by its index.
-
 	case [4]byte{0x7f, 0xed, 0x84, 0xf2}:
 		return this.getByKey(caller, input[4:]) // Get the element by its key.
 
-	// bdf47d22
-
 	case [4]byte{0xc2, 0x78, 0xb7, 0x99}:
 		return this.setByKey(caller, input[4:]) // Set the element by its key.
-
-	case [4]byte{0x90, 0xd2, 0x44, 0xd8}:
-		return this.delByIndex(caller, input[4:]) // Delete the element by its index.
 
 	case [4]byte{0x37, 0x79, 0xc0, 0x34}:
 		return this.delByKey(caller, input[4:]) // Delete the element by its key.
@@ -262,13 +248,34 @@ func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]by
 		return []byte{}, false, 0
 	}
 
-	if key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt); err == nil && len(key) > 0 {
-		str := hex.EncodeToString(key)
-		bytes, successful, _ := this.GetByKey(path + str)
-		if len(bytes) > 0 && successful {
-			return bytes, true, 0
-		}
+	// Get the key of the element
+	key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
+	if err != nil || len(key) == 0 {
+		return []byte{}, false, 0
 	}
+
+	// Get the type of the container info
+	str := hex.EncodeToString(key)
+	typeID := this.pathBuilder.GetPathType(caller) // Get the type of the container
+	switch typeID {
+	case commutative.UINT256: // Commutative container
+		v, _, fee := this.api.WriteCache().(*tempcache.WriteCache).Read(
+			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str, new(commutative.U256)) //Write the element to the container
+
+		if v != nil {
+			if encoded, err := abi.Encode(v); err == nil {
+				return encoded, true, int64(fee)
+			}
+		}
+		return []byte{}, false, int64(fee)
+	}
+
+	// Non-commutative bytes container by default
+	bytes, successful, _ := this.GetByKey(path + str) // Get the value by its key.
+	if len(bytes) > 0 && successful {
+		return bytes, true, 0
+	}
+	// }
 	return []byte{}, false, 0
 }
 
@@ -279,34 +286,52 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 		return []byte{}, false, 0
 	}
 
+	// Get the type of the container info
 	typeID := this.pathBuilder.GetPathType(caller) // Get the type of the container
-
 	switch typeID {
 	case commutative.UINT256: // Commutative container
+		key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
+		if err != nil {
+			return []byte{}, false, 0
+		}
+		// str := hex.EncodeToString(key)
+
 		v, err := abi.DecodeTo(input, 1, []byte{}, 2, math.MaxInt)
 		if err != nil {
 			return []byte{}, false, 0
 		}
 
-		value := commutative.NewU256Delta(new(uint256.Int).SetBytes(v), true)
-		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, value) //Write the element to the container
+		//Write the element to the container
+		newVal := commutative.NewU256Delta(new(uint256.Int).SetBytes(v), true)
+		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
+			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+hex.EncodeToString(key), newVal)
+
 		return []byte{}, err == nil, fee
-
-		// case noncommutative.BYTES: // Non-commutative container
-
 	}
 
+	// Non-commutative container by default
 	key, value, err := abi.Parse2(input,
 		[]byte{}, 2, math.MaxInt,
 		[]byte{}, 2, math.MaxInt,
 	)
 
 	if err == nil {
-		str := hex.EncodeToString(key)
-		successful, _ := this.SetByKey(path+str, value)
+		successful, _ := this.SetByKey(path+hex.EncodeToString(key), value)
 		return []byte{}, successful, 0
 	}
+	return []byte{}, false, 0
+}
 
+func (this *BaseHandlers) delByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	path := this.pathBuilder.Key(caller) // Build container path
+
+	key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
+	if err == nil {
+		str := hex.EncodeToString(key)
+		if successful, fee := this.SetByKey(path+str, nil); successful {
+			return []byte{}, true, fee
+		}
+	}
 	return []byte{}, false, 0
 }
 
@@ -335,19 +360,6 @@ func (this *BaseHandlers) keyByIndex(caller evmcommon.Address, input []byte) ([]
 		key, _ := this.KeyAt(path, index)
 		v, _ := hex.DecodeString(key)
 		return v, true, 0
-	}
-	return []byte{}, false, 0
-}
-
-func (this *BaseHandlers) delByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	path := this.pathBuilder.Key(caller) // Build container path
-
-	key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
-	if err == nil {
-		str := hex.EncodeToString(key)
-		if successful, fee := this.SetByKey(path+str, nil); successful {
-			return []byte{}, true, fee
-		}
 	}
 	return []byte{}, false, 0
 }
