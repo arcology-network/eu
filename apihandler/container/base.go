@@ -242,6 +242,23 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, input []byte
 	return []byte{}, false, int64(fees)
 }
 
+// func (this *BaseHandlers) exists(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+// 	path := this.pathBuilder.Key(caller) // Build container path
+// 	if len(path) == 0 {
+// 		return []byte{}, false, 0
+// 	}
+
+// 	// Get the key of the element
+// 	key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
+// 	if err != nil || len(key) == 0 {
+// 		return []byte{}, false, 0
+// 	}
+
+// 	flag := this.api.WriteCache().(*tempcache.WriteCache).IfExists(
+// 		this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str) //Write the element to the container
+
+// }
+
 func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller) // Build container path
 	if len(path) == 0 {
