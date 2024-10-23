@@ -296,15 +296,26 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 		}
 		// str := hex.EncodeToString(key)
 
-		v, err := abi.DecodeTo(input, 1, []byte{}, 2, math.MaxInt)
+		rawV, err := abi.DecodeTo(input, 1, []byte{}, 2, math.MaxInt)
 		if err != nil {
 			return []byte{}, false, 0
 		}
 
-		//Write the element to the container
-		newVal := commutative.NewU256Delta(new(uint256.Int).SetBytes(v), true)
+		// Decode the input delta value, could be negative or positive.
+		v, err := abi.DecodeInt256(rawV)
+		if err != nil {
+			return []byte{}, false, 0
+		}
+
+		// Get the bytes from the delta bytes.
+		delta := new(uint256.Int).SetBytes(new(big.Int).Abs(v).Bytes())
+
+		// Create a new delta value for the element
+		deltaVal := commutative.NewU256Delta(delta, v.Sign() >= 0)
+
+		// Write the delta to the element
 		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
-			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+hex.EncodeToString(key), newVal)
+			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+hex.EncodeToString(key), deltaVal)
 
 		return []byte{}, err == nil, fee
 	}

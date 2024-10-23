@@ -26,8 +26,22 @@ import (
 func TestContractU256Cum(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "array/U256Cum_test.sol", "0.8.19", "U256CumTest", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "array/U256Cum_test.sol", "0.8.19", "U256CumArrayTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestContractU256CumMap(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+	// _, err, _, _ := DeployThenInvoke(targetPath, "map/AddressU256Cum_test.sol", "0.8.19", "AddressU256MapTest", "", []byte{}, false)
+	// if err != nil {
+	// 	t.Error(err)
+	// }
+
+	_, err2, _, _ := DeployThenInvoke(targetPath, "map/AddressU256Cum_test.sol", "0.8.19", "AddressU256MapTest2", "call()", []byte{}, false)
+	if err2 != nil {
+		t.Error(err2)
 	}
 }

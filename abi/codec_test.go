@@ -19,6 +19,7 @@ package abi
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math"
 	"reflect"
@@ -142,4 +143,18 @@ func TestDecoder(t *testing.T) {
 	if buffer32.([32]byte)[31] != 96 {
 		t.Error("Error: Wrong [32]byte length")
 	}
+}
+
+func TestInt256(t *testing.T) {
+	// Example: Decode the hex string for -2
+	hexStr := "fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe"
+
+	bytes, _ := hex.DecodeString(hexStr)
+	val, err := DecodeInt256(bytes)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("Decoded int256:", val)
 }

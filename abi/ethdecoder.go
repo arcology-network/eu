@@ -64,3 +64,14 @@ func DecodeEth(abiDefinition, encodedData, functionName string, types []interfac
 		}
 	}
 }
+
+func DecodeInt256(bytes []byte) (*big.Int, error) {
+	intVal := new(big.Int).SetBytes(bytes) // Convert bytes to a big.Int
+
+	// If the value is negative in two's complement, adjust it
+	if bytes[0]&0x80 != 0 { // If the highest bit is set, it means it's a negative number
+		maxValue := new(big.Int).Lsh(big.NewInt(1), 256) // 2^256
+		intVal = intVal.Sub(intVal, maxValue)
+	}
+	return intVal, nil
+}
