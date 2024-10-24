@@ -187,6 +187,9 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 
 		// Initialize the element with the lower and upper bounds
 		minv, maxv := uint256.NewInt(0).SetBytes(min), uint256.NewInt(0).SetBytes(max)
+		if minv.Cmp(maxv) > 0 {
+			return []byte{}, false, 0 // The lower bound is greater than the upper bound
+		}
 		v := commutative.NewBoundedU256(minv, maxv)
 
 		str := hex.EncodeToString(key)
