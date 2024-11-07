@@ -55,31 +55,35 @@ func (this *U256CumHandler) Address() [20]byte {
 	return common.CUMULATIVE_U256_HANDLER
 }
 
-func (this *U256CumHandler) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64) ([]byte, bool, int64) {
+func (this *U256CumHandler) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isReadOnly bool) ([]byte, bool, int64) {
 	signature := [4]byte{}
 	copy(signature[:], input)
 
-	switch signature {
-	case [4]byte{0x1c, 0x64, 0x49, 0x9c}:
-		return this.new(caller, input[4:])
+	if isReadOnly {
+		switch signature {
+		case [4]byte{0x59, 0xe0, 0x2d, 0xd7}: // 59 e0 2d d7
+			return this.peek(caller, input[4:])
 
-	case [4]byte{0x59, 0xe0, 0x2d, 0xd7}: // 59 e0 2d d7
-		return this.peek(caller, input[4:])
+		case [4]byte{0x6d, 0x4c, 0xe6, 0x3c}:
+			return this.get(caller, input[4:])
 
-	case [4]byte{0x6d, 0x4c, 0xe6, 0x3c}:
-		return this.get(caller, input[4:])
+		case [4]byte{0xf8, 0x89, 0x79, 0x45}: // f8 89 79 45
+			return this.min(caller, input[4:]) // Get the lower bound of the variable
 
-	case [4]byte{0xf8, 0x89, 0x79, 0x45}: // f8 89 79 45
-		return this.min(caller, input[4:])
+		case [4]byte{0x6a, 0xc5, 0xdb, 0x19}:
+			return this.max(caller, input[4:]) // Get the upper bound of the variable
+		}
+	} else {
+		switch signature {
+		case [4]byte{0x1c, 0x64, 0x49, 0x9c}:
+			return this.new(caller, input[4:])
 
-	case [4]byte{0x6a, 0xc5, 0xdb, 0x19}:
-		return this.max(caller, input[4:])
+		case [4]byte{0x10, 0x03, 0xe2, 0xd2}: // 10 03 e2 d2
+			return this.add(caller, input[4:])
 
-	case [4]byte{0x10, 0x03, 0xe2, 0xd2}: // 10 03 e2 d2
-		return this.add(caller, input[4:])
-
-	case [4]byte{0x27, 0xee, 0x58, 0xa6}:
-		return this.sub(caller, input[4:]) //27 ee 58 a6
+		case [4]byte{0x27, 0xee, 0x58, 0xa6}:
+			return this.sub(caller, input[4:]) //27 ee 58 a6
+		}
 	}
 	return []byte{}, false, 0
 }

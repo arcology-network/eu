@@ -54,7 +54,7 @@ func (this *RuntimeHandlers) Address() [20]byte {
 	return adaptorcommon.RUNTIME_HANDLER
 }
 
-func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64) ([]byte, bool, int64) {
+func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isReadOnly bool) ([]byte, bool, int64) {
 	signature := [4]byte{}
 	copy(signature[:], input)
 
@@ -77,8 +77,8 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 	case [4]byte{0xa8, 0x7a, 0xe4, 0x81}: // bb 07 e8 5d
 		return this.instances(caller, callee, input[4:])
 
-	case [4]byte{0xf5, 0xf0, 0x15, 0xf3}: //
-		return this.deferred(caller, callee, input[4:])
+	case [4]byte{0x19, 0x7f, 0x62, 0x5f}: // 19 7f 62 5f
+		return this.deferCall(caller, callee, input[4:])
 	}
 
 	fmt.Println(input)
@@ -188,7 +188,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 }
 
 // This function needs to schedule a defer call to the next generation.
-func (this *RuntimeHandlers) deferred(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	if !this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.IsInConstructor() {
 		return []byte{}, false, 0 // Can only be called from a constructor.
 	}

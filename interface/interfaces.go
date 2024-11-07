@@ -28,7 +28,7 @@ import (
 
 type ApiCallHandler interface {
 	Address() [20]byte
-	Call([20]byte, [20]byte, []byte, [20]byte, uint64) ([]byte, bool, int64)
+	Call([20]byte, [20]byte, []byte, [20]byte, uint64, bool) ([]byte, bool, int64)
 }
 
 type ILog interface {
@@ -68,7 +68,7 @@ type EthApiRouter interface {
 	DecrementDepth() uint8
 	Depth() uint8
 	AddLog(key, value string)
-	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash) (bool, []byte, bool, int64)
+	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash, isReadOnly bool) (bool, []byte, bool, int64)
 
 	GetSerialNum(int) uint64
 	Pid() [32]byte
