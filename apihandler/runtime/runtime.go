@@ -33,6 +33,7 @@ import (
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
 	schtype "github.com/arcology-network/scheduler"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/noncommutative"
@@ -69,10 +70,10 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 		return this.uuid(caller, callee, input[4:])
 
 	case [4]byte{0x68, 0x7b, 0x09, 0xb7}: //
-		return this.setExecutionMethod(caller, callee, input[4:], schtype.SEQUENTIAL_EXECUTION)
+		return this.setExecutionMethod(caller, callee, input[4:], stgcommon.SEQUENTIAL_EXECUTION)
 
 	case [4]byte{0xc4, 0xdf, 0xfe, 0x6e}: //
-		return this.setExecutionMethod(caller, callee, input[4:], schtype.PARALLEL_EXECUTION)
+		return this.setExecutionMethod(caller, callee, input[4:], stgcommon.PARALLEL_EXECUTION)
 
 	case [4]byte{0xa8, 0x7a, 0xe4, 0x81}: // bb 07 e8 5d
 		return this.instances(caller, callee, input[4:])
@@ -133,7 +134,7 @@ func (this *RuntimeHandlers) instances(caller evmcommon.Address, callee evmcommo
 	return []byte{}, false, 0
 }
 
-func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, input []byte, method uint8) ([]byte, bool, int64) {
+func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, input []byte, executionMethod uint8) ([]byte, bool, int64) {
 	if !this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.IsInConstructor() {
 		return []byte{}, false, 0 // Can only be called from a constructor.
 	}
@@ -157,32 +158,39 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 
 	// Parse the function signatures.
 	signatures, err := abi.DecodeTo(signBytes[32:], 0, [][4]byte{}, 2, math.MaxInt)
+	if err != nil {
+		return []byte{}, false, 0
+	}
 
 	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
 	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
 	// Create the parent path for the properties.
-	propertyPath := eth.FuncPropertyPath(caller, sourceFunc)
+	propertyPath := stgcommon.FuncPropertyPath(caller, sourceFunc)
 	if _, err = tempcache.Write(txID, propertyPath, commutative.NewPath()); err != nil {
 		return []byte{}, err == nil, 0
 	}
 
 	// Either the function is parallel or sequential.
-	path := eth.ExecutionMethodPath(caller, sourceFunc)
+	path := stgcommon.ExecutionMethodPath(caller, sourceFunc)
 
 	// If local method is parallel, global method is sequential and vice versa.
-	globalMethod := schtype.PARALLEL_EXECUTION
-	if method == schtype.PARALLEL_EXECUTION {
-		globalMethod = schtype.SEQUENTIAL_EXECUTION
+	// How the scheduler all the function under the contract should be executed in parallel or sequentially by DEFAULT.
+	globalMethod := stgcommon.PARALLEL_EXECUTION
+	if executionMethod == stgcommon.PARALLEL_EXECUTION {
+		globalMethod = stgcommon.SEQUENTIAL_EXECUTION
 	}
-	_, err = tempcache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod})) //
+
+	if _, err = tempcache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod})); err != nil { //
+		return []byte{}, false, 0
+	}
 
 	// Users can add some excepted callees so they can be handled differently.
 	callees := slice.Transform(signatures, func(i int, signature [4]byte) string { // Get the excepted callees.
 		return hex.EncodeToString(schtype.Compact(targetAddr[:], signature[:]))
 	})
 
-	path = eth.ExceptPaths(caller, sourceFunc)
+	path = stgcommon.ExceptPaths(caller, sourceFunc)
 	_, err = tempcache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
 	return []byte{}, err == nil, 0
 }
@@ -197,15 +205,16 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 		return []byte{}, false, 0
 	}
 
-	funSign := new(codec.Bytes4).FromBytes(input[:4])
 	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
+
+	funSign := new(codec.Bytes4).FromBytes(input[:4])
 	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
 	// Get the function signature.
-	propertyPath := eth.FuncPropertyPath(caller, funSign)
-	tempcache.Write(txID, propertyPath, commutative.NewPath())
+	propertyPath := stgcommon.FuncPropertyPath(caller, funSign)
+	tempcache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
 
-	deferPath := eth.DeferrablePath(caller, funSign)
+	deferPath := stgcommon.DeferrablePath(caller, funSign)                           // Generate the sub path for the deferrable.
 	_, err := tempcache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
 	return []byte{}, err == nil, 0
 }
