@@ -496,7 +496,27 @@ func (this *BaseHandlers) pop(caller evmcommon.Address, _ []byte) ([]byte, bool,
 	return values, successful, fee
 }
 
-func (this *BaseHandlers) clear(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+// func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
+// 	path := this.pathBuilder.Key(caller) // Build container path
+// 	if len(path) == 0 {
+// 		return []byte{}, false, 0
+// 	}
+
+// 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
+// 	for {
+// 		if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).PopBack(tx, path, nil); err != nil {
+// 			break
+// 		}
+// 	}
+
+// 	typedv, univ, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(tx, path, new(commutative.Path))
+// 	typedv.(*deltaset.DeltaSet[string]).Commit()
+// 	univ.(*univalue.Univalue).IncrementWrites(1)
+
+// 	return []byte{}, true, 0
+// }
+
+func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller) // Build container path
 	if len(path) == 0 {
 		return []byte{}, false, 0
@@ -504,7 +524,7 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, input []byte) ([]byte,
 
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	for {
-		if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).PopBack(tx, path, nil); err != nil {
+		if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).EraseAll(tx, path, nil); err != nil {
 			break
 		}
 	}

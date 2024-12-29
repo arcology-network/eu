@@ -91,6 +91,10 @@ func (this *PathBuilder) GetPathType(caller evmcommon.Address) uint8 {
 		return 0
 	}
 
+	return this.PathTypeID(pathStr)
+}
+
+func (this *PathBuilder) PathTypeID(pathStr string) uint8 {
 	path, _ := this.apiRouter.WriteCache().(*tempcache.WriteCache).PeekRaw(pathStr, commutative.Path{})
 	return path.(*commutative.Path).Type
 }

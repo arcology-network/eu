@@ -64,7 +64,8 @@ func Encode(typed interface{}) ([]byte, error) {
 
 	case [20]uint8:
 		bytes := typed.([20]uint8)
-		return bytes[:], nil
+		copy(buffer[12:], bytes[:])
+		return buffer[:], nil
 
 	case [32]uint8:
 		bytes := typed.([32]uint8)

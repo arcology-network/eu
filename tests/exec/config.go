@@ -78,7 +78,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(sstore.WriteCache, 32, 1) // Generation writecache
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Reset() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -102,7 +102,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	// Init a new API
 	api = apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(sstore, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Reset() }))
 
 	statedb = ethimpl.NewImplStateDB(api)
 
@@ -218,12 +218,12 @@ func AliceCall(executor *eu.EU, contractAddress evmcommon.Address, funcName stri
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
-	executor.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	executor.Api().WriteCache().(*tempcache.WriteCache).Reset()
 
 	// localCache := tempcache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(datastore, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Reset() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
 	eu.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)

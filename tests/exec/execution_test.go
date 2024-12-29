@@ -71,7 +71,7 @@ func TestSequence(t *testing.T) {
 	msgCallAdd2 := core.NewMessage(Alice, &contractAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 
 	// Put the messages into the sequence and run it in sequence.
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Reset()
 	seq = execution.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), [32]byte{}, testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 }
@@ -173,7 +173,7 @@ func TestGeneration(t *testing.T) {
 	clearTransitions = eu.NewGeneration(0, 2, []*execution.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
 	acctTrans = univalue.Univalues(clearTransitions).To(univalue.IPTransition{})
 
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear().Insert(acctTrans)
+	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Reset().Insert(acctTrans)
 
 	checkMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 5, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check3()"))[:4], nil, false)
 	seq = execution.NewJobSequence(1, []uint64{1}, slice.ToSlice(&checkMsg), [32]byte{}, testEu.eu.Api())
@@ -213,7 +213,7 @@ func TestMultiCummutiaves(t *testing.T) {
 	msgCallAdd2 := core.NewMessage(Alice, &contractAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 
 	// // Put the messages into the sequence and run it in sequence.
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Reset()
 	seq = execution.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), [32]byte{}, testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 
@@ -229,7 +229,7 @@ func TestMultiCummutiaves(t *testing.T) {
 	data = crypto.Keccak256([]byte("check()"))[:4]
 	msgCallCheck := core.NewMessage(Alice, &contractAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Reset()
 	seq = execution.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallCheck), [32]byte{}, testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 
