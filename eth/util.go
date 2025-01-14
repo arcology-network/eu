@@ -28,9 +28,9 @@ import (
 
 // CreateNewAccount creates a new account in the write cache.
 // It returns the transitions and an error, if any.
-func CreateNewAccount(tx uint32, acct string, store interface {
+func CreateNewAccount(tx uint64, acct string, store interface {
 	IfExists(string) bool
-	Write(uint32, string, interface{}) (int64, error)
+	Write(uint64, string, interface{}) (int64, error)
 }) ([]*univalue.Univalue, error) {
 	paths, typeids := stgcommcom.NewPlatform().GetBuiltins(acct)
 

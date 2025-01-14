@@ -205,7 +205,7 @@ func (this *APIHandler) ClearLogs() {
 	this.logs = this.logs[:0]
 }
 
-func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash ethcommon.Hash) (bool, []byte, bool, int64) {
+func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash ethcommon.Hash, isReadOnly bool) (bool, []byte, bool, int64) {
 	if handler, ok := this.handlerDict[callee]; ok {
 		result, successful, fees := handler.Call(
 			ethcommon.Address(codec.Bytes20(caller).Clone().(codec.Bytes20)),
@@ -213,6 +213,7 @@ func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]b
 			slice.Clone(input),
 			origin,
 			nonce,
+			isReadOnly,
 		)
 		return true, result, successful, fees
 	}

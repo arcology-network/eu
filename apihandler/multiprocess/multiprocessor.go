@@ -90,7 +90,8 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 		if !successful { // Assign the fee to the fees array
 			ethMsgs[i], erros[i] = nil, errors.New("Error: Failed to get the function call data")
 		}
-		ethMsgs[i], erros[i] = this.WrapEthMsg(caller, funCall) // Convert the function call data to an ethereum message.
+		// Convert the function call data to an ethereum message for execution.
+		ethMsgs[i], erros[i] = this.WrapEthMsg(caller, funCall)
 	})
 
 	// Generate the configuration for the sub processes based on the current block context.
@@ -103,7 +104,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	}
 
 	// Unify tx IDs
-	mainTxID := uint32(this.Api().GetEU().(interface{ ID() uint32 }).ID())
+	mainTxID := uint64(this.Api().GetEU().(interface{ ID() uint64 }).ID())
 	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) { (*v).SetTx(mainTxID) })
 
 	this.Api().WriteCache().(*tempcache.WriteCache).Insert(transitions) // Merge the write tempcache to the main tempcache

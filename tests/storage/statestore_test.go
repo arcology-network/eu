@@ -48,7 +48,7 @@ func TestRandomOrderImport(t *testing.T) {
 
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{stgcomm.SYSTEM})
+	committer.Precommit([]uint64{stgcomm.SYSTEM})
 	committer.Commit(stgcomm.SYSTEM)
 
 	fmt.Println(" ================================================= ")
@@ -61,7 +61,7 @@ func TestRandomOrderImport(t *testing.T) {
 	// committer.Import(acctTrans)
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(2)
 
 	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(1), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
@@ -76,7 +76,7 @@ func TestRandomOrderImport(t *testing.T) {
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1, 2})
+	committer.Precommit([]uint64{1, 2})
 	committer.Commit(2)
 
 	outV, _, _ := sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
@@ -108,7 +108,7 @@ func TestRandomOrderImport(t *testing.T) {
 	common.Swap(&acctTrans[0], &acctTrans[1])
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1, 2})
+	committer.Precommit([]uint64{1, 2})
 	committer.Commit(2)
 
 	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
@@ -128,7 +128,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 
 	committer := stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{stgcomm.SYSTEM})
+	committer.Precommit([]uint64{stgcomm.SYSTEM})
 	committer.Commit(stgcomm.SYSTEM)
 
 	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
@@ -145,7 +145,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	// committer.Import(acctTrans)
 	committer = stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(2)
 
 	outV, _, _ := sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
@@ -189,7 +189,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 
 	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(2)
 
 	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))
@@ -230,7 +230,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{stgcomm.SYSTEM})
+	committer.Precommit([]uint64{stgcomm.SYSTEM})
 	committer.Commit(stgcomm.SYSTEM)
 
 	fmt.Println(" ================================================= ")
@@ -249,7 +249,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	// committer.Import(acctTrans)
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(2)
 
 	fmt.Println(" ================================================= ")
@@ -296,7 +296,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 
 	// committer = statestore.NewStateStore(store)
 	committer.Import(acctTrans)
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(2) //.Clear()
 	fmt.Println(" ================================================= ")
 	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), new(noncommutative.Bytes))

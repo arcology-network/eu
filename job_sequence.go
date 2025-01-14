@@ -42,15 +42,15 @@ import (
 
 // JobSequence represents a sequence of jobs to be executed.
 type JobSequence struct {
-	ID           uint32 // group id
-	PreTxs       []uint32
+	ID           uint64 // group id
+	PreTxs       []uint64
 	StdMsgs      []*commontype.StandardMessage
 	Results      []*eucommon.Result
 	SeqAPI       intf.EthApiRouter
 	RecordBuffer []*univalue.Univalue
 }
 
-func NewJobSequence(seqID uint32, tx []uint64, evmMsgs []*evmcore.Message, txHash [32]byte, api intf.EthApiRouter) *JobSequence {
+func NewJobSequence(seqID uint64, tx []uint64, evmMsgs []*evmcore.Message, txHash [32]byte, api intf.EthApiRouter) *JobSequence {
 	newJobSeq := &JobSequence{
 		ID:     seqID,
 		SeqAPI: api,
@@ -69,7 +69,7 @@ func NewJobSequence(seqID uint32, tx []uint64, evmMsgs []*evmcore.Message, txHas
 func (*JobSequence) T() *JobSequence { return &JobSequence{} }
 
 // New creates a new JobSequence with the given ID and API router.
-func (*JobSequence) New(id uint32, apiRouter intf.EthApiRouter) *JobSequence {
+func (*JobSequence) New(id uint64, apiRouter intf.EthApiRouter) *JobSequence {
 	return &JobSequence{
 		ID:     id,
 		SeqAPI: apiRouter,
@@ -78,7 +78,7 @@ func (*JobSequence) New(id uint32, apiRouter intf.EthApiRouter) *JobSequence {
 
 // NewFromCall creates a new JobSequence from the given call.
 func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, baseTxHash [32]byte, api intf.EthApiRouter) *JobSequence {
-	newJobSeq := new(JobSequence).New(uint32(api.GetSerialNum(eucommon.SUB_PROCESS)), api)
+	newJobSeq := new(JobSequence).New(uint64(api.GetSerialNum(eucommon.SUB_PROCESS)), api)
 
 	return newJobSeq.AppendMsg(&commontype.StandardMessage{
 		ID:     uint64(newJobSeq.GetID()),
@@ -88,7 +88,7 @@ func (*JobSequence) NewFromCall(evmMsg *evmcore.Message, baseTxHash [32]byte, ap
 }
 
 // GetID returns the ID of the JobSequence.
-func (this *JobSequence) GetID() uint32 { return this.ID }
+func (this *JobSequence) GetID() uint64 { return this.ID }
 func (this *JobSequence) AppendMsg(msg interface{}) *JobSequence {
 	this.StdMsgs = append(this.StdMsgs, msg.(*commontype.StandardMessage))
 	return this
@@ -108,7 +108,7 @@ func (this *JobSequence) Length() int { return len(this.StdMsgs) }
 
 // Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
 // case there is a contract deployment in the sequence.
-func (this *JobSequence) Run(config *eucommon.Config, seqAPI intf.EthApiRouter, threadId uint64) ([]uint32, []*univalue.Univalue) {
+func (this *JobSequence) Run(config *eucommon.Config, seqAPI intf.EthApiRouter, threadId uint64) ([]uint64, []*univalue.Univalue) {
 	this.SeqAPI = seqAPI //.Cascade() // Create a new write tempcache for the sequence with the main router as the data source.
 	this.SeqAPI.DecrementDepth()
 
@@ -116,7 +116,7 @@ func (this *JobSequence) Run(config *eucommon.Config, seqAPI intf.EthApiRouter, 
 	this.Results = make([]*eucommon.Result, len(this.StdMsgs))
 	if len(this.StdMsgs) == 1 {
 		this.Results[0] = this.execute(this.StdMsgs[0], config, this.SeqAPI.Cascade())
-		return slice.Fill(make([]uint32, len(this.Results[0].RawStateAccesses)), this.ID), this.Results[0].RawStateAccesses
+		return slice.Fill(make([]uint64, len(this.Results[0].RawStateAccesses)), this.ID), this.Results[0].RawStateAccesses
 	}
 
 	for i, msg := range this.StdMsgs {
@@ -132,7 +132,7 @@ func (this *JobSequence) Run(config *eucommon.Config, seqAPI intf.EthApiRouter, 
 
 	// Get acumulated state access records from all the transactions in the sequence.
 	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*tempcache.WriteCache).Export()).To(univalue.IPAccess{})
-	return slice.Fill(make([]uint32, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
+	return slice.Fill(make([]uint64, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
@@ -157,7 +157,7 @@ func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 }
 
 // FlagConflict flags the transitions after the first conflicting transaction.
-func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
+func (this *JobSequence) FlagConflict(dict map[uint64]uint64, err error) {
 	// Get the first index of the first conflict transaction.
 	// All the transitions after this index aren't usuable any more.
 	first, _ := slice.FindFirstIf(this.Results, func(_ int, r *eucommon.Result) bool {
@@ -175,7 +175,7 @@ func (this *JobSequence) FlagConflict(dict map[uint32]uint64, err error) {
 // execute executes a standard message and returns the result.
 func (this *JobSequence) execute(StdMsg *commontype.StandardMessage, config *eucommon.Config, api intf.EthApiRouter) *eucommon.Result {
 	statedb := eth.NewImplStateDB(api)
-	statedb.PrepareFormer(StdMsg.TxHash, [32]byte{}, uint32(StdMsg.ID))
+	statedb.PrepareFormer(StdMsg.TxHash, [32]byte{}, uint64(StdMsg.ID))
 
 	eu := NewEU(
 		config.ChainConfig,
@@ -192,7 +192,7 @@ func (this *JobSequence) execute(StdMsg *commontype.StandardMessage, config *euc
 		)
 
 	return (&eucommon.Result{
-		TxIndex:          uint32(StdMsg.ID),
+		TxIndex:          uint64(StdMsg.ID),
 		TxHash:           common.IfThenDo1st(receipt != nil, func() evmcommon.Hash { return receipt.TxHash }, evmcommon.Hash{}),
 		RawStateAccesses: tempcache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),
 		Err:              common.IfThenDo1st(prechkErr == nil, func() error { return evmResult.Err }, prechkErr),

@@ -33,7 +33,7 @@ import (
 
 // APIs under the concurrency namespace
 type Generation struct {
-	ID          uint32
+	ID          uint64
 	numThreads  uint8
 	jobSeqs     []*JobSequence // para jobSeqs
 	occurrences *map[string]int
@@ -50,7 +50,7 @@ func (*Generation) OccurrenceDict(jobSeqs []*JobSequence) *map[string]int {
 	return &occurrences
 }
 
-func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
+func NewGeneration(id uint64, numThreads uint8, jobSeqs []*JobSequence) *Generation {
 	gen := &Generation{
 		ID:         id,
 		numThreads: numThreads,
@@ -63,7 +63,7 @@ func NewGeneration(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generat
 // This function is used for Multiprocessor execution ONLY !!!.
 // This function converts a list of raw calls to a list of parallel job sequences. One job sequence is created for each caller.
 // If there are N callers, there will be N job sequences. There sequences will be later added to a generation and executed in parallel.
-func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter) *Generation {
+func NewGenerationFromMsgs(id uint64, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter) *Generation {
 	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{})
 	slice.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
 		gen.Add(new(JobSequence).NewFromCall(*msg, api.GetEU().(interface{ TxHash() [32]byte }).TxHash(), api))
@@ -83,7 +83,7 @@ func (this *Generation) At(idx uint64) *JobSequence {
 	return common.IfThenDo1st(idx < uint64(len(this.jobSeqs)), func() *JobSequence { return this.jobSeqs[idx] }, nil)
 }
 
-func (*Generation) New(id uint32, numThreads uint8, jobSeqs []*JobSequence) *Generation {
+func (*Generation) New(id uint64, numThreads uint8, jobSeqs []*JobSequence) *Generation {
 	return NewGeneration(id, numThreads, slice.To[*JobSequence, *JobSequence](jobSeqs))
 }
 
@@ -111,7 +111,7 @@ func (this *Generation) Add(job *JobSequence) bool {
 func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRouter) []*univalue.Univalue {
 	config := execCoinbase.(*eucommon.Config)
 
-	seqIDs := make([][]uint32, len(this.jobSeqs))
+	seqIDs := make([][]uint64, len(this.jobSeqs))
 	records := make([][]*univalue.Univalue, len(this.jobSeqs))
 
 	// Execute the job sequences in parallel. All the access records from the same sequence share
@@ -137,7 +137,7 @@ func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRo
 	return cleanTrans
 }
 
-func (*Generation) Detect(seqIDs [][]uint32, records [][]*univalue.Univalue) arbitrator.Conflicts {
+func (*Generation) Detect(seqIDs [][]uint64, records [][]*univalue.Univalue) arbitrator.Conflicts {
 	if len(records) == 1 {
 		return arbitrator.Conflicts{}
 	}

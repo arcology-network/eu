@@ -50,7 +50,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	time.Sleep(2 * time.Second)
@@ -75,7 +75,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	arib := (&arbitrator.Arbitrator{})
 
-	IDVec := append(slice.Fill(make([]uint32, len(accesses1)), 0), slice.Fill(make([]uint32, len(accesses2)), 1)...)
+	IDVec := append(slice.Fill(make([]uint64, len(accesses1)), 0), slice.Fill(make([]uint64, len(accesses2)), 1)...)
 	ids := arib.Detect(IDVec, append(accesses1, accesses2...))
 
 	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
@@ -98,7 +98,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	committer.SetStore(store)
@@ -135,7 +135,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	// fmt.Print(" ++++++++++++++++++++++++++++++++++++++++++++++++ ")
 	// accesses2.Print()
 
-	IDVec := append(slice.Fill(make([]uint32, len(accesses1)), 0), slice.Fill(make([]uint32, len(accesses2)), 1)...)
+	IDVec := append(slice.Fill(make([]uint64, len(accesses1)), 0), slice.Fill(make([]uint64, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
 	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
 
@@ -162,7 +162,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 	committer.SetStore(store)
 
@@ -194,7 +194,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 	transitions2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	IDVec := append(slice.Fill(make([]uint32, len(accesses1)), 0), slice.Fill(make([]uint32, len(accesses2)), 1)...)
+	IDVec := append(slice.Fill(make([]uint64, len(accesses1)), 0), slice.Fill(make([]uint64, len(accesses2)), 1)...)
 	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
 	conflictDict, _, pairs := arbitrator.Conflicts(ids).ToDict()
 
@@ -204,7 +204,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 		t.Error("Error: There should be 1 conflict")
 	}
 
-	toCommit := slice.Exclude([]uint32{1, 2}, mapi.Keys(conflictDict))
+	toCommit := slice.Exclude([]uint64{1, 2}, mapi.Keys(conflictDict))
 
 	in := append(transitions1, transitions2...)
 	buffer := univalue.Univalues(in).Encode()
@@ -231,7 +231,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses4 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 	transitions4 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	IDVec = append(slice.Fill(make([]uint32, len(accesses3)), 0), slice.Fill(make([]uint32, len(accesses4)), 1)...)
+	IDVec = append(slice.Fill(make([]uint64, len(accesses3)), 0), slice.Fill(make([]uint64, len(accesses4)), 1)...)
 	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
 	conflictDict, _, _ = arbitrator.Conflicts(ids).ToDict()
 
@@ -240,9 +240,8 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 		t.Error("Error: There should be only 1 conflict")
 	}
 
-	toCommit = slice.RemoveIf(&[]uint32{3, 4}, func(_ int, tx uint32) bool {
+	toCommit = slice.RemoveIf(&[]uint64{3, 4}, func(_ int, tx uint64) bool {
 		// conflictTx := mapi.Keys(*conflictDict)
-
 		_, ok := conflictDict[tx]
 		return ok
 	})
@@ -276,21 +275,21 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 func BenchmarkSimpleArbitrator(b *testing.B) {
 	alice := AliceAccount()
 	univalues := make([]*univalue.Univalue, 0, 5*200000)
-	groupIDs := make([]uint32, 0, len(univalues))
+	groupIDs := make([]uint64, 0, len(univalues))
 
 	v := commutative.NewPath()
 	for i := 0; i < len(univalues)/5; i++ {
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
-		univalues = append(univalues, univalue.NewUnivalue(uint32(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint64(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint64(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint64(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint64(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
+		univalues = append(univalues, univalue.NewUnivalue(uint64(i), "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/elem-000"+fmt.Sprint(rand.Float32()), 1, 0, 0, v, nil))
 
-		groupIDs = append(groupIDs, uint32(i))
-		groupIDs = append(groupIDs, uint32(i))
-		groupIDs = append(groupIDs, uint32(i))
-		groupIDs = append(groupIDs, uint32(i))
-		groupIDs = append(groupIDs, uint32(i))
+		groupIDs = append(groupIDs, uint64(i))
+		groupIDs = append(groupIDs, uint64(i))
+		groupIDs = append(groupIDs, uint64(i))
+		groupIDs = append(groupIDs, uint64(i))
+		groupIDs = append(groupIDs, uint64(i))
 	}
 
 	t0 := time.Now()

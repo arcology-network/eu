@@ -32,7 +32,7 @@ type EthPathBuilder struct {
 	// ccurl tempcache.WriteCache
 }
 
-func (this *EthPathBuilder) AccountExist(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint32) bool {
+func (this *EthPathBuilder) AccountExist(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint64) bool {
 	return writeCache.IfExists(this.AccountRootPath(account))
 }
 
@@ -84,11 +84,11 @@ func getCodePath(writeCache *tempcache.WriteCache, account evmcommon.Address) st
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/code")
 }
 
-func accountExist(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint32) bool {
+func accountExist(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint64) bool {
 	return writeCache.IfExists(getAccountRootPath(writeCache, account))
 }
 
-func createAccount(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint32) {
+func createAccount(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint64) {
 	if _, err := CreateNewAccount(tid, hexutil.Encode(account[:]), writeCache); err != nil {
 		panic(err)
 	}

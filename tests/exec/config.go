@@ -113,7 +113,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	store := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
 	committer := stgcomm.NewStateCommitter(datastore, store.GetWriters())
 	committer.Import(transitions)
-	committer.Precommit([]uint32{0})
+	committer.Precommit([]uint64{0})
 	committer.Commit(20)
 
 	// Init a new API
@@ -221,7 +221,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	contractAddress := receipt.ContractAddress
 	testEu.committer = stgcomm.NewStateCommitter(statestore.Store(), statestore.GetWriters())
 	testEu.committer.Import(transitions)
-	testEu.committer.Precommit([]uint32{1})
+	testEu.committer.Precommit([]uint64{1})
 	testEu.committer.Commit(20)
 
 	// testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
@@ -291,7 +291,7 @@ func DepolyContract(eu *eu.EU, committer *stgcomm.StateCommitter, config *adapto
 	_, transitionsFiltered := tempcache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 	// committer := eu.Api().Ccurl()
 	committer.Import(transitionsFiltered)
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(20)
 	return nil, config, eu, receipt
 }

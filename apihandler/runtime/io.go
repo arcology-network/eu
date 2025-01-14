@@ -38,7 +38,7 @@ func (this *IoHandlers) Address() [20]byte {
 	return common.IO_HANDLER
 }
 
-func (this *IoHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64) ([]byte, bool, int64) {
+func (this *IoHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, _ bool) ([]byte, bool, int64) {
 	signature := [4]byte{}
 	copy(signature[:], input)
 

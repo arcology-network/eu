@@ -25,7 +25,7 @@ import (
 
 type EuResult struct {
 	H  string
-	ID uint32
+	ID uint64
 	// Transitions  []byte
 	TransitTypes []byte
 	// DC           *DeferredCall
@@ -34,16 +34,16 @@ type EuResult struct {
 	GasUsed uint64
 }
 
-func (this *EuResult) HeaderSize() uint32 {
-	return 8 * codec.UINT32_LEN
+func (this *EuResult) HeaderSize() uint64 {
+	return 6 * codec.UINT64_LEN
 }
 
-func (this *EuResult) Size() uint32 {
+func (this *EuResult) Size() uint64 {
 	return this.HeaderSize() +
-		uint32(len(this.H)) +
-		codec.UINT32_LEN +
+		uint64(len(this.H)) +
+		codec.UINT64_LEN +
 		// codec.Bytes(this.Trans).Size() +
-		uint32(univalue.Univalues(this.Trans).Size()) +
+		uint64(univalue.Univalues(this.Trans).Size()) +
 		codec.Bytes(this.TransitTypes).Size() +
 		// this.DC.Size() +
 		codec.UINT64_LEN +
@@ -63,11 +63,11 @@ func (this *EuResult) EncodeToBuffer(buffer []byte) int {
 
 	offset := codec.Encoder{}.FillHeader(
 		buffer,
-		[]uint32{
+		[]uint64{
 			codec.String(this.H).Size(),
-			codec.Uint32(this.ID).Size(),
+			codec.Uint64(this.ID).Size(),
 			// codec.Bytes(this.Transitions).Size(),
-			uint32(univalue.Univalues(this.Trans).Size()),
+			univalue.Univalues(this.Trans).Size(),
 			codec.Bytes(this.TransitTypes).Size(),
 			// this.DC.Size(),
 			codec.UINT64_LEN,
@@ -76,7 +76,7 @@ func (this *EuResult) EncodeToBuffer(buffer []byte) int {
 	)
 
 	offset += codec.String(this.H).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint32(this.ID).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.ID).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bytes(univalue.Univalues(this.Trans).Encode()).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bytes(this.TransitTypes).EncodeToBuffer(buffer[offset:])
 	// offset += this.DC.EncodeToBuffer(buffer[offset:])
@@ -90,7 +90,7 @@ func (this *EuResult) Decode(buffer []byte) *EuResult {
 	fields := [][]byte(codec.Byteset{}.Decode(buffer).(codec.Byteset))
 
 	this.H = string(fields[0])
-	this.ID = uint32(codec.Uint32(0).Decode(fields[1]).(codec.Uint32))
+	this.ID = uint64(codec.Uint64(0).Decode(fields[1]).(codec.Uint64))
 	this.Trans = univalue.Univalues(this.Trans).Decode(fields[2]).([]*univalue.Univalue)
 	// this.Transitions = []byte(codec.Bytes{}.Decode(fields[2]).(codec.Bytes))
 	this.TransitTypes = []byte(codec.Bytes{}.Decode(fields[3]).(codec.Bytes))
@@ -123,11 +123,11 @@ func (tar *TxAccessRecords) GobDecode(buffer []byte) error {
 
 type Euresults []*EuResult
 
-func (this *Euresults) HeaderSize() uint32 {
-	return uint32((len(*this) + 1) * codec.UINT32_LEN) // Header length
+func (this *Euresults) HeaderSize() uint64 {
+	return uint64(len(*this)+1) * codec.UINT64_LEN // Header length
 }
 
-func (this *Euresults) Size() uint32 {
+func (this *Euresults) Size() uint64 {
 	total := this.HeaderSize()
 	for i := 0; i < len(*this); i++ {
 		total += (*this)[i].Size()
@@ -137,11 +137,11 @@ func (this *Euresults) Size() uint32 {
 
 // Fill in the header info
 func (this *Euresults) FillHeader(buffer []byte) {
-	codec.Uint32(len(*this)).EncodeToBuffer(buffer)
+	codec.Uint64(len(*this)).EncodeToBuffer(buffer)
 
-	offset := uint32(0)
+	offset := uint64(0)
 	for i := 0; i < len(*this); i++ {
-		codec.Uint32(offset).EncodeToBuffer(buffer[codec.UINT32_LEN*(i+1):])
+		codec.Uint64(offset).EncodeToBuffer(buffer[codec.UINT64_LEN*uint64(i+1):])
 		offset += (*this)[i].Size()
 	}
 }
@@ -150,7 +150,7 @@ func (this Euresults) GobEncode() ([]byte, error) {
 	buffer := make([]byte, this.Size())
 	this.FillHeader(buffer)
 
-	offsets := make([]uint32, len(this)+1)
+	offsets := make([]uint64, len(this)+1)
 	offsets[0] = 0
 	for i := 0; i < len(this); i++ {
 		offsets[i+1] = offsets[i] + this[i].Size()

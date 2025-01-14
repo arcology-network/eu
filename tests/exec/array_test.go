@@ -69,6 +69,15 @@ func TestContractU256(t *testing.T) {
 	}
 }
 
+func TestContractU256Cum(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "array/U256Cum_test.sol", "0.8.19", "U256CumArrayTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestContractInt256(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")

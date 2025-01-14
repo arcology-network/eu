@@ -150,7 +150,7 @@ func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfa
 // It's mainly used for TESTING purpose.
 func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
 	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
+	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint64 {
 		return v.GetTx()
 	})
 
@@ -163,9 +163,9 @@ func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
 }
 
 // It's mainly used for TESTING purpose.
-func FlushGeneration(sstore *statestore.StateStore) []uint32 {
+func FlushGeneration(sstore *statestore.StateStore) []uint64 {
 	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint32 {
+	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint64 {
 		return v.GetTx()
 	})
 

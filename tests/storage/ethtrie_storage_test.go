@@ -143,7 +143,7 @@ func TestTrieUpdates(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues(slice.Clone(trans)).To(univalue.IPTransition{}))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	// ds := committer.Store().(*storage.StorageProxy).EthStore()
@@ -171,7 +171,7 @@ func TestTrieUpdates(t *testing.T) {
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 
 	// aliceAddr := ethcommon.BytesToAddress(hexutil.MustDecode(alice))
 	// if len(ds.Dirties()) != 1 || ds.Dirties()[0].Address() != aliceAddr || !ds.Dirties()[0].StorageDirty {
@@ -195,7 +195,7 @@ func TestTrieUpdates(t *testing.T) {
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{}))
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 
 	// if len(ds.Dirties()) != 1 || ds.Dirties()[0].Address() != aliceAddr || ds.Dirties()[0].StorageDirty {
 	// 	t.Error("Error: Dirties() should be 1, actual", len(ds.Dirties()))
@@ -233,7 +233,7 @@ func TestEthStorageConnection(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans)
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform()) // Reset the write tempcache
@@ -347,7 +347,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(ts)
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 	committer.SetStore(store)
 
@@ -361,7 +361,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues))
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
@@ -378,7 +378,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
-	committer.Precommit([]uint32{1})
+	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {

@@ -84,7 +84,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	t0 := time.Now()
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(transitions)
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM, 0, 1})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM, 0, 1})
 	committer.Commit(10)
 	fmt.Println("Init committer= :", time.Since(t0), "with initial transitions:", len(transitions))
 }
@@ -146,7 +146,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Sort: ", len(trans), " in: ", time.Since(t0))
 
 	t0 = time.Now()
-	committer.Precommit([]uint32{0})
+	committer.Precommit([]uint64{0})
 	fmt.Println("Precommit:", time.Since(t0))
 
 	fmt.Println("Root: ", sstore.Backend().EthStore().LatestWorldTrieRoot())
@@ -184,7 +184,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans)
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	alice := AliceAccount()
@@ -229,7 +229,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	alice := AliceAccount()
@@ -347,7 +347,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
 	path := commutative.NewPath()
@@ -422,9 +422,9 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 
-	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
-	// errs := committer.AllInOneCommit(acctTrans, []uint32{0})
+	// errs := committer.AllInOneCommit(acctTrans, []uint64{0})
 
 	// if len(errs) > 0 {
 	// 	fmt.Println(errs)
@@ -486,7 +486,7 @@ func BenchmarkStringSort(b *testing.B) {
 		acct := addrcompressor.RandomAccount()
 		for j := 9; j >= 1; j-- {
 
-			paths[i] = append(paths[i], univalue.NewUnivalue(uint32(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64())), nil))
+			paths[i] = append(paths[i], univalue.NewUnivalue(uint64(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64())), nil))
 		}
 	}
 

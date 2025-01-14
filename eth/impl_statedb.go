@@ -35,7 +35,7 @@ import (
 type ImplStateDB struct {
 	refund           uint64
 	txHash           evmcommon.Hash
-	tid              uint32 // tx id
+	tid              uint64 // tx id
 	logs             map[evmcommon.Hash][]*evmtypes.Log
 	transientStorage transientStorage
 	api              intf.EthApiRouter
@@ -142,6 +142,9 @@ func (this *ImplStateDB) GetCode(addr evmcommon.Address) []byte {
 	}
 
 	value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(this.tid, getCodePath(this.api.WriteCache().(*tempcache.WriteCache), addr), new(noncommutative.Bytes))
+	if value == nil {
+		return []byte{}
+	}
 	return value.([]byte)
 
 }
@@ -172,7 +175,8 @@ func (this *ImplStateDB) AddSlotToAccessList(addr evmcommon.Address, slot evmcom
 
 // func (this *ImplStateDB) Set(eac EthAccountCache, esc EthStorageCache)                    {} // TODO
 
-// Get from DB directly, bypassing ccurl since it make have some temporary states
+// GetCommittedState retrieves the value associated with the specific key
+// without any mutations caused in the current execution.
 func (this *ImplStateDB) GetCommittedState(addr evmcommon.Address, key evmcommon.Hash) evmcommon.Hash {
 	if value, _ := this.api.WriteCache().(*tempcache.WriteCache).ReadCommitted(this.tid, getStorageKeyPath(this.api, addr, key), new(noncommutative.Bytes)); value != nil {
 		// v, _, _ := value.(interfaces.Type).Get()
@@ -252,7 +256,7 @@ func (this *ImplStateDB) SlotInAccessList(addr evmcommon.Address, slot evmcommon
 	return true, true
 }
 
-func (this *ImplStateDB) PrepareFormer(txHash, bhash evmcommon.Hash, ti uint32) {
+func (this *ImplStateDB) PrepareFormer(txHash, bhash evmcommon.Hash, ti uint64) {
 	this.refund = 0
 	this.txHash = txHash
 	this.tid = ti
