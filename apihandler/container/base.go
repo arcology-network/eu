@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"math"
 	"math/big"
+	"strings"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/types"
@@ -115,7 +116,7 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 			return this.pop(caller, input[4:]) // shrink the size of the container by one
 
 		case [4]byte{0x52, 0xef, 0xea, 0x6e}:
-			return this.clear(caller, input[4:]) // Clear the container.
+			return this.eraseAll(caller, input[4:]) // Clear the container.
 		}
 	}
 
@@ -485,6 +486,26 @@ func (this *BaseHandlers) pop(caller evmcommon.Address, _ []byte) ([]byte, bool,
 		return []byte{}, successful, fee
 	}
 
+	idx := strings.LastIndex(path, "/")
+	typeID := this.pathBuilder.PathTypeID(path[:idx] + "/") // Get the type of the container
+	switch typeID {
+	case commutative.UINT256: // Commutative container
+		value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).ReadAt(
+			this.api.GetEU().(interface{ ID() uint64 }).ID(),
+			path,
+			length-1,
+			new(commutative.U256))
+
+		// if value != nil {
+		// 	return value.([]byte), true, 0
+		// }
+		if value != nil {
+			if encoded, err := abi.Encode(value); err == nil {
+				return encoded, true, int64(0)
+			}
+		}
+	}
+
 	// Get the last element in the container.
 	values, successful, _ := this.GetByIndex(path, length-1)
 	if len(values) == 0 || !successful {
@@ -504,7 +525,7 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, input []byte) ([]byte,
 
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	for {
-		if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).PopBack(tx, path, nil); err != nil {
+		if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).EraseAll(tx, path, nil); err != nil {
 			break
 		}
 	}
@@ -513,5 +534,18 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, input []byte) ([]byte,
 	typedv.(*deltaset.DeltaSet[string]).Commit()
 	univ.(*univalue.Univalue).IncrementWrites(1)
 
+	return []byte{}, true, 0
+}
+func (this *BaseHandlers) eraseAll(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
+	path := this.pathBuilder.Key(caller) // Build container path
+	if len(path) == 0 {
+		return []byte{}, false, 0
+	}
+
+	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
+
+	if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).EraseAll(tx, path, nil); err != nil {
+		return []byte{}, false, 0
+	}
 	return []byte{}, true, 0
 }
