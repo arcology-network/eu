@@ -19,10 +19,12 @@ package api
 
 import (
 	"math"
+	"strings"
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	abi "github.com/arcology-network/eu/abi"
 	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
@@ -69,6 +71,23 @@ func (this *BaseHandlers) ReadAll(path string) ([][]byte, []bool, []int64) {
 
 // Get the index of the element by its key
 func (this *BaseHandlers) GetByIndex(path string, idx uint64) ([]byte, bool, int64) {
+	keyidx := strings.LastIndex(path, "/")
+	typeID := this.pathBuilder.PathTypeID(path[:keyidx] + "/") // Get the type of the container
+	switch typeID {
+	case commutative.UINT256: // Commutative container
+		value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).ReadAt(
+			this.api.GetEU().(interface{ ID() uint64 }).ID(),
+			path,
+			idx,
+			new(commutative.U256))
+
+		if value != nil {
+			if encoded, err := abi.Encode(value); err == nil {
+				return encoded, true, int64(0)
+			}
+		}
+	}
+
 	if value, _, err := this.api.WriteCache().(*tempcache.WriteCache).ReadAt(
 		this.api.GetEU().(interface{ ID() uint64 }).ID(),
 		path,
