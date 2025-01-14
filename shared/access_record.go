@@ -25,18 +25,18 @@ import (
 
 type TxAccessRecords struct {
 	Hash     string
-	ID       uint32
+	ID       uint64
 	Accesses []*univalue.Univalue
 }
 
 func (this *TxAccessRecords) HeaderSize() uint64 {
-	return 4 * codec.UINT32_LEN
+	return 3 * codec.UINT64_LEN
 }
 
 func (this *TxAccessRecords) Size() uint64 {
 	return this.HeaderSize() +
 		codec.String(this.Hash).Size() +
-		codec.UINT32_LEN +
+		codec.UINT64_LEN +
 		// codec.Bytes(this.Accesses).Size()
 		univalue.Univalues(this.Accesses).Size()
 }
@@ -63,7 +63,7 @@ func (this *TxAccessRecords) EncodeToBuffer(buffer []byte) int {
 	)
 
 	offset += codec.String(this.Hash).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint32(this.ID).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.ID).EncodeToBuffer(buffer[offset:])
 	offset += codec.Bytes(univalue.Univalues(this.Accesses).Encode()).EncodeToBuffer(buffer[offset:])
 	return offset
 }
@@ -71,7 +71,7 @@ func (this *TxAccessRecords) EncodeToBuffer(buffer []byte) int {
 func (this *TxAccessRecords) Decode(buffer []byte) *TxAccessRecords {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	this.Hash = codec.Bytes(fields[0]).ToString()
-	this.ID = uint32(codec.Uint32(0).Decode(fields[1]).(codec.Uint32))
+	this.ID = uint64(codec.Uint64(0).Decode(fields[1]).(codec.Uint64))
 	this.Accesses = univalue.Univalues(this.Accesses).Decode(fields[2]).([]*univalue.Univalue) //codec.Bytes{}.Decode(fields[2]).(codec.Bytes)
 	return this
 }
@@ -79,7 +79,7 @@ func (this *TxAccessRecords) Decode(buffer []byte) *TxAccessRecords {
 type TxAccessRecordSet []*TxAccessRecords
 
 func (this *TxAccessRecordSet) HeaderSize() uint64 {
-	return uint64(len(*this)+1) * codec.UINT32_LEN
+	return uint64(len(*this)+1) * codec.UINT64_LEN
 }
 
 func (this *TxAccessRecordSet) Size() uint64 {
@@ -93,9 +93,9 @@ func (this *TxAccessRecordSet) Size() uint64 {
 // Fill in the header info
 func (this *TxAccessRecordSet) FillHeader(buffer []byte) {
 	offset := uint64(0)
-	codec.Uint32(len(*this)).EncodeToBuffer(buffer)
+	codec.Uint64(len(*this)).EncodeToBuffer(buffer)
 	for i := 0; i < len(*this); i++ {
-		codec.Uint32(offset).EncodeToBuffer(buffer[uint64(i+1)*codec.UINT32_LEN:])
+		codec.Uint64(offset).EncodeToBuffer(buffer[uint64(i+1)*codec.UINT64_LEN:])
 		offset += (*this)[i].Size()
 	}
 }

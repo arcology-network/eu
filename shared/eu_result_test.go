@@ -76,7 +76,7 @@ func TestEuResultEncodingWithDefer(t *testing.T) {
 
 	euresult := EuResult{
 		H:  "1234",
-		ID: uint32(99),
+		ID: uint64(99),
 		//Transitions:  []byte{byte(2), byte(8)},
 		TransitTypes: []byte{1, 2},
 		// DC:           dc,
@@ -103,7 +103,7 @@ func TestEuResultsEncoding(t *testing.T) {
 	for i := 0; i < len(euresults); i++ {
 		euresults[i] = &EuResult{
 			H:  "0x1234567",
-			ID: uint32(99),
+			ID: uint64(99),
 			//Transitions:  []byte{byte(9), byte(11)},
 			TransitTypes: []byte{1, 2},
 			// DC:           dc,
@@ -138,7 +138,7 @@ func BenchmarkEuResultsEncoding(b *testing.B) {
 	for i := 0; i < len(euresults); i++ {
 		euresults[i] = &EuResult{
 			H:  "0x1234567",
-			ID: uint32(99),
+			ID: uint64(99),
 			//Transitions: []byte{byte(90), byte(110)},
 			// DC:          dc,
 			Status:  11,

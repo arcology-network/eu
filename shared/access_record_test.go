@@ -72,7 +72,7 @@ func BenchmarkAccessRecordSetEncoding(b *testing.B) {
 	for i := 0; i < len(recordVec); i++ {
 		recordVec[i] = &TxAccessRecords{
 			Hash: "0x1234567",
-			ID:   uint32(i),
+			ID:   uint64(i),
 			//Accesses: []byte{byte(99), byte(110)},
 		}
 	}
