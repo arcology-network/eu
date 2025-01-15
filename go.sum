@@ -11,10 +11,12 @@ github.com/VictoriaMetrics/fastcache v1.12.2/go.mod h1:AmC+Nzz1+3G2eCPapF6UcsnkT
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156 h1:eMwmnE/GDgah4HI848JfFxHt+iPb26b4zyfspmqY0/8=
 github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156/go.mod h1:Cb/ax3seSYIx7SuZdm2G2xzfwmv3TPSk2ucNfQESPXM=
-github.com/arcology-network/common-lib v1.9.1-0.20240828101906-f4d64ec48d31 h1:w1q0f6ae1HO0vgB6ubYRB1rKTyKOsouf67T/BVBOqQ8=
-github.com/arcology-network/common-lib v1.9.1-0.20240828101906-f4d64ec48d31/go.mod h1:uXYMdmuImBAmas/+PM87wX2lje40wGkux5i1jI0fG6A=
-github.com/arcology-network/scheduler v0.0.0-20241008080722-e805dc833334 h1:kjHDmcraJgIigzu2hRKQbTNEW9LAOrp+rcRAx/U70l8=
-github.com/arcology-network/scheduler v0.0.0-20241008080722-e805dc833334/go.mod h1:r1SRW6P90nwD1iTWBoK42p6zIaIhRMoOZGQi91RPjDQ=
+github.com/arcology-network/common-lib v1.9.1-0.20250114032930-d9548e98ccd0 h1:sFoVjp6g/bWjULKZ6iVfrEx6NXfcurv05PQBmS7XsNc=
+github.com/arcology-network/common-lib v1.9.1-0.20250114032930-d9548e98ccd0/go.mod h1:3inydlHRr5vNSS367n5+iEERiCO8FvnaSB3yEmCEi4E=
+github.com/arcology-network/scheduler v0.0.0-20250115083411-c5d593998552 h1:SVYtYQYmXVtuoCiUPbrJ7cNPUcH9smqA/qK30wHJs6k=
+github.com/arcology-network/scheduler v0.0.0-20250115083411-c5d593998552/go.mod h1:1Tff8veHgmX9St2SuT1Z3kSKwFLC3QWVBEHA+FnW1b4=
+github.com/arcology-network/storage-committer v1.9.1-0.20250115083055-49b463a27754 h1:hn3ptaPeOYwslYAmHRi8J/Gmt2BFUOUi2Ritppb8OEQ=
+github.com/arcology-network/storage-committer v1.9.1-0.20250115083055-49b463a27754/go.mod h1:/wSSqU39WppL725t9EWkgVkVa60CqSFR6eN9H89XXjg=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
