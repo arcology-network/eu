@@ -94,6 +94,9 @@ func (this *EU) Run(stdmsg *commontype.StandardMessage, blockContext vm.BlockCon
 			Err: err,
 		}
 	}
+	if result.Failed() {
+		fmt.Printf("--------eu/eu.go----core.ApplyMessage result.err:%v\n", result.Err)
+	}
 
 	assertLog := GetAssertion(result.ReturnData) // Get the assertion
 	if len(assertLog) > 0 {
