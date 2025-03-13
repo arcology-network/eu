@@ -88,3 +88,13 @@ func TestU256ConcurrentMap(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestHashUint256Map(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "map/hashU256Cum_test.sol", "0.8.19", "HashU256MapTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
