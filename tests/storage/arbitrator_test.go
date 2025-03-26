@@ -220,8 +220,9 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	}
 
 	// accesses3, transitions3 := committer.Export(univalue.Sorter)
-	accesses3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
-	transitions3 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	exports := writeCache.Export(univalue.Sorter)
+	accesses3 := univalue.Univalues(slice.Clone(exports)).To(univalue.ITAccess{})
+	transitions3 := univalue.Univalues(slice.Clone(exports)).To(univalue.IPTransition{})
 
 	// url4 := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	if _, err := writeCache.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
@@ -237,7 +238,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	conflictTx := mapi.Keys(conflictDict)
 	if len(conflictDict) != 1 || conflictTx[0] != 4 {
-		t.Error("Error: There should be only 1 conflict")
+		t.Error("Error: There should be only 1 conflict", "actual:", len(conflictDict))
 	}
 
 	toCommit = slice.RemoveIf(&[]uint64{3, 4}, func(_ int, tx uint64) bool {

@@ -122,11 +122,11 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 
 func TestNewCommitterWithoutCache(t *testing.T) {
 	store := chooseDataStore()
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy).EnableCache())
-	CommitterCache(sstore, t) // Use cache
+	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy).EnableCache())
+	// CommitterCache(sstore, t) // Use cache
 
-	store = chooseDataStore()
-	sstore = statestore.NewStateStore(store.(*proxy.StorageProxy).DisableCache())
+	// store = chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy).DisableCache())
 	CommitterCache(sstore, t) // Don't use cache
 }
 

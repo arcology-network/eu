@@ -18,7 +18,6 @@
 package api
 
 import (
-	"bytes"
 	"encoding/hex"
 	"math"
 	"math/big"
@@ -28,8 +27,6 @@ import (
 	"github.com/arcology-network/common-lib/types"
 
 	// "github.com/arcology-network/common-lib/exp/deltaset"
-	"github.com/arcology-network/common-lib/exp/deltaset"
-	"github.com/arcology-network/common-lib/exp/slice"
 
 	abi "github.com/arcology-network/eu/abi"
 	"github.com/arcology-network/eu/common"
@@ -38,7 +35,7 @@ import (
 	stgtype "github.com/arcology-network/storage-committer/common"
 	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	univalue "github.com/arcology-network/storage-committer/type/univalue"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
 	"github.com/holiman/uint256"
@@ -48,10 +45,10 @@ import (
 type BaseHandlers struct {
 	api         intf.EthApiRouter
 	pathBuilder *eth.PathBuilder
-	args        []interface{}
+	args        []any
 }
 
-func NewBaseHandlers(api intf.EthApiRouter, args ...interface{}) *BaseHandlers {
+func NewBaseHandlers(api intf.EthApiRouter, args ...any) *BaseHandlers {
 	return &BaseHandlers{
 		api:         api,
 		pathBuilder: eth.NewPathBuilder("/storage/container", api),
@@ -66,7 +63,7 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	signature := [4]byte{}
 	copy(signature[:], input)
 
-	// Read-only functions won't change the state of the container
+	// Read-only functions that won't change the state of the container
 	if isReadOnly {
 		switch signature {
 		case [4]byte{0x59, 0xe0, 0x2d, 0xd7}:
@@ -111,7 +108,13 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 
 		case [4]byte{0x37, 0x79, 0xc0, 0x34}:
 			return this.delByKey(caller, input[4:]) // Delete the element by its key.
+		//
+		case [4]byte{0x94, 0x42, 0x8e, 0x6a}:
+			return this.resetByKey(caller, input[4:]) // Delete the element by its key.
 
+		case [4]byte{0x02, 0x07, 0x83, 0x86}:
+			return this.resetByInd(caller, input[4:]) // Delete the element by its index.
+		//
 		case [4]byte{0xa4, 0xec, 0xe5, 0x2c}:
 			return this.pop(caller, input[4:]) // shrink the size of the container by one
 
@@ -122,7 +125,7 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 
 	// Custom function call. The base handler may have a custom function to call..
 	if len(this.args) > 0 {
-		customFun := this.args[0].(func([20]byte, [20]byte, []byte, ...interface{}) ([]byte, bool, int64))
+		customFun := this.args[0].(func([20]byte, [20]byte, []byte, ...any) ([]byte, bool, int64))
 		customFun(caller, callee, input[4:], this.args[1:]...)
 		return []byte{}, true, 0
 	}
@@ -169,7 +172,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 	}
 
 	// Check if it is a cumulative container. Only cumulative elements can be initialized.
-	// Decode the lower and upper bounds
+	// If it is, decode the lower and upper bounds
 	if pathData.(*commutative.Path).Type == commutative.UINT256 {
 		abiDef := `[{
 			"name": "init",
@@ -184,7 +187,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 
 		// Pass pointers to variables so they can be decoded into
 		var key, min, max []byte
-		abi.DecodeEth(abiDef, "0x"+hex.EncodeToString(input), "init", []interface{}{&key, &min, &max})
+		abi.DecodeEth(abiDef, "0x"+hex.EncodeToString(input), "init", []any{&key, &min, &max})
 
 		// Initialize the element with the lower and upper bounds
 		minv, maxv := uint256.NewInt(0).SetBytes(min), uint256.NewInt(0).SetBytes(max)
@@ -263,6 +266,43 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, input []byte
 
 // }
 
+// func (this *BaseHandlers) get(caller evmcommon.Address, input []byte) (any, []byte, bool, int64) {
+// 	path := this.pathBuilder.Key(caller) // Build container path
+// 	if len(path) == 0 {
+// 		return []byte{}, false, 0
+// 	}
+
+// 	// Get the key of the element
+// 	key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
+// 	if err != nil || len(key) == 0 {
+// 		return []byte{}, false, 0
+// 	}
+
+// 	// Get the type of the container info
+// 	str := hex.EncodeToString(key)
+// 	typeID := this.pathBuilder.GetPathType(caller) // Get the type of the container
+// 	switch typeID {
+// 	case commutative.UINT256: // Commutative container
+// 		v, _, fee := this.api.WriteCache().(*tempcache.WriteCache).Read(
+// 			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str, new(commutative.U256)) //Write the element to the container
+
+// 		if v != nil {
+// 			if encoded, err := abi.Encode(v); err == nil {
+// 				return v, encoded, true, int64(fee)
+// 			}
+// 		}
+// 		return []byte{}, false, int64(fee)
+// 	}
+
+// 	// Non-commutative bytes container by default
+// 	bytes, successful, _ := this.GetByKey(path + str) // Get the value by its key.
+// 	if len(bytes) > 0 && successful {
+// 		return 0, bytes, true, 0
+// 	}
+// 	// }
+// 	return 0, []byte{}, false, 0
+// }
+
 func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller) // Build container path
 	if len(path) == 0 {
@@ -315,7 +355,6 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 		if err != nil {
 			return []byte{}, false, 0
 		}
-		// str := hex.EncodeToString(key)
 
 		rawV, err := abi.DecodeTo(input, 1, []byte{}, 2, math.MaxInt)
 		if err != nil {
@@ -396,84 +435,6 @@ func (this *BaseHandlers) keyByIndex(caller evmcommon.Address, input []byte) ([]
 	return []byte{}, false, 0
 }
 
-// The function returns the minimum value in the container sorted by numerical order by
-// converting the byte array to a big integer and comparing the two values.
-func (this *BaseHandlers) minNumerical(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	path := this.pathBuilder.Key(caller)
-	entries, _, _ := this.ReadAll(path)
-
-	lhv, rhv := new(big.Int), new(big.Int)
-	idx, v := slice.Extreme(entries, func(lhvBytes, rhvBytes []byte) bool {
-		lhv.SetBytes(lhvBytes) // Convert the byte array to a big integer
-		rhv.SetBytes(rhvBytes)
-		return lhv.Cmp(rhv) < 0
-	})
-
-	// This leaves a read access for the minimum value in the container. It will be used for the conflict detection
-	if val, _, _ := this.GetByIndex(path, uint64(idx)); !bytes.Equal(v, val) {
-		panic("The value is not equal to the value in the container.")
-	}
-
-	idxBytes, _ := abi.Encode(uint256.NewInt(uint64(idx)))
-	return append(idxBytes, v...), true, 0
-}
-
-// The function maxNumerical returns the maximum value in the container sorted by numerical order by
-// converting the byte array to a big integer and comparing the two values.
-func (this *BaseHandlers) maxNumerical(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	path := this.pathBuilder.Key(caller)
-	entries, _, _ := this.ReadAll(path)
-
-	lhv, rhv := new(big.Int), new(big.Int)
-	idx, v := slice.Extreme(entries, func(lhvBytes, rhvBytes []byte) bool {
-		lhv.SetBytes(lhvBytes) // Convert the byte array to a big integer
-		rhv.SetBytes(rhvBytes)
-		return lhv.Cmp(rhv) > 0
-	})
-
-	// This leaves a read access for the maxmium value in the container. It will be used for the conflict detection
-	if val, _, _ := this.GetByIndex(path, uint64(idx)); !bytes.Equal(v, val) {
-		panic("The value is not equal to the value in the container.")
-	}
-
-	idxBytes, _ := abi.Encode(uint256.NewInt(uint64(idx)))
-	return append(idxBytes, v...), true, 0
-}
-
-// func (this *BaseHandlers) minString(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-// 	path := this.pathBuilder.Key(caller)
-// 	entries, _, _ := this.ReadAll(path)
-
-// 	idx, v := slice.Extreme(entries, func(lhv, rhv []byte) bool {
-// 		return string(lhv) < string(rhv)
-// 	})
-
-// 	// This leaves a read access for the maxmium string in the container. It will be used for the conflict detection
-// 	if val, _, _ := this.GetByIndex(path, uint64(idx)); !bytes.Equal(v, val) {
-// 		panic("The value is not equal to the value in the container.")
-// 	}
-
-// 	idxBytes, _ := abi.Encode(uint256.NewInt(uint64(idx)))
-// 	return append(idxBytes, v...), true, 0
-// }
-
-// func (this *BaseHandlers) maxString(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-// 	path := this.pathBuilder.Key(caller)
-// 	entries, _, _ := this.ReadAll(path)
-
-// 	idx, v := slice.Extreme(entries, func(lhv, rhv []byte) bool {
-// 		return string(lhv) > string(rhv)
-// 	})
-
-// 	// This leaves a read access for the maxmium string in the container. It will be used for the conflict detection
-// 	if val, _, _ := this.GetByIndex(path, uint64(idx)); !bytes.Equal(v, val) {
-// 		panic("The value is not equal to the value in the container.")
-// 	}
-
-// 	idxBytes, _ := abi.Encode(uint256.NewInt(uint64(idx)))
-// 	return append(idxBytes, v...), true, 0
-// }
-
 // Get the last element in the container and remove it from the container.
 func (this *BaseHandlers) pop(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
@@ -496,9 +457,6 @@ func (this *BaseHandlers) pop(caller evmcommon.Address, _ []byte) ([]byte, bool,
 			length-1,
 			new(commutative.U256))
 
-		// if value != nil {
-		// 	return value.([]byte), true, 0
-		// }
 		if value != nil {
 			if encoded, err := abi.Encode(value); err == nil {
 				return encoded, true, int64(0)
@@ -517,25 +475,7 @@ func (this *BaseHandlers) pop(caller evmcommon.Address, _ []byte) ([]byte, bool,
 	return values, successful, fee
 }
 
-func (this *BaseHandlers) clear(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	path := this.pathBuilder.Key(caller) // Build container path
-	if len(path) == 0 {
-		return []byte{}, false, 0
-	}
-
-	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
-	for {
-		if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).EraseAll(tx, path, nil); err != nil {
-			break
-		}
-	}
-
-	typedv, univ, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(tx, path, new(commutative.Path))
-	typedv.(*deltaset.DeltaSet[string]).Commit()
-	univ.(*univalue.Univalue).IncrementWrites(1)
-
-	return []byte{}, true, 0
-}
+// Delete all elements in the container.
 func (this *BaseHandlers) eraseAll(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller) // Build container path
 	if len(path) == 0 {
@@ -543,9 +483,84 @@ func (this *BaseHandlers) eraseAll(caller evmcommon.Address, _ []byte) ([]byte, 
 	}
 
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
-
 	if _, _, err := this.api.WriteCache().(*tempcache.WriteCache).EraseAll(tx, path, nil); err != nil {
 		return []byte{}, false, 0
 	}
 	return []byte{}, true, 0
+}
+
+// Set all elements in the container to their default value.
+func (this *BaseHandlers) resetByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	path := this.pathBuilder.Key(caller) // Build container path
+	if len(path) == 0 {
+		return []byte{}, false, 0
+	}
+
+	// Get the key of the element
+	key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
+	if err != nil || len(key) == 0 {
+		return []byte{}, false, 0
+	}
+
+	// Get the type of the container info
+	str := hex.EncodeToString(key)
+	typeID := this.pathBuilder.GetPathType(caller) // Get the type of the container
+	switch typeID {
+	case commutative.UINT256: // Commutative container
+		v, _ := this.api.WriteCache().(*tempcache.WriteCache).Peek(path+str, new(commutative.U256))
+		if v == nil {
+			return []byte{}, false, int64(0)
+		}
+
+		absDelta := v.(*commutative.U256).Delta().(*uint256.Int)
+		deltaVal := commutative.NewU256Delta(absDelta, !v.(*commutative.U256).DeltaSign()) // Set the delta to the opposite of the current delta to set it to zero.
+
+		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
+			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+hex.EncodeToString(key), deltaVal)
+		return []byte{}, err == nil, fee
+
+	default:
+		// Bytes by default
+		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
+			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+hex.EncodeToString(key), noncommutative.NewBytes([]byte{}))
+		return []byte{}, err == nil, int64(fee)
+	}
+}
+
+func (this *BaseHandlers) resetByInd(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	path := this.pathBuilder.Key(caller) // BaseHandlers path
+	if len(path) == 0 {
+		return []byte{}, false, 0
+	}
+
+	var key string
+	if index, err := abi.DecodeTo(input, 0, uint64(0), 1, 32); err == nil {
+		if key, _ = this.KeyAt(path, index); len(key) == 0 {
+			return []byte{}, false, 0 // Key not found
+		}
+	}
+
+	// Get the type id of the container
+	typeID := this.pathBuilder.GetPathType(caller) // Get the type of the container
+	switch typeID {
+	case commutative.UINT256: // Commutative container
+		v, _ := this.api.WriteCache().(*tempcache.WriteCache).Peek(path+key, new(commutative.U256))
+		if v == nil {
+			return []byte{}, false, int64(0)
+		}
+
+		absDelta := v.(*commutative.U256).Delta().(*uint256.Int)
+		deltaVal := commutative.NewU256Delta(absDelta, !v.(*commutative.U256).DeltaSign()) // Set the delta to the opposite of the current delta to set it to zero.
+
+		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
+			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+key, deltaVal)
+
+		return []byte{}, err == nil, fee
+
+	default:
+		// Bytes by default
+		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
+			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+key, noncommutative.NewBytes([]byte{}))
+		return []byte{}, err == nil, int64(fee)
+	}
 }
