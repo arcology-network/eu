@@ -126,8 +126,7 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	// Custom function call. The base handler may have a custom function to call..
 	if len(this.args) > 0 {
 		customFun := this.args[0].(func([20]byte, [20]byte, []byte, ...any) ([]byte, bool, int64))
-		customFun(caller, callee, input[4:], this.args[1:]...)
-		return []byte{}, true, 0
+		return customFun(caller, callee, input[4:], this.args[1:]...)
 	}
 
 	return []byte{}, false, 0 // unknown

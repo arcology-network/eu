@@ -80,6 +80,9 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 
 	case [4]byte{0x19, 0x7f, 0x62, 0x5f}: // 19 7f 62 5f
 		return this.deferCall(caller, callee, input[4:])
+
+	case [4]byte{0x37, 0x66, 0x82, 0xb5}: // 19 7f 62 5f
+		return this.print(caller, callee, input[4:])
 	}
 
 	fmt.Println(input)
@@ -217,4 +220,12 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	deferPath := stgcommon.DeferrablePath(caller, funSign)                           // Generate the sub path for the deferrable.
 	_, err := tempcache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
 	return []byte{}, err == nil, 0
+}
+
+func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	msg, err := abi.DecodeTo(input, 2, []uint8{}, 1, math.MaxInt)
+
+	msg = evmcommon.TrimRightZeroes(msg)
+	fmt.Println("From=", caller, " Msg=", (msg), " Error=", err)
+	return []byte{}, true, 0
 }

@@ -41,7 +41,7 @@ type Result struct {
 	From             [20]byte
 	Coinbase         [20]byte
 	RawStateAccesses []*univalue.Univalue
-	immuned          []*univalue.Univalue //These transitions will take effect if the execution fails.
+	immuned          []*univalue.Univalue //These transitions will take effect anyway even if the execution fails.
 	Receipt          *ethcoretypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
 	StdMsg           *commontype.StandardMessage
