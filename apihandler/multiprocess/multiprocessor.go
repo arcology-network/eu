@@ -107,7 +107,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	// Prepare the return values to return to the caller.
 	returnValues := make([][]byte, length)
 	successes := make([]bool, length)
-	totalSubGasUsed := uint64(0)
+	totalSubGasUsed := uint64(0) // The total gas used by the sub processes
 	for i, seq := range newGen.JobSeqs() {
 		// only one job per sequence for multiprocessing
 		successes[i] = seq.Results[0].Receipt.Status == 1 // Check if the transaction was successful
@@ -122,7 +122,9 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 
 	// Add the gas used by the sub processes to the main thread, the state is updated by transitions.
 	// The receipt has to be processed separately.
-	this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas += totalSubGasUsed
+	// this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas -= totalSubGasUsed
+	// fmt.Println(this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas, totalSubGasUsed)
+
 	// Sub processes may have been spawned during the execution, recheck it.
 	if !this.Api().CheckRuntimeConstrains() {
 		return []byte{}, false, fee

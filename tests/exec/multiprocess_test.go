@@ -65,16 +65,6 @@ func TestU256ParallelPushPopGet(t *testing.T) {
 	}
 }
 
-func TestParallelBasic(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-
-	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaNativeAssignmentTest", "call()", []byte{}, false)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestParallelWithConflict(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")

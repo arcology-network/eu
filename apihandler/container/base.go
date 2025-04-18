@@ -446,27 +446,30 @@ func (this *BaseHandlers) pop(caller evmcommon.Address, _ []byte) ([]byte, bool,
 		return []byte{}, successful, fee
 	}
 
+	// Get the last element in the container first before
+	// deleting it from the container.
+	values, successful, _ := this.GetByIndex(path, length-1)
+	if len(values) == 0 || !successful {
+		return values, false, 0 // Failed to get the last element
+	}
+
 	idx := strings.LastIndex(path, "/")
 	typeID := this.pathBuilder.PathTypeID(path[:idx] + "/") // Get the type of the container
 	switch typeID {
 	case commutative.UINT256: // Commutative container
-		value, _, _ := this.api.WriteCache().(*tempcache.WriteCache).ReadAt(
+		v, _, _ := this.api.WriteCache().(*tempcache.WriteCache).ReadAt(
 			this.api.GetEU().(interface{ ID() uint64 }).ID(),
 			path,
 			length-1,
 			new(commutative.U256))
 
-		if value != nil {
-			if encoded, err := abi.Encode(value); err == nil {
-				return encoded, true, int64(0)
+		if v != nil {
+			encoded, err := abi.Encode(v)
+			if err != nil {
+				return []byte{}, false, int64(0)
 			}
+			values = encoded
 		}
-	}
-
-	// Get the last element in the container.
-	values, successful, _ := this.GetByIndex(path, length-1)
-	if len(values) == 0 || !successful {
-		return values, false, 0 // Failed to get the last element
 	}
 
 	// Delete the last element in the container.
@@ -503,6 +506,8 @@ func (this *BaseHandlers) resetByKey(caller evmcommon.Address, input []byte) ([]
 
 	// Get the type of the container info
 	str := hex.EncodeToString(key)
+	var typedV any
+
 	typeID := this.pathBuilder.GetPathType(caller) // Get the type of the container
 	switch typeID {
 	case commutative.UINT256: // Commutative container
@@ -512,18 +517,17 @@ func (this *BaseHandlers) resetByKey(caller evmcommon.Address, input []byte) ([]
 		}
 
 		absDelta := v.(*commutative.U256).Delta().(*uint256.Int)
-		deltaVal := commutative.NewU256Delta(absDelta, !v.(*commutative.U256).DeltaSign()) // Set the delta to the opposite of the current delta to set it to zero.
-
-		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
-			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+hex.EncodeToString(key), deltaVal)
-		return []byte{}, err == nil, fee
-
+		typedV = commutative.NewU256Delta(absDelta, !v.(*commutative.U256).DeltaSign()) // Set the delta to the opposite of the current delta to set it to zero.
 	default:
-		// Bytes by default
-		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
-			this.api.GetEU().(interface{ ID() uint64 }).ID(), path+hex.EncodeToString(key), noncommutative.NewBytes([]byte{}))
-		return []byte{}, err == nil, int64(fee)
+		typedV = noncommutative.NewBytes([]byte{}) // Non-commutative container by default
+
 	}
+
+	// Bytes by default
+	fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
+		this.api.GetEU().(interface{ ID() uint64 }).ID(), path+hex.EncodeToString(key), typedV)
+
+	return []byte{}, err == nil, int64(fee)
 }
 
 func (this *BaseHandlers) resetByInd(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
