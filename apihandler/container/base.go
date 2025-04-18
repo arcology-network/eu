@@ -81,8 +81,11 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 		case [4]byte{0xb7, 0xc5, 0x64, 0x6c}:
 			return this.keyByIndex(caller, input[4:]) // Get the key of the element by its index.
 
-		case [4]byte{0x7f, 0xed, 0x84, 0xf2}:
+		case [4]byte{0x6b, 0x19, 0xdf, 0x9b}:
 			return this.getByKey(caller, input[4:]) // Get the element by its key.
+
+		case [4]byte{0x2d, 0x88, 0x3a, 0x73}:
+			return this.getByIndex(caller, input[4:]) // Get the element by its key.
 
 		case [4]byte{0xd3, 0x32, 0x51, 0x6f}:
 			return this.minNumerical(caller, input[4:]) // Delete the element by its key.
@@ -103,10 +106,10 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 		case [4]byte{0xf1, 0x06, 0x84, 0x54}:
 			return this.pid(caller, input[4:]) // Get the pesudo process ID.
 
-		case [4]byte{0xc2, 0x78, 0xb7, 0x99}:
+		case [4]byte{0x8a, 0xd4, 0xeb, 0xf6}:
 			return this.setByKey(caller, input[4:]) // Set the element by its key.
 
-		case [4]byte{0x37, 0x79, 0xc0, 0x34}:
+		case [4]byte{0x55, 0x46, 0x09, 0xea}:
 			return this.delByKey(caller, input[4:]) // Delete the element by its key.
 		//
 		case [4]byte{0x94, 0x42, 0x8e, 0x6a}:
@@ -335,8 +338,21 @@ func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]by
 	if len(bytes) > 0 && successful {
 		return bytes, true, 0
 	}
-	// }
+
 	return []byte{}, false, 0
+}
+
+func (this *BaseHandlers) getByIndex(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	path := this.pathBuilder.Key(caller) // Container path
+	if len(path) == 0 {
+		return []byte{}, false, 0
+	}
+
+	index, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
+	if err != nil {
+		return []byte{}, false, 0
+	}
+	return this.GetByIndex(path, index) // Get the value by its key.
 }
 
 // Push a new element into the container. If the key does not exist, it will be created and the value will be set.
