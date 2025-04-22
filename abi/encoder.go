@@ -24,9 +24,14 @@ import (
 	"github.com/holiman/uint256"
 )
 
-func Encode(typed interface{}) ([]byte, error) {
-	buffer := [32]byte{}
+func Encode(typed any, customEncoder ...func(t any) ([]byte, bool, error)) ([]byte, error) {
+	if len(customEncoder) > 0 && customEncoder[0] != nil {
+		if encoded, ok, err := customEncoder[0](typed); ok {
+			return encoded, err
+		}
+	}
 
+	buffer := [32]byte{}
 	switch typed.(type) {
 	case bool:
 		if typed.(bool) {
@@ -58,6 +63,11 @@ func Encode(typed interface{}) ([]byte, error) {
 		v := typed.(uint256.Int)
 		bytes := (&v).Bytes32()
 		return bytes[:], nil
+
+	case int64:
+		v := typed.(int64)
+		binary.BigEndian.PutUint64(buffer[32-8:], uint64(v))
+		return buffer[:], nil
 
 	case string:
 		return []byte(typed.(string)), nil
