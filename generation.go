@@ -120,16 +120,12 @@ func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRo
 		seqIDs[i], records[i] = this.jobSeqs[i].Run(config, blockAPI.Cascade(), uint64(i))
 	})
 
-	// for i := 0; i < len(this.jobSeqs); i++ {
-	// 	seqIDs[i], records[i] = this.jobSeqs[i].Run(config, blockAPI, uint64(i))
-	// }
-
-	// Detect the conflicts between different sequences.
-	txDict, seqDict, _ := this.Detect(seqIDs, records).ToDict()
+	conflictInfo := this.Detect(seqIDs, records)
+	txDict, seqDict, _ := conflictInfo.ToDict()
 
 	// Mark the conflicts in the job sequences.
 	cleanTrans := slice.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
-		if _, ok := seqDict[(*seq).ID]; ok { // A conflict transaction
+		if _, ok := seqDict[(*seq).ID]; ok { // Check if the sequence ID is in the conflict list.
 			(*seq).FlagConflict(txDict, errors.New(stgcommon.WARN_ACCESS_CONFLICT))
 		}
 		return (*seq).GetClearedTransition() // Return the conflict-free transitions
@@ -137,6 +133,8 @@ func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRo
 	return cleanTrans
 }
 
+// There needs to be a sequence ID for each transaction in the sequence, not just the transaction ID because
+// multiple transactions may be in the same sequence and they may have the same transaction ID.
 func (*Generation) Detect(seqIDs [][]uint64, records [][]*univalue.Univalue) arbitrator.Conflicts {
 	if len(records) == 1 {
 		return arbitrator.Conflicts{}

@@ -31,7 +31,7 @@ import (
 )
 
 // Get the number of elements in the container, EXCLUDING the nil elements.
-func (this *BaseHandlers) Length(path string) (uint64, bool, int64) {
+func (this *BaseHandlers) NonNilLength(path string) (uint64, bool, int64) {
 	if len(path) == 0 {
 		return 0, false, 0
 	}
@@ -57,7 +57,7 @@ func (this *BaseHandlers) FullLength(path string) (uint64, bool, int64) {
 // Export all the elements in the container to a two-dimensional slice.
 // This function will read all the elements in the container.
 func (this *BaseHandlers) ReadAll(path string) ([][]byte, []bool, []int64) {
-	length, _, _ := this.Length(path)
+	length, _, _ := this.NonNilLength(path)
 	entries := make([][]byte, length)
 	flags := make([]bool, length)
 	fees := make([]int64, length)
@@ -170,4 +170,11 @@ func (this *BaseHandlers) ResetByKey(path string, key string) ([]byte, bool, int
 		this.api.GetEU().(interface{ ID() uint64 }).ID(), path+key, typedV)
 
 	return []byte{}, err == nil, int64(fee)
+}
+
+// PopAt removes the element at the given index and returns it.
+func (this *BaseHandlers) ExtractAt(path string, idx uint64) ([]byte, bool, int64) {
+	funCall, getSuccessful, getFee := this.GetByIndex(path, idx) // Get the function call data and the fee.
+	setSuccessful, setFee := this.SetByIndex(path, idx, nil)
+	return funCall, getSuccessful && setSuccessful, getFee + setFee
 }

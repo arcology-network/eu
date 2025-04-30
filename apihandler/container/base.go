@@ -59,21 +59,26 @@ func NewBaseHandlers(api intf.EthApiRouter, args ...any) *BaseHandlers {
 func (this *BaseHandlers) Address() [20]byte           { return common.BYTES_HANDLER }
 func (this *BaseHandlers) Connector() *eth.PathBuilder { return this.pathBuilder }
 
-func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isReadOnly bool) ([]byte, bool, int64) {
+func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isFromStaticCall bool) ([]byte, bool, int64) {
+	// Real handlers
 	signature := [4]byte{}
 	copy(signature[:], input)
 
-	// Read-only functions that won't change the state of the container
-	if isReadOnly {
+	if signature == [4]byte{0xc7, 0x67, 0xf3, 0x6f} {
+		return this.eval(caller, callee, input[4:], origin, nonce, isFromStaticCall)
+	}
+
+	// if calling from staticcall.
+	if isFromStaticCall { //
 		switch signature {
-		case [4]byte{0x59, 0xe0, 0x2d, 0xd7}:
+		case [4]byte{0xb4, 0xa1, 0x05, 0x4c}:
 			return this.committedLength(caller, input[4:]) // Get the initial length of the container, it remains the same in the same block.
 
 		case [4]byte{0x86, 0x03, 0x9d, 0x78}:
-			return this.fullLength(caller, input[4:]) // Get the current number of elements in the container.
+			return this.fullLength(caller, input[4:]) // Get the total number of elements in the container, including nil elements.
 
 		case [4]byte{0x1f, 0x7b, 0x6d, 0x32}:
-			return this.length(caller, input[4:]) // Get the current number of elements in the container, excluding the nil elements.
+			return this.length(caller, input[4:]) // Get the number of non-nil elements in the container.
 
 		case [4]byte{0x91, 0x1f, 0x6f, 0xe0}:
 			return this.keyToInd(caller, input[4:]) // Get the index of the element by its key.
@@ -87,11 +92,11 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 		case [4]byte{0x2d, 0x88, 0x3a, 0x73}:
 			return this.getByIndex(caller, input[4:]) // Get the element by its key.
 
-		case [4]byte{0xd3, 0x32, 0x51, 0x6f}:
-			return this.minNumerical(caller, input[4:]) // Delete the element by its key.
+		case [4]byte{0xf8, 0x89, 0x79, 0x45}:
+			return this.min(caller, input[4:]) // Delete the element by its key.
 
-		case [4]byte{0xd6, 0x99, 0x5f, 0x76}:
-			return this.maxNumerical(caller, input[4:]) // Delete the element by its key.
+		case [4]byte{0x6a, 0xc5, 0xdb, 0x19}:
+			return this.max(caller, input[4:]) // Delete the element by its key.
 		}
 	} else {
 		// Write functions will change the state of the container
@@ -137,6 +142,81 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 
 func (this *BaseHandlers) Api() intf.EthApiRouter { return this.api }
 
+func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isFromStaticCall bool) ([]byte, bool, int64) {
+	subInput, err := abi.DecodeTo(input, 2, []byte{}, 1, math.MaxInt)
+	if err != nil || len(subInput) == 0 {
+		return []byte{}, false, 0
+	}
+
+	signature := [4]byte{}
+	copy(signature[:], subInput)
+	input = subInput
+
+	switch signature {
+	case [4]byte{0x59, 0xe0, 0x2d, 0xd7}:
+		return this.committedLength(caller, input[4:]) // Get the initial length of the container, it remains the same in the same block.
+
+	case [4]byte{0x86, 0x03, 0x9d, 0x78}:
+		return this.fullLength(caller, input[4:]) // Get the total number of elements in the container, including nil elements.
+
+	case [4]byte{0x1f, 0x7b, 0x6d, 0x32}:
+		return this.length(caller, input[4:]) // Get the number of non-nil elements in the container.
+
+	case [4]byte{0x91, 0x1f, 0x6f, 0xe0}:
+		return this.keyToInd(caller, input[4:]) // Get the index of the element by its key.
+
+	case [4]byte{0x06, 0xed, 0x32, 0x3c}:
+		return this.indToKey(caller, input[4:]) // Get the key of the element by its index.
+
+	case [4]byte{0x6b, 0x19, 0xdf, 0x9b}:
+		return this.getByKey(caller, input[4:]) // Get the element by its key.
+
+	case [4]byte{0x2d, 0x88, 0x3a, 0x73}:
+		return this.getByIndex(caller, input[4:]) // Get the element by its key.
+
+	case [4]byte{0xf8, 0x89, 0x79, 0x45}:
+		return this.min(caller, input[4:]) // Delete the element by its key.
+
+	case [4]byte{0x6a, 0xc5, 0xdb, 0x19}:
+		return this.max(caller, input[4:]) // Delete the element by its key.
+
+	case [4]byte{0x66, 0x54, 0x85, 0x21}:
+		return this.new(caller, input[4:]) // Create a new container
+
+	case [4]byte{0xe5, 0xe2, 0x14, 0xb5}:
+		return this.init(caller, input[4:]) // Set the bounds of the elements in the container.
+
+	case [4]byte{0xf1, 0x06, 0x84, 0x54}:
+		return this.pid(caller, input[4:]) // Get the pesudo process ID.
+
+	case [4]byte{0x8a, 0xd4, 0xeb, 0xf6}:
+		return this.setByKey(caller, input[4:]) // Set the element by its key.
+
+	case [4]byte{0x55, 0x46, 0x09, 0xea}:
+		return this.delByKey(caller, input[4:]) // Delete the element by its key.
+	//
+	case [4]byte{0x94, 0x42, 0x8e, 0x6a}:
+		return this.resetByKey(caller, input[4:]) // Delete the element by its key.
+
+	case [4]byte{0x02, 0x07, 0x83, 0x86}:
+		return this.resetByInd(caller, input[4:]) // Delete the element by its index.
+
+	case [4]byte{0x0b, 0xe0, 0xc6, 0xd5}:
+		return this.delLast(caller, input[4:]) // shrink the size of the container by one
+
+	case [4]byte{0x52, 0xef, 0xea, 0x6e}:
+		return this.clear(caller, input[4:]) // Clear the container.
+	}
+
+	// Custom function call. The base handler may have a custom function to call..
+	if len(this.args) > 0 {
+		customFun := this.args[0].(func([20]byte, [20]byte, []byte, ...any) ([]byte, bool, int64))
+		return customFun(caller, callee, input[4:], this.args[1:]...)
+	}
+
+	return []byte{}, false, 0 // unknown
+}
+
 func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	addr := codec.Bytes20(caller).Hex()
 	connected, pathStr := this.pathBuilder.New(
@@ -155,6 +235,7 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 	return caller[:], connected, 0 // Create a new container
 }
 
+// Only works for uing256 commutative container
 func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	// Check if the container exists
 	path := this.pathBuilder.Key(caller)
@@ -225,7 +306,7 @@ func (this *BaseHandlers) fullLength(caller evmcommon.Address, input []byte) ([]
 // getByIndex the number of elements in the container
 func (this *BaseHandlers) length(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller)
-	if length, successful, _ := this.Length(path); successful {
+	if length, successful, _ := this.NonNilLength(path); successful {
 		if encoded, err := abi.Encode(uint256.NewInt(length)); err == nil {
 			return encoded, true, 0
 		}
@@ -402,7 +483,7 @@ func (this *BaseHandlers) delLast(caller evmcommon.Address, _ []byte) ([]byte, b
 		return []byte{}, false, 0
 	}
 
-	length, successful, fee := this.Length(path)
+	length, successful, fee := this.NonNilLength(path)
 	if !successful || length == 0 {
 		return []byte{}, successful, fee
 	}
