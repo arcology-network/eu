@@ -151,13 +151,18 @@ func (this *BaseHandlers) ResetByKey(path string, key string) ([]byte, bool, int
 	typeID := this.pathBuilder.PathTypeID(path) // Get the type of the container
 	switch typeID {
 	case commutative.UINT256: // Commutative container
-		v, _ := this.api.WriteCache().(*tempcache.WriteCache).Peek(path+key, new(commutative.U256))
+		v, _ := this.api.WriteCache().(*tempcache.WriteCache).PeekRaw(path+key, new(commutative.U256))
 		if v == nil {
 			return []byte{}, false, int64(0)
 		}
 
-		absDelta := v.(*commutative.U256).Delta().(*uint256.Int)
-		typedV = commutative.NewU256Delta(absDelta, !v.(*commutative.U256).DeltaSign()) // Set the delta to the opposite of the current delta to set it to zero.
+		delta, _, _ := v.(*commutative.U256).Get()
+		absDelta := delta.(uint256.Int)
+
+		typedV = commutative.NewU256Delta(&absDelta, !v.(*commutative.U256).DeltaSign()) // Set the delta to the opposite of the current delta to set it to zero.
+		typedV.(*commutative.U256).SetMin(v.(*commutative.U256).Min())
+		typedV.(*commutative.U256).SetMax(v.(*commutative.U256).Max())
+
 	case noncommutative.BYTES:
 		typedV = noncommutative.NewBytes([]byte{}) // Non-commutative container by default
 
