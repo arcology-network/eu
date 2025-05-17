@@ -156,10 +156,6 @@ func (this *BaseHandlers) ResetByKey(path string, key string) ([]byte, bool, int
 			return []byte{}, false, int64(0)
 		}
 
-<<<<<<< HEAD
-		absDelta := v.(*commutative.U256).Delta().(uint256.Int)
-		typedV = commutative.NewU256Delta(&absDelta, !v.(*commutative.U256).DeltaSign()) // Set the delta to the opposite of the current delta to set it to zero.
-=======
 		delta, _, _ := v.(*commutative.U256).Get()
 		absDelta := delta.(uint256.Int)
 
@@ -167,7 +163,6 @@ func (this *BaseHandlers) ResetByKey(path string, key string) ([]byte, bool, int
 		typedV.(*commutative.U256).SetMin(v.(*commutative.U256).Min())
 		typedV.(*commutative.U256).SetMax(v.(*commutative.U256).Max())
 
->>>>>>> 5f06ce1f653332321a5cde8ada95e542332ba8ab
 	case noncommutative.BYTES:
 		typedV = noncommutative.NewBytes([]byte{}) // Non-commutative container by default
 
