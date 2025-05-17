@@ -18,7 +18,6 @@
 package multiprocessor
 
 import (
-	"errors"
 	"math"
 	"math/big"
 	"sync/atomic"
@@ -72,30 +71,32 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	threads := common.Min(common.Max(uint8(numThreads), 1), math.MaxUint8) // [1, 255]
 
 	path := this.Connector().Key(caller)
-	length, successful, fee := this.Length(path)
-	length = common.Min(eucommon.MAX_VM_INSTANCES, length)
+	length, successful, fee := this.FullLength(path)
+	length = common.Min(eucommon.MAX_SPAWED_PROCESSES, length)
 	if !successful {
 		return []byte{}, successful, fee
 	}
 
 	// Initialize a new generation
-	fees := make([]int64, length)
-	erros := make([]error, length)
-	ethMsgs := make([]*evmcore.Message, length)
+	fees := make([]int64, 0, length)
+	erros := make([]error, 0, length)
+	ethMsgs := make([]*evmcore.Message, 0, length)
 
-	slice.Foreach(ethMsgs, func(i int, _ **evmcore.Message) {
-		funCall, successful, fee := this.GetByIndex(path, uint64(i)) // Get the function call data and the fee.
-		fees[i] = fee
-
-		if !successful { // Assign the fee to the fees array
-			ethMsgs[i], erros[i] = nil, errors.New("Error: Failed to get the function call data")
+	for i := 0; i < int(length); i++ {
+		funCall, successful, fee := this.ExtractAt(path, uint64(i)) // Get the function call data and the fee.
+		if !successful {                                            // Assign the fee to the fees array
+			continue
 		}
-		// Convert the function call data to an ethereum message for execution.
-		ethMsgs[i], erros[i] = this.WrapEthMsg(caller, funCall)
-	})
+
+		ethMsg, err := this.WrapToEthMsg(caller, funCall) // Convert the function call data to an ethereum message for execution.
+		ethMsgs = append(ethMsgs, ethMsg)                 // Append the message to the list of messages to be executed
+		erros = append(erros, err)                        // Append the error to the errors array
+		fees = append(fees, fee)                          // Append the fee to the fees array
+
+	}
 
 	// Generate the configuration for the sub processes based on the current block context.
-	subConfig := eucommon.NewConfigFromBlockContext(this.Api().GetEU().(interface{ VM() interface{} }).VM().(*vm.EVM).Context)
+	subConfig := eucommon.NewConfigFromBlockContext(this.Api().GetEU().(interface{ VM() any }).VM().(*vm.EVM).Context)
 	newGen := eu.NewGenerationFromMsgs(0, threads, ethMsgs, this.Api())
 	transitions := newGen.Execute(subConfig, this.Api()) // Run the job sequences in parallel.
 
@@ -107,10 +108,12 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	// Prepare the return values to return to the caller.
 	returnValues := make([][]byte, length)
 	successes := make([]bool, length)
+	inConflict := make([]bool, length)
 	totalSubGasUsed := uint64(0) // The total gas used by the sub processes
 	for i, seq := range newGen.JobSeqs() {
 		// only one job per sequence for multiprocessing
 		successes[i] = seq.Results[0].Receipt.Status == 1 // Check if the transaction was successful
+		inConflict[i] = seq.Results[0].Err != nil
 		returnValues[i] = seq.Results[0].EvmResult.Return()
 		totalSubGasUsed += uint64(seq.Results[0].Receipt.GasUsed) // Get the gas used by the transaction
 
@@ -139,7 +142,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 }
 
 // toEthMsgs converts the input byte slice into a list of ethereum messages.
-func (this *MultiprocessHandler) WrapEthMsg(caller [20]byte, input []byte) (*evmcore.Message, error) {
+func (this *MultiprocessHandler) WrapToEthMsg(caller [20]byte, input []byte) (*evmcore.Message, error) {
 	gasLimit, value, calleeAddr, funCall, err := abi.Parse4(input,
 		uint64(0), 1, 32,
 		uint256.NewInt(0), 1, 32,

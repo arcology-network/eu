@@ -44,6 +44,16 @@ func TestU256ParallelInitTest(t *testing.T) {
 	}
 }
 
+func TestU256ParallelInitTestExceed(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "U256ParallelInitTestExeceed", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 // //434343
 func TestU256ParallelPop(t *testing.T) {
 	currentPath, _ := os.Getwd()
@@ -389,7 +399,7 @@ func TestParaArrayUint256(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaAddressUint256Test", "call()", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaAddressUint256ConflictTest", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

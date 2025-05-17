@@ -24,21 +24,21 @@ import (
 	"testing"
 )
 
-func TestContainerPair(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-
-	_, err, _, _ := DeployThenInvoke(targetPath, "array/bytes_bool_test.sol", "0.8.19", "PairTest", "", []byte{}, false)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestAddressBooleanMap(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "map/addressBoolean_test.sol", "0.8.19", "AddressBooleanMapTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestAddressBooleanMapConcurrentTest(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "map/addressBoolean_test.sol", "0.8.19", "AddressBooleanMapConcurrentTest", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -79,6 +79,16 @@ func TestStringUint256Map(t *testing.T) {
 	}
 }
 
+func TestU256MapTest(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "map/u256_test.sol", "0.8.19", "U256MapTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestU256ConcurrentMap(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/")
@@ -93,7 +103,17 @@ func TestHashUint256Map(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "map/hashU256Cum_test.sol", "0.8.19", "HashU256MapTest", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "map/hashU256Cum_test.sol", "0.8.19", "HashU256MapTest", "resetter()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestAddressUint256CumMap(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "map/addressU256Cum_test.sol", "0.8.19", "AddressU256CumMapTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

@@ -137,7 +137,7 @@ func (this *APIHandler) SetWriteCache(writeCache interface{}) intf.EthApiRouter 
 
 func (this *APIHandler) CheckRuntimeConstrains() bool { // Execeeds the max recursion depth or the max sub processes
 	return this.Depth() < eucommon.MAX_RECURSIION_DEPTH &&
-		atomic.AddUint64(&eucommon.TotalSubProcesses, 1) <= eucommon.MAX_VM_INSTANCES
+		atomic.AddUint64(&eucommon.TotalSubProcesses, 1) <= eucommon.MAX_TOTAL_VM_INSTANCES
 }
 
 func (this *APIHandler) DecrementDepth() uint8 {

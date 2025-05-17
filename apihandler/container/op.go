@@ -33,7 +33,7 @@ import (
 
 // The function returns the minimum value in the container sorted by numerical order by
 // converting the byte array to a big integer and comparing the two values.
-func (this *BaseHandlers) minNumerical(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+func (this *BaseHandlers) min(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller)
 	entries, _, _ := this.ReadAll(path)
 
@@ -53,9 +53,9 @@ func (this *BaseHandlers) minNumerical(caller evmcommon.Address, input []byte) (
 	return append(idxBytes, v...), true, 0
 }
 
-// The function maxNumerical returns the maximum value in the container sorted by numerical order by
+// The function max returns the maximum value in the container sorted by numerical order by
 // converting the byte array to a big integer and comparing the two values.
-func (this *BaseHandlers) maxNumerical(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
+func (this *BaseHandlers) max(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.pathBuilder.Key(caller)
 	entries, _, _ := this.ReadAll(path)
 
