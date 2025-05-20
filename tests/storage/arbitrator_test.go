@@ -73,10 +73,10 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	accesses2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
 	univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
-	arib := (&arbitrator.Arbitrator{})
+	arib := arbitrator.NewArbitrator()
 
 	IDVec := append(slice.Fill(make([]uint64, len(accesses1)), 0), slice.Fill(make([]uint64, len(accesses2)), 1)...)
-	ids := arib.Detect(IDVec, append(accesses1, accesses2...))
+	ids := arib.InsertAndDetect(IDVec, append(accesses1, accesses2...))
 
 	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
 	if len(conflictdict) != 0 {
@@ -136,7 +136,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	// accesses2.Print()
 
 	IDVec := append(slice.Fill(make([]uint64, len(accesses1)), 0), slice.Fill(make([]uint64, len(accesses2)), 1)...)
-	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
+	ids := arbitrator.NewArbitrator().InsertAndDetect(IDVec, append(accesses1, accesses2...))
 	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
 
 	if len(conflictdict) != 1 {
@@ -195,7 +195,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	transitions2 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	IDVec := append(slice.Fill(make([]uint64, len(accesses1)), 0), slice.Fill(make([]uint64, len(accesses2)), 1)...)
-	ids := (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses1, accesses2...))
+	ids := arbitrator.NewArbitrator().InsertAndDetect(IDVec, append(accesses1, accesses2...))
 	conflictDict, _, pairs := arbitrator.Conflicts(ids).ToDict()
 
 	// pairs := arbitrator.Conflicts(ids).ToPairs()
@@ -233,7 +233,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	transitions4 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 
 	IDVec = append(slice.Fill(make([]uint64, len(accesses3)), 0), slice.Fill(make([]uint64, len(accesses4)), 1)...)
-	ids = (&arbitrator.Arbitrator{}).Detect(IDVec, append(accesses3, accesses4...))
+	ids = arbitrator.NewArbitrator().InsertAndDetect(IDVec, append(accesses3, accesses4...))
 	conflictDict, _, _ = arbitrator.Conflicts(ids).ToDict()
 
 	conflictTx := mapi.Keys(conflictDict)
@@ -294,6 +294,6 @@ func BenchmarkSimpleArbitrator(b *testing.B) {
 	}
 
 	t0 := time.Now()
-	(&arbitrator.Arbitrator{}).Detect(groupIDs, univalues)
+	arbitrator.NewArbitrator().InsertAndDetect(groupIDs, univalues)
 	fmt.Println("Detect "+fmt.Sprint(len(univalues)), "path in ", time.Since(t0))
 }

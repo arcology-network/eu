@@ -13,7 +13,7 @@ replace github.com/arcology-network/storage-committer => ../storage-committer/
 require (
 	github.com/elliotchance/orderedmap v1.5.1
 	github.com/ethereum/go-ethereum v1.14.8
-	github.com/google/btree v1.1.2
+	github.com/google/btree v1.1.3
 	github.com/holiman/uint256 v1.2.4
 	golang.org/x/crypto v0.20.0
 	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb

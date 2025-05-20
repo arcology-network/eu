@@ -66,14 +66,14 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	// dict[*(balanceDeltas[0]).GetPath()] = &balanceDeltas
 
 	conflicts := (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
-	if len(conflicts) != 0 {
+	if (conflicts) != nil {
 		t.Error("Error: There is no conflict")
 	}
 
 	balanceDeltas[3].Value().(*commutative.U256).SetDelta(*uint256.NewInt(64))
 	conflicts = (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
-	if len(conflicts) != 1 {
-		t.Error("Error: There is should be a of-limit-error")
+	if (conflicts) == nil {
+		t.Error("Error: There should be a of-limit-error")
 	}
 }
 
@@ -110,13 +110,13 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 	balanceDeltas[3].Value().(*commutative.U256).SetDelta((*uint256.NewInt(63)))
 
 	conflicts := (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
-	if len(conflicts) != 0 {
+	if (conflicts) != nil {
 		t.Error("Error: There is no conflict")
 	}
 
 	balanceDeltas[3].Value().(*commutative.U256).SetDelta((*uint256.NewInt(64)))
 	conflicts = (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
-	if len(conflicts) != 1 {
-		t.Error("Error: There is should be a of-limit-error")
+	if (conflicts) == nil {
+		t.Error("Error: There should be a of-limit-error")
 	}
 }
