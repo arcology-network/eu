@@ -140,7 +140,7 @@ func (*Generation) Detect(seqIDs [][]uint64, records [][]*univalue.Univalue) arb
 		return arbitrator.Conflicts{}
 	}
 
-	return arbitrator.Conflicts((&arbitrator.Arbitrator{}).InsertAndDectect(slice.Flatten(seqIDs), slice.Flatten(records)))
+	return arbitrator.Conflicts((&arbitrator.Arbitrator{}).InsertAndDetect(slice.Flatten(seqIDs), slice.Flatten(records)))
 }
 
 func (this *Generation) Clear() uint64 {
