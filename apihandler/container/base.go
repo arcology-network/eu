@@ -153,7 +153,7 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 	input = subInput
 
 	switch signature {
-	case [4]byte{0x59, 0xe0, 0x2d, 0xd7}:
+	case [4]byte{0xb4, 0xa1, 0x05, 0x4c}:
 		return this.committedLength(caller, input[4:]) // Get the initial length of the container, it remains the same in the same block.
 
 	case [4]byte{0x86, 0x03, 0x9d, 0x78}:
