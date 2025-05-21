@@ -24,10 +24,10 @@ import (
 	"testing"
 )
 
-func TestBaseCall(t *testing.T) {
+func TestConcurrentGateway(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "shared/backend_test.sol", "0.8.19", "BackendTest", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "shared/concurrentGateway_test.sol", "0.8.19", "ConcurrentGatewayTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

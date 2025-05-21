@@ -285,6 +285,16 @@ func TestCumulativeU256Case(t *testing.T) {
 	}
 }
 
+func TestParaCumU256Sub(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaCumU256SubTest", "call()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestCumulativeU256Case1(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
@@ -370,16 +380,6 @@ func TestSimpleConflict(t *testing.T) {
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
 	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "SimpleConflictTest", "call()", []byte{}, false)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestParaCumU256Sub(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-
-	_, err, _, _ := DeployThenInvoke(targetPath, "multiprocess/multiprocess_test.sol", "0.8.19", "ParaCumU256SubTest", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
