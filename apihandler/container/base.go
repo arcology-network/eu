@@ -64,8 +64,20 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	signature := [4]byte{}
 	copy(signature[:], input)
 
-	if signature == [4]byte{0xc7, 0x67, 0xf3, 0x6f} {
+	switch signature {
+
+	case [4]byte{0x66, 0x54, 0x85, 0x21}:
+		return this.new(caller, input[4:]) // Create a new container
+
+	case [4]byte{0xc7, 0x67, 0xf3, 0x6f}:
 		return this.eval(caller, callee, input[4:], origin, nonce, isFromStaticCall)
+
+	}
+
+	// Custom function call. The base handler may have a custom function to call..
+	if len(this.args) > 0 {
+		customFun := this.args[0].(func([20]byte, [20]byte, []byte, ...any) ([]byte, bool, int64))
+		return customFun(caller, callee, input[4:], this.args[1:]...)
 	}
 
 	return []byte{}, false, 0 // unknown
