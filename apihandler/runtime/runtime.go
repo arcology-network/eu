@@ -249,8 +249,10 @@ func (this *RuntimeHandlers) topupGas(_, _ evmcommon.Address, input []byte) ([]b
 		return []byte{}, false, eucommon.GAS_DECODE*2 + eucommon.GAS_READ // No enough balance to transfer
 	}
 
-	// Deduct the value from the contract.
+	// Deduct the value from the contract's holding
 	this.api.VM().(*vm.EVM).StateDB.SubBalance(from, valTransfer)
+
+	// Return a nagetive gas consumed to increase gas left.
 	return []byte{}, false, -(int64(gasTransfer.ToBig().Uint64()) - int64(eucommon.GAS_TOPUP_GAS))
 }
 
