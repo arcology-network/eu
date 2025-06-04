@@ -61,6 +61,16 @@ func TestDeferred(t *testing.T) {
 	}
 }
 
+func TestTopup(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+
+	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "TopupGasTest", "init()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestPrint(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")

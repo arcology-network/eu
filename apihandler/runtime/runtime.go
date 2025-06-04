@@ -232,12 +232,14 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 func (this *RuntimeHandlers) topupGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	from := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Caller()
 
-	valBytes, err := abi.DecodeTo(input, 0, []byte{}, 1, 4)
+	// valBytes, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
+
+	valBytes, err := abi.DecodeTo(input, 0, []byte{}, 1, 32)
 	if err != nil {
 		return []byte{}, false, eucommon.GAS_DECODE
 	}
 
-	gasBytes, err := abi.DecodeTo(input, 1, []byte{}, 1, 4)
+	gasBytes, err := abi.DecodeTo(input, 1, []byte{}, 1, 32)
 	if err != nil {
 		return []byte{}, false, eucommon.GAS_DECODE * 2
 	}
