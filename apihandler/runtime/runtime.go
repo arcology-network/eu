@@ -76,14 +76,17 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 	case [4]byte{0xc4, 0xdf, 0xfe, 0x6e}: //
 		return this.setExecutionMethod(caller, callee, input[4:], stgcommon.PARALLEL_EXECUTION)
 
-	case [4]byte{0xa8, 0x7a, 0xe4, 0x81}: // bb 07 e8 5d
-		// return this.instances(caller, callee, input[4:])
+	// case [4]byte{0xa8, 0x7a, 0xe4, 0x81}: // bb 07 e8 5d
+	// return this.instances(caller, callee, input[4:])
 
 	case [4]byte{0x19, 0x7f, 0x62, 0x5f}: // 19 7f 62 5f
 		return this.deferCall(caller, callee, input[4:])
 
 	case [4]byte{0xc2, 0x53, 0xf2, 0x72}:
 		return this.topupGas(caller, callee, input[4:])
+
+	case [4]byte{0xd0, 0x67, 0x9d, 0x34}: // 19 7f 62 5f
+		return this.send(caller, callee, input[4:])
 
 	case [4]byte{0x37, 0x66, 0x82, 0xb5}: // 19 7f 62 5f
 		return this.print(caller, callee, input[4:])
@@ -230,7 +233,7 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 
 // This function is used to top up the gas of the contract to compensate for the gas used by defer transaction.
 func (this *RuntimeHandlers) topupGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	from := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Caller()
+	contractAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
 
 	// valBytes, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
 
@@ -245,15 +248,40 @@ func (this *RuntimeHandlers) topupGas(_, _ evmcommon.Address, input []byte) ([]b
 	}
 
 	valTransfer, gasTransfer := (&uint256.Int{}).SetBytes(valBytes), (&uint256.Int{}).SetBytes(gasBytes)
-	if balance := this.api.VM().(*vm.EVM).StateDB.GetBalance(from); balance.Cmp(valTransfer) < 0 {
+	if balance := this.api.VM().(*vm.EVM).StateDB.GetBalance(contractAddr); balance.Cmp(valTransfer) < 0 {
 		return []byte{}, false, eucommon.GAS_DECODE*2 + eucommon.GAS_READ // No enough balance to transfer
 	}
 
 	// Deduct the value from the contract's holding
-	this.api.VM().(*vm.EVM).StateDB.SubBalance(from, valTransfer)
+	this.api.VM().(*vm.EVM).StateDB.SubBalance(contractAddr, valTransfer)
 
 	// Return a nagetive gas consumed to increase gas left.
 	return []byte{}, false, -(int64(gasTransfer.ToBig().Uint64()) - int64(eucommon.GAS_TOPUP_GAS))
+}
+
+func (this *RuntimeHandlers) send(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	contractAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
+
+	recipient, err := abi.DecodeTo(input, 0, [20]byte{}, 1, 20)
+	if err != nil {
+		return []byte{}, false, eucommon.GAS_DECODE
+	}
+
+	valBytes, err := abi.DecodeTo(input, 1, []byte{}, 1, 32)
+	if err != nil {
+		return []byte{}, false, eucommon.GAS_DECODE * 2
+	}
+
+	val := (&uint256.Int{}).SetBytes(valBytes)
+
+	this.api.VM().(*vm.EVM).StateDB.GetBalance(contractAddr)
+	if balance := this.api.VM().(*vm.EVM).StateDB.PeekBalance(contractAddr); balance.Cmp(val) < 0 {
+		this.api.VM().(*vm.EVM).StateDB.SubBalance(contractAddr, val)     // Deduct the value from the contract's holding
+		this.api.VM().(*vm.EVM).StateDB.AddBalance(recipient, val)        // Add the value to the recipient's balance
+		return []byte{}, false, eucommon.GAS_DECODE*2 + eucommon.GAS_READ // No enough balance to transfer
+	}
+
+	return []byte{}, false, eucommon.GAS_DECODE*2 + eucommon.GAS_READ // No enough balance to transfer
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {

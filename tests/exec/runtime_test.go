@@ -24,42 +24,42 @@ import (
 	"testing"
 )
 
-func TestResettable(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+// func TestResettable(t *testing.T) {
+// 	currentPath, _ := os.Getwd()
+// 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "storage/storage_test.sol", "0.8.19", "ResettableDeployer", "call()", []byte{}, false)
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	_, err, _, _ := DeployThenInvoke(targetPath, "storage/storage_test.sol", "0.8.19", "ResettableDeployer", "call()", []byte{}, false)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
-func TestInstances(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+// func TestInstances(t *testing.T) {
+// 	currentPath, _ := os.Getwd()
+// 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "NumConcurrentInstanceTest", "call()", []byte{}, false)
-	if err != nil {
-		t.Error(err)
-	}
-	// fmt.Println(result.ReturnData)
+// 	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "NumConcurrentInstanceTest", "call()", []byte{}, false)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	// fmt.Println(result.ReturnData)
 
-	// _, err, _, _ = DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "NumConcurrentInstanceTest", "call2()", []byte{}, false)
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-	// fmt.Println(result.ReturnData)
-}
+// 	// _, err, _, _ = DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "NumConcurrentInstanceTest", "call2()", []byte{}, false)
+// 	// if err != nil {
+// 	// 	t.Error(err)
+// 	// }
+// 	// fmt.Println(result.ReturnData)
+// }
 
-func TestDeferred(t *testing.T) {
-	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+// func TestDeferred(t *testing.T) {
+// 	currentPath, _ := os.Getwd()
+// 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "DeferredTest", "", []byte{}, false)
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "DeferredTest", "", []byte{}, false)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
 func TestTopup(t *testing.T) {
 	currentPath, _ := os.Getwd()

@@ -159,7 +159,7 @@ func (this *ImplStateDB) SetCode(addr evmcommon.Address, code []byte) {
 	}
 }
 
-func (this *ImplStateDB) SelfDestruct(addr evmcommon.Address)           { return }
+func (this *ImplStateDB) SelfDestruct(addr evmcommon.Address)           {}
 func (this *ImplStateDB) HasSelfDestructed(addr evmcommon.Address) bool { return false }
 func (this *ImplStateDB) Selfdestruct6780(common.Address)               {}
 
