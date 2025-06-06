@@ -55,15 +55,20 @@ func NewMultiprocessHandler(ethApiRouter intf.EthApiRouter) *MultiprocessHandler
 func (this *MultiprocessHandler) Address() [20]byte { return eucommon.MULTIPROCESS_HANDLER }
 
 func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args ...interface{}) ([]byte, bool, int64) {
+	accumFee := int64(0)
+
+	accumFee += eucommon.GAS_DECODE
 	if atomic.AddUint64(&eucommon.TotalSubProcesses, 1); !this.Api().CheckRuntimeConstrains() {
 		return []byte{}, false, 0
 	}
 
+	accumFee += eucommon.GAS_DECODE
 	input, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt64)
 	if err != nil {
 		return []byte{}, false, 0
 	}
 
+	accumFee += eucommon.GAS_DECODE
 	numThreads, err := abi.DecodeTo(input, 0, uint64(1), 1, 8)
 	if err != nil {
 		return []byte{}, false, 0
@@ -72,9 +77,11 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 
 	path := this.Connector().Key(caller)
 	length, successful, fee := this.FullLength(path)
+
+	accumFee += fee
 	length = common.Min(eucommon.MAX_SPAWED_PROCESSES, length)
 	if !successful {
-		return []byte{}, successful, fee
+		return []byte{}, successful, accumFee
 	}
 
 	// Initialize a new generation
@@ -92,7 +99,6 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 		ethMsgs = append(ethMsgs, ethMsg)                 // Append the message to the list of messages to be executed
 		erros = append(erros, err)                        // Append the error to the errors array
 		fees = append(fees, fee)                          // Append the fee to the fees array
-
 	}
 
 	// Generate the configuration for the sub processes based on the current block context.
@@ -109,13 +115,13 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	returnValues := make([][]byte, length)
 	successes := make([]bool, length)
 	inConflict := make([]bool, length)
-	totalSubGasUsed := uint64(0) // The total gas used by the sub processes
+	totalSubExecGasUsed := uint64(0) // The total gas used by the sub processes
 	for i, seq := range newGen.JobSeqs() {
 		// only one job per sequence for multiprocessing
 		successes[i] = seq.Results[0].Receipt.Status == 1 // Check if the transaction was successful
 		inConflict[i] = seq.Results[0].Err != nil
 		returnValues[i] = seq.Results[0].EvmResult.Return()
-		totalSubGasUsed += uint64(seq.Results[0].Receipt.GasUsed) // Get the gas used by the transaction
+		totalSubExecGasUsed += uint64(seq.Results[0].Receipt.GasUsed) // Get the gas used by the transaction
 
 		// Append the sub logs to the main thread
 		for _, log := range seq.Results[0].Receipt.Logs {
@@ -125,8 +131,8 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 
 	// Add the gas used by the sub processes to the main thread, the state is updated by transitions.
 	// The receipt has to be processed separately.
-	// this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas -= totalSubGasUsed
-	// fmt.Println(this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas, totalSubGasUsed)
+	// this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas -= totalSubExecGasUsed
+	// fmt.Println(this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas, totalSubExecGasUsed)
 
 	// Sub processes may have been spawned during the execution, recheck it.
 	if !this.Api().CheckRuntimeConstrains() {

@@ -85,9 +85,6 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 	case [4]byte{0xc2, 0x53, 0xf2, 0x72}:
 		return this.topupGas(caller, callee, input[4:])
 
-	case [4]byte{0xd0, 0x67, 0x9d, 0x34}: // 19 7f 62 5f
-		return this.send(caller, callee, input[4:])
-
 	case [4]byte{0x37, 0x66, 0x82, 0xb5}: // 19 7f 62 5f
 		return this.print(caller, callee, input[4:])
 	}
@@ -96,9 +93,9 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 	return []byte{}, false, eucommon.GAS_UNKNOW_FUNCTION
 }
 
-func (this *RuntimeHandlers) pid(_ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+func (this *RuntimeHandlers) pid(_ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	if encoded, err := abi.Encode(this.api.Pid()); err == nil {
-		return encoded, true, 0
+		return encoded, true, eucommon.GAS_DECODE
 	}
 	return []byte{}, false, eucommon.GAS_PID
 }
@@ -257,31 +254,6 @@ func (this *RuntimeHandlers) topupGas(_, _ evmcommon.Address, input []byte) ([]b
 
 	// Return a nagetive gas consumed to increase gas left.
 	return []byte{}, false, -(int64(gasTransfer.ToBig().Uint64()) - int64(eucommon.GAS_TOPUP_GAS))
-}
-
-func (this *RuntimeHandlers) send(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	contractAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
-
-	recipient, err := abi.DecodeTo(input, 0, [20]byte{}, 1, 20)
-	if err != nil {
-		return []byte{}, false, eucommon.GAS_DECODE
-	}
-
-	valBytes, err := abi.DecodeTo(input, 1, []byte{}, 1, 32)
-	if err != nil {
-		return []byte{}, false, eucommon.GAS_DECODE * 2
-	}
-
-	val := (&uint256.Int{}).SetBytes(valBytes)
-
-	this.api.VM().(*vm.EVM).StateDB.GetBalance(contractAddr)
-	if balance := this.api.VM().(*vm.EVM).StateDB.PeekBalance(contractAddr); balance.Cmp(val) < 0 {
-		this.api.VM().(*vm.EVM).StateDB.SubBalance(contractAddr, val)     // Deduct the value from the contract's holding
-		this.api.VM().(*vm.EVM).StateDB.AddBalance(recipient, val)        // Add the value to the recipient's balance
-		return []byte{}, false, eucommon.GAS_DECODE*2 + eucommon.GAS_READ // No enough balance to transfer
-	}
-
-	return []byte{}, false, eucommon.GAS_DECODE*2 + eucommon.GAS_READ // No enough balance to transfer
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
