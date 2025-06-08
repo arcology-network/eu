@@ -90,7 +90,7 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 	}
 
 	fmt.Println(input)
-	return []byte{}, false, eucommon.GAS_UNKNOW_FUNCTION
+	return []byte{}, false, eucommon.GAS_CALL_UNKNOW
 }
 
 func (this *RuntimeHandlers) pid(_ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
@@ -230,7 +230,7 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 
 // This function is used to top up the gas of the contract to compensate for the gas used by defer transaction.
 func (this *RuntimeHandlers) topupGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	contractAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
+	contractAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.CallerAddress
 
 	// valBytes, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
 

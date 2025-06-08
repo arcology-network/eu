@@ -30,6 +30,7 @@ import (
 
 	abi "github.com/arcology-network/eu/abi"
 	"github.com/arcology-network/eu/common"
+	eucommon "github.com/arcology-network/eu/common"
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
 	stgtype "github.com/arcology-network/storage-committer/common"
@@ -80,7 +81,7 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 		return customFun(caller, callee, input[4:], this.args[1:]...)
 	}
 
-	return []byte{}, false, 0 // unknown
+	return []byte{}, false, eucommon.GAS_CALL_UNKNOW // unknown
 }
 
 func (this *BaseHandlers) Api() intf.EthApiRouter { return this.api }
@@ -157,7 +158,7 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 		return customFun(caller, callee, input[4:], this.args[1:]...)
 	}
 
-	return []byte{}, false, 0 // unknown
+	return []byte{}, false, eucommon.GAS_CALL_UNKNOW // unknown
 }
 
 func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
@@ -174,25 +175,28 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 		path.(*commutative.Path).Type = typeID.(uint8)
 	}
 
-	this.api.SetDeployer(caller)   // Store the MP address to the API
-	return caller[:], connected, 0 // Create a new container
+	this.api.SetDeployer(caller)                            // Store the MP address to the API
+	return caller[:], connected, eucommon.GAS_NEW_CONTAINER // Create a new container
 }
 
 // Only works for uing256 commutative container
 func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	// Check if the container exists
+	accumFee := int64(0)
 	path := this.pathBuilder.Key(caller)
-	if !this.api.WriteCache().(*tempcache.WriteCache).IfExists(path) {
-		return []byte{}, false, int64(0) // Doesn't exist, cannot initialize in a non-existent container.
+	if !this.api.WriteCache().(*tempcache.WriteCache).IfExists(path) { // Check if the container exists
+		accumFee += int64(eucommon.GAS_READ)
+		return []byte{}, false, accumFee // Doesn't exist, cannot initialize in a non-existent container.
 	}
 
 	// If the key already exists
 	if _, ok, fee := this.getByKey(caller, []byte{}); ok {
-		return []byte{}, false, fee
+		accumFee += fee
+		return []byte{}, false, accumFee
 	}
 
 	//Get the type info here
 	pathData, fee := this.api.WriteCache().(*tempcache.WriteCache).PeekRaw(path, commutative.Path{})
+	accumFee += int64(fee)
 	if pathData == nil {
 		return []byte{}, false, int64(fee)
 	}
@@ -214,6 +218,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 		// Pass pointers to variables so they can be decoded into
 		var key, min, max []byte
 		abi.DecodeEth(abiDef, "0x"+hex.EncodeToString(input), "init", []any{&key, &min, &max})
+		accumFee += eucommon.GAS_DECODE
 
 		// Initialize the element with the lower and upper bounds
 		minv, maxv := uint256.NewInt(0).SetBytes(min), uint256.NewInt(0).SetBytes(max)
@@ -224,10 +229,10 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 
 		str := hex.EncodeToString(key)
 		fee, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str, v)
-		return []byte{}, err == nil, int64(fee)
+		return []byte{}, err == nil, int64(accumFee) + int64(fee) // Write the value to the container
 	}
 
-	return []byte{}, false, 0 // unknown type
+	return []byte{}, false, accumFee // unknown type
 }
 
 func (this *BaseHandlers) pid(_ evmcommon.Address, _ []byte) ([]byte, bool, int64) {

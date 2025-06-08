@@ -85,26 +85,28 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	}
 
 	// Initialize a new generation
-	fees := make([]int64, 0, length)
+	// fees := make([]int64, 0, length)
 	erros := make([]error, 0, length)
 	ethMsgs := make([]*evmcore.Message, 0, length)
 
 	for i := 0; i < int(length); i++ {
-		funCall, successful, fee := this.ExtractAt(path, uint64(i)) // Get the function call data and the fee.
-		if !successful {                                            // Assign the fee to the fees array
+		funCall, successful, _ := this.ExtractAt(path, uint64(i)) // Get the function call data and the fee.
+		if !successful {                                          // Assign the fee to the fees array
 			continue
 		}
 
 		ethMsg, err := this.WrapToEthMsg(caller, funCall) // Convert the function call data to an ethereum message for execution.
 		ethMsgs = append(ethMsgs, ethMsg)                 // Append the message to the list of messages to be executed
 		erros = append(erros, err)                        // Append the error to the errors array
-		fees = append(fees, fee)                          // Append the fee to the fees array
+		// fees = append(fees, fee)                          // Append the fee to the fees array
 	}
 
 	// Generate the configuration for the sub processes based on the current block context.
 	subConfig := eucommon.NewConfigFromBlockContext(this.Api().GetEU().(interface{ VM() any }).VM().(*vm.EVM).Context)
 	newGen := eu.NewGenerationFromMsgs(0, threads, ethMsgs, this.Api())
-	transitions := newGen.Execute(subConfig, this.Api()) // Run the job sequences in parallel.
+
+	// Run the job sequences in parallel.
+	transitions := newGen.Execute(subConfig, this.Api())
 
 	// Unify tx IDs
 	mainTxID := uint64(this.Api().GetEU().(interface{ ID() uint64 }).ID())
@@ -142,9 +144,9 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	// Prepare the return values to return for the caller.
 	encodedReturnedData, err := EncodeCallReturns(returnValues, successes)
 	if err != nil {
-		return []byte{}, false, slice.Sum[int64, int64](fees)
+		return []byte{}, false, accumFee
 	}
-	return encodedReturnedData, true, slice.Sum[int64, int64](fees)
+	return encodedReturnedData, true, accumFee
 }
 
 // toEthMsgs converts the input byte slice into a list of ethereum messages.

@@ -42,6 +42,12 @@ type ChainContext interface {
 }
 
 type EthApiRouter interface {
+	// Used in EVM to call the kernel API
+	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash, isReadOnly bool) (bool, []byte, bool, int64)
+	GetExecutionSubsidy() uint64 // Get the execution subsidy for the current call
+	SetExecutionSubsidy(uint64)  // Set the execution subsidy for the current call
+
+	// Arcology specific APIs
 	GetDeployer() evmcommon.Address
 	SetDeployer(evmcommon.Address)
 
@@ -68,7 +74,6 @@ type EthApiRouter interface {
 	DecrementDepth() uint8
 	Depth() uint8
 	AddLog(key, value string)
-	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash, isReadOnly bool) (bool, []byte, bool, int64)
 
 	GetSerialNum(int) uint64
 	Pid() [32]byte

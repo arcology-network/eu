@@ -54,6 +54,8 @@ type APIHandler struct {
 	auxDict map[string]interface{} // Auxiliary data generated during the execution of the APIHandler
 
 	execResult *eucommon.Result
+
+	executionSubsidy uint64
 }
 
 func NewAPIHandler(writeCachePool *mempool.Mempool[*tempcache.WriteCache]) *APIHandler {
@@ -219,3 +221,7 @@ func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]b
 	}
 	return false, []byte{}, true, 0 // not an Arcology call, used 0 gas
 }
+
+// Exeuction subsidy is the amount of gas that the parallel TXs pay to offset the cost of execution of the deferred TX.
+func (this *APIHandler) GetExecutionSubsidy() uint64        { return this.executionSubsidy }
+func (this *APIHandler) SetExecutionSubsidy(subsidy uint64) { this.executionSubsidy = subsidy }
