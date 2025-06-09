@@ -326,8 +326,6 @@ func TestAddThenDeletePath2(t *testing.T) {
 	// _, trans := writeCache.Export(univalue.Sorter)
 	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	acctTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(trans).Encode()).(univalue.Univalues)
-
-	//values := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).([]*univalue.Univalue)
 	ts := univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)
 
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
