@@ -181,7 +181,8 @@ func (this *APIHandler) Pid() [32]byte {
 }
 
 func (this *APIHandler) ElementUID() []byte {
-	instanceID := this.Pid()
+	pid := this.Pid()
+	instanceID := common.TrimTrail(pid[:8], 0) // Trim the trailing zeros to make it a valid UUID
 	serial := strconv.Itoa(int(this.GetSerialNum(eucommon.ELEMENT_ID)))
 	return []byte(append(instanceID[:8], []byte(serial)...))
 }
