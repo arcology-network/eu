@@ -61,11 +61,11 @@ import (
 // 	}
 // }
 
-func TestTopup(t *testing.T) {
+func TestSponsorGas(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "TopupGasTest", "init()", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "TestSponsorGas", "init()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

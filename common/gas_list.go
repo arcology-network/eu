@@ -27,12 +27,14 @@ const (
 	GAS_UNCOMMITTED_RESET = int64(params.SstoreSetGas / 4)    // 20,000 / 4 = 5,000
 	GAS_COMMITTED_SET     = int64(params.SstoreSetGas / 8)    // 20,000 / 8 = 2,500
 
-	GAS_TOPUP_GAS   = int64(20000)
-	GAS_CALL_UNKNOW = int64(1000)
-	GAS_PID         = int64(1000)
-	GAS_UUID        = int64(1000)
-	GAS_SET_EXEC    = int64(1000)
-	GAS_DECODE      = int64(1000)
+	GAS_SPONSOR_GAS       = int64(5000)  // Transfer gas another account
+	GAS_USE_SPONSORED_GAS = int64(20000) // Apply sponsored gas to the current transaction's gas
+	GAS_GET_SPONSORED_GAS = int64(50000) // Read total sponsored gas, more expensive because of it is conflict prone.
+	GAS_CALL_UNKNOW       = int64(1000)  // Call an unknown function, which is not defined in the contract, but the gas is still charged.
+	GAS_PID               = int64(1000)  // The gas for the PID, which is used to identify the transaction in the storage.
+	GAS_UUID              = int64(1000)
+	GAS_SET_EXEC          = int64(1000)
+	GAS_DECODE            = int64(1000)
 
 	GAS_DEBUG_PRINT = int64(1000)
 	GAS_DEFER       = int64(10000)

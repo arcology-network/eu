@@ -82,8 +82,14 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 	case [4]byte{0x19, 0x7f, 0x62, 0x5f}: // 19 7f 62 5f
 		return this.deferCall(caller, callee, input[4:])
 
-	case [4]byte{0xc2, 0x53, 0xf2, 0x72}:
-		return this.topupGas(caller, callee, input[4:])
+	case [4]byte{0x7a, 0x2b, 0x97, 0x0b}:
+		return this.sponsorGas(caller, callee, input[4:]) // Send gas to another account.
+
+	case [4]byte{0x9b, 0x24, 0x26, 0x76}:
+		return this.useSponsoredGas(caller, callee, input[4:])
+
+	case [4]byte{0x2a, 0xbe, 0xf8, 0x41}:
+		return this.getSponsoredGas(caller, callee, input[4:])
 
 	case [4]byte{0x37, 0x66, 0x82, 0xb5}: // 19 7f 62 5f
 		return this.print(caller, callee, input[4:])
@@ -228,36 +234,66 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	return []byte{}, err == nil, eucommon.GAS_READ + eucommon.GAS_DEFER
 }
 
-// This function is used to top up the gas of the contract to compensate for the gas used by defer transaction.
-func (this *RuntimeHandlers) topupGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	contractAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.CallerAddress
+func (this *RuntimeHandlers) sponsorGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	currentAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
+	if !this.api.VM().(*vm.EVM).StateDB.Exist(currentAddr) { // Check the balance of the contract.
+		return []byte{}, false, eucommon.GAS_READ
+	}
 
 	// valBytes, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
-	valBytes, err := abi.DecodeTo(input, 0, []byte{}, 1, 32)
+	gasBytes, err := abi.DecodeTo(input, 0, []byte{}, 1, 32)
 	if err != nil {
 		return []byte{}, false, eucommon.GAS_DECODE
 	}
+	gasTransfer := (&uint256.Int{}).SetBytes(gasBytes).ToBig().Uint64()
 
-	gasBytes, err := abi.DecodeTo(input, 1, []byte{}, 1, 32)
+	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
+	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
+
+	// Write the gas transfer to the sponsored gas path.
+	fee, error := this.api.WriteCache().(*tempcache.WriteCache).Write(txID, sponsoredGasPath, commutative.NewU256DeltaFromU64(gasTransfer, true))
+	if error != nil {
+		return []byte{}, false, eucommon.GAS_READ + eucommon.GAS_DECODE + fee
+	}
+	return []byte{}, true, eucommon.GAS_READ + eucommon.GAS_DECODE + fee + int64(gasTransfer)
+}
+
+// This function is used to top up the gas of the contract to compensate for the gas used by defer transaction.
+func (this *RuntimeHandlers) useSponsoredGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	currentAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
+	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
+	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
+	total := eucommon.GAS_USE_SPONSORED_GAS + eucommon.GAS_READ
+
+	// Get the amount of sponsored gas to use for the transaction.
+	gasBytes, err := abi.DecodeTo(input, 0, []byte{}, 1, 32)
+	total += eucommon.GAS_DECODE
 	if err != nil {
-		return []byte{}, false, eucommon.GAS_DECODE * 2
+		return []byte{}, false, total
+	}
+	gasTransfer := (&uint256.Int{}).SetBytes(gasBytes).ToBig().Uint64() // Get the amount of sponsored gas to use for the transaction.
+
+	// No need to check the balance of the contract, the accumulator will check it after the transaction is executed.
+	fee, error := this.api.WriteCache().(*tempcache.WriteCache).Write(txID, sponsoredGasPath, commutative.NewU256DeltaFromU64(gasTransfer, false))
+	total += fee
+	if error != nil {
+		return []byte{}, false, total
+	}
+	return []byte{}, false, total - int64(gasTransfer)
+}
+
+func (this *RuntimeHandlers) getSponsoredGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	currentAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
+	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
+	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
+
+	v, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(txID, sponsoredGasPath, new(commutative.U256))
+	if v == nil { // not found
+		return []byte{}, false, eucommon.GAS_READ
 	}
 
-	valTransfer, gasTransfer := (&uint256.Int{}).SetBytes(valBytes), (&uint256.Int{}).SetBytes(gasBytes)
-
-	// Return if no enough balance to transfer
-	if balance := this.api.VM().(*vm.EVM).StateDB.GetBalance(contractAddr); balance.Cmp(valTransfer) < 0 {
-		return []byte{}, false, eucommon.GAS_DECODE*2 + eucommon.GAS_READ
-	}
-
-	// Deduct the value from the contract's holding
-	this.api.VM().(*vm.EVM).StateDB.SubBalance(contractAddr, valTransfer)
-
-	// For EVM to calculate the gas used.
-	this.api.SetExecutionSubsidy(gasTransfer.ToBig().Uint64()) // Set the execution subsidy to the gas transfer amount minus the topup gas.
-
-	// Return a nagetive gas consumed to increase gas left.
-	return []byte{}, false, -(int64(gasTransfer.ToBig().Uint64()) - int64(eucommon.GAS_TOPUP_GAS))
+	encoded, err := abi.Encode(v.(uint256.Int))
+	return encoded, err == nil, eucommon.GAS_READ + eucommon.GAS_DECODE
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
