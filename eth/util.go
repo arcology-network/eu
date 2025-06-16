@@ -30,7 +30,7 @@ import (
 // It returns the transitions and an error, if any.
 func CreateNewAccount(tx uint64, acct string, store interface {
 	IfExists(string) bool
-	Write(uint64, string, interface{}) (int64, error)
+	Write(uint64, string, interface{}, ...any) (int64, error)
 }) ([]*univalue.Univalue, error) {
 	paths, typeids := stgcommcom.NewPlatform().GetBuiltins(acct)
 

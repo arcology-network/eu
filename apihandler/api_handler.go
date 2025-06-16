@@ -27,8 +27,11 @@ import (
 	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/vm"
 
 	apicontainer "github.com/arcology-network/eu/apihandler/container"
 	apicumulative "github.com/arcology-network/eu/apihandler/cumulative"
@@ -224,5 +227,20 @@ func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]b
 }
 
 // Exeuction subsidy is the amount of gas that the parallel TXs pay to offset the cost of execution of the deferred TX.
-func (this *APIHandler) GetExecutionSubsidy() uint64        { return this.executionSubsidy }
-func (this *APIHandler) SetExecutionSubsidy(subsidy uint64) { this.executionSubsidy = subsidy }
+// func (this *APIHandler) GetExecutionSubsidy() uint64        { return this.executionSubsidy }
+// func (this *APIHandler) SetExecutionSubsidy(subsidy uint64) { this.executionSubsidy = subsidy }
+
+// The sponsered gas is the amount of gas transferred to from other senders to the contract to pay for the execution on their behalf.
+// This isn't part of the original Ethereum spec, it is an Arcology specific feature.
+
+// UseSponsoredGas will refill just enoguth gas on the fly for the current contract call when the purchased gas is running out, there is
+// no need for an refund machasim.
+func (this *APIHandler) UseSponsoredGas(gasToUse uint64) bool {
+	currentAddr := this.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
+	txID := this.GetEU().(interface{ ID() uint64 }).ID()
+	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
+
+	// No need to check the balance of the contract, the accumulator will check it after the transaction is executed.
+	_, error := this.WriteCache().(*tempcache.WriteCache).Write(txID, sponsoredGasPath, commutative.NewU256DeltaFromU64(gasToUse, false))
+	return error == nil
+}

@@ -274,7 +274,7 @@ func (this *RuntimeHandlers) useSponsoredGas(_, _ evmcommon.Address, input []byt
 	gasTransfer := (&uint256.Int{}).SetBytes(gasBytes).ToBig().Uint64() // Get the amount of sponsored gas to use for the transaction.
 
 	// No need to check the balance of the contract, the accumulator will check it after the transaction is executed.
-	fee, error := this.api.WriteCache().(*tempcache.WriteCache).Write(txID, sponsoredGasPath, commutative.NewU256DeltaFromU64(gasTransfer, false))
+	fee, error := this.api.WriteCache().(*tempcache.WriteCache).WritePersistent(txID, sponsoredGasPath, commutative.NewU256DeltaFromU64(gasTransfer, false))
 	total += fee
 	if error != nil {
 		return []byte{}, false, total
@@ -282,7 +282,7 @@ func (this *RuntimeHandlers) useSponsoredGas(_, _ evmcommon.Address, input []byt
 	return []byte{}, false, total - int64(gasTransfer)
 }
 
-func (this *RuntimeHandlers) getSponsoredGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+func (this *RuntimeHandlers) getSponsoredGas(_, _ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	currentAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
 	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
