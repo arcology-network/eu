@@ -38,7 +38,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	// localCache := tempcache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(db, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), apihandler.NewGasPrepayer())
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
@@ -68,7 +68,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	// localCache := tempcache.NewWriteCache(db, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(db, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), apihandler.NewGasPrepayer())
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
 	ethStatedb := eth.NewImplStateDB(api)
@@ -100,7 +100,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	// localCache := tempcache.NewWriteCache(db, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(db, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }))
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), apihandler.NewGasPrepayer())
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)

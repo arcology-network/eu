@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package execution
+package common
 
 import (
 	"bytes"
@@ -23,7 +23,6 @@ import (
 	"math"
 	"math/big"
 
-	commontype "github.com/arcology-network/common-lib/types"
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -37,7 +36,7 @@ import (
 )
 
 type EU struct {
-	StdMsg      *commontype.StandardMessage
+	job         *Job              // The job that is being executed
 	evm         *vm.EVM           // Original ETH EVM
 	statedb     vm.StateDB        // Arcology Implementation of Eth StateDB
 	api         intf.EthApiRouter // Arcology API calls
@@ -55,17 +54,18 @@ func NewEU(chainConfig *params.ChainConfig, vmConfig vm.Config, statedb vm.State
 	}
 
 	eu.api.SetEU(eu)
-	eu.evm.ArcologyNetworkAPIs.APIs = api
+	eu.evm.ArcologyAPIs.APIs = api
 	return eu
 }
 
-func (this *EU) ID() uint64         { return uint64(this.StdMsg.ID) }
-func (this *EU) TxHash() [32]byte   { return this.StdMsg.TxHash }
-func (this *EU) GasPrice() *big.Int { return this.StdMsg.Native.GasPrice }
+func (this *EU) ID() uint64         { return uint64(this.job.StdMsg.ID) }
+func (this *EU) TxHash() [32]byte   { return this.job.StdMsg.TxHash }
+func (this *EU) GasPrice() *big.Int { return this.job.StdMsg.Native.GasPrice }
 func (this *EU) Coinbase() [20]byte { return this.evm.Context.Coinbase }
 func (this *EU) Origin() [20]byte   { return this.evm.TxContext.Origin }
+func (this *EU) Job() *Job          { return this.job }
 
-func (this *EU) Message() interface{}            { return this.StdMsg }
+func (this *EU) Message() interface{}            { return this.job.StdMsg }
 func (this *EU) VM() interface{}                 { return this.evm }
 func (this *EU) Statedb() vm.StateDB             { return this.statedb }
 func (this *EU) Api() intf.EthApiRouter          { return this.api }
@@ -76,18 +76,17 @@ func (this *EU) SetRuntimeContext(statedb vm.StateDB, api intf.EthApiRouter) {
 	this.statedb = statedb
 
 	this.evm.StateDB = this.statedb
-	this.evm.ArcologyNetworkAPIs.APIs = api
+	this.evm.ArcologyAPIs.APIs = api
 }
 
-func (this *EU) Run(stdmsg *commontype.StandardMessage, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
-	this.statedb.(*eth.ImplStateDB).PrepareFormer(stdmsg.TxHash, ethcommon.Hash{}, uint64(stdmsg.ID))
-
+func (this *EU) Run(job *Job, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
+	this.statedb.(*eth.ImplStateDB).PrepareFormer(job.StdMsg.TxHash, ethcommon.Hash{}, uint64(job.StdMsg.ID))
 	this.evm.Context = blockContext
 	this.evm.TxContext = txContext
-	this.StdMsg = stdmsg
+	this.job = job
 
 	gasPool := core.GasPool(math.MaxUint64)
-	result, err := core.ApplyMessage(this.evm, this.StdMsg.Native, &gasPool) // Execute the transcation
+	result, err := core.ApplyMessage(this.evm, this.job.StdMsg.Native, &gasPool) // Execute the transcation
 
 	if err != nil {
 		result = &core.ExecutionResult{
@@ -105,18 +104,18 @@ func (this *EU) Run(stdmsg *commontype.StandardMessage, blockContext vm.BlockCon
 
 	// Create a new receipt
 	receipt := types.NewReceipt(nil, result.Failed(), result.UsedGas)
-	receipt.TxHash = stdmsg.TxHash
+	receipt.TxHash = job.StdMsg.TxHash
 	receipt.GasUsed = result.UsedGas
 
 	// Check the newly created address
-	if stdmsg.Native.To == nil {
-		userSpecifiedAddress := crypto.CreateAddress(this.evm.Origin, stdmsg.Native.Nonce)
+	if job.StdMsg.Native.To == nil {
+		userSpecifiedAddress := crypto.CreateAddress(this.evm.Origin, job.StdMsg.Native.Nonce)
 		receipt.ContractAddress = result.ContractAddress
 		if !bytes.Equal(userSpecifiedAddress.Bytes(), result.ContractAddress.Bytes()) {
 			this.api.AddLog("ContractAddressWarning", fmt.Sprintf("user specified address = %v, inner address = %v", userSpecifiedAddress, result.ContractAddress))
 		}
 	}
-	receipt.Logs = this.statedb.(*eth.ImplStateDB).GetLogs(stdmsg.TxHash)
+	receipt.Logs = this.statedb.(*eth.ImplStateDB).GetLogs(job.StdMsg.TxHash)
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
 	return receipt, result, err

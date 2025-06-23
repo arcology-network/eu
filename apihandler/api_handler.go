@@ -19,6 +19,7 @@ package apihandler
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"sync/atomic"
 
@@ -27,11 +28,10 @@ import (
 	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
-	stgcommon "github.com/arcology-network/storage-committer/common"
 	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/holiman/uint256"
 
 	apicontainer "github.com/arcology-network/eu/apihandler/container"
 	apicumulative "github.com/arcology-network/eu/apihandler/cumulative"
@@ -54,14 +54,11 @@ type APIHandler struct {
 	writeCachePool *mempool.Mempool[*tempcache.WriteCache]
 	localCache     *tempcache.WriteCache // The private tempcache for the current APIHandler
 
-	auxDict map[string]interface{} // Auxiliary data generated during the execution of the APIHandler
-
-	execResult *eucommon.Result
-
-	executionSubsidy uint64
+	auxDict     map[string]interface{} // Auxiliary data generated during the execution of the APIHandler
+	gasPrepayer *GasPrepayer           // Pay for the deferred execution gas.
 }
 
-func NewAPIHandler(writeCachePool *mempool.Mempool[*tempcache.WriteCache]) *APIHandler {
+func NewAPIHandler(writeCachePool *mempool.Mempool[*tempcache.WriteCache], gasPrepayer any) *APIHandler {
 	api := &APIHandler{
 		writeCachePool: writeCachePool,
 		eu:             nil,
@@ -69,8 +66,9 @@ func NewAPIHandler(writeCachePool *mempool.Mempool[*tempcache.WriteCache]) *APIH
 		auxDict:        make(map[string]interface{}),
 		handlerDict:    make(map[[20]byte]intf.ApiCallHandler),
 		depth:          0,
-		execResult:     &eucommon.Result{},
 		serialNums:     [4]uint64{},
+
+		gasPrepayer: gasPrepayer.(*GasPrepayer),
 	}
 
 	handlers := []intf.ApiCallHandler{
@@ -92,9 +90,9 @@ func NewAPIHandler(writeCachePool *mempool.Mempool[*tempcache.WriteCache]) *APIH
 }
 
 // Initliaze a new APIHandler from an existing writeCache. This is different from the NewAPIHandler() function in that it does not create a new writeCache.
-func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, deployer ethcommon.Address, schedule interface{}) intf.EthApiRouter {
+func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, deployer ethcommon.Address, schedule any, gasPayer any) intf.EthApiRouter {
 	// localCache := writeCachePool.(*mempool.Mempool[*tempcache.WriteCache]).New()
-	api := NewAPIHandler(this.writeCachePool)
+	api := NewAPIHandler(this.writeCachePool, gasPayer)
 	api.SetDeployer(deployer)
 	// api.writeCachePool = writeCachePool.(*mempool.Mempool[*tempcache.WriteCache])
 	api.writeCachePool = this.writeCachePool
@@ -103,13 +101,15 @@ func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, 
 	api.deployer = deployer
 	api.schedule = schedule
 	api.auxDict = make(map[string]interface{})
+
+	api.gasPrepayer = gasPayer.(*GasPrepayer) // Use the same gas prepayer as the parent APIHandler
 	return api
 }
 
 // The Cascade() function creates a new APIHandler whose writeCache uses the parent APIHandler's writeCache as the
 // read-only data store.  writecache -> parent's writecache -> backend datastore
 func (this *APIHandler) Cascade() intf.EthApiRouter {
-	api := NewAPIHandler(this.writeCachePool)
+	api := NewAPIHandler(this.writeCachePool, this.gasPrepayer)
 	api.SetDeployer(this.deployer)
 	api.depth = this.depth + 1
 	api.schedule = this.schedule
@@ -226,21 +226,60 @@ func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]b
 	return false, []byte{}, true, 0 // not an Arcology call, used 0 gas
 }
 
-// Exeuction subsidy is the amount of gas that the parallel TXs pay to offset the cost of execution of the deferred TX.
-// func (this *APIHandler) GetExecutionSubsidy() uint64        { return this.executionSubsidy }
-// func (this *APIHandler) SetExecutionSubsidy(subsidy uint64) { this.executionSubsidy = subsidy }
+// Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
+func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 {
+	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
+	job.InitialGas = *initGas        // Set the initial gas for the job from the EVM
+	job.GasRemaining = *gasRemaining // Set the gas remaining for the job from the EVM
 
-// The sponsered gas is the amount of gas transferred to from other senders to the contract to pay for the execution on their behalf.
-// This isn't part of the original Ethereum spec, it is an Arcology specific feature.
+	// Pre deferred execution, pay the gas for the deferred execution of the job.
+	if job.StdMsg.PrepaidGas <= *gasRemaining {
+		paid := this.gasPrepayer.AddPrepayer(job) // Add itself as a gas prepayer.
+		*initGas -= paid                          // Subtract the prepaid gas from the initial gas.
+		*gasRemaining -= paid                     // Subtract the prepaid gas from the gas remaining.
+		return paid
+	}
+	return 0
 
-// UseSponsoredGas will refill just enoguth gas on the fly for the current contract call when the purchased gas is running out, there is
-// no need for an refund machasim.
-func (this *APIHandler) UseSponsoredGas(gasToUse uint64) bool {
-	currentAddr := this.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
-	txID := this.GetEU().(interface{ ID() uint64 }).ID()
-	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
+}
 
-	// No need to check the balance of the contract, the accumulator will check it after the transaction is executed.
-	_, error := this.WriteCache().(*tempcache.WriteCache).Write(txID, sponsoredGasPath, commutative.NewU256DeltaFromU64(gasToUse, false))
-	return error == nil
+// Add the prepaid gas to the job's prepaid gas. This is used to pay for the deferred execution of the job.
+func (this *APIHandler) UsePrepaidGas(gas *uint64) bool {
+	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
+	if !job.IsDeferred {
+		return false
+	}
+
+	// Deferred execution, use the prepaid gas to the job.
+	totalPrepaid := this.gasPrepayer.GetPrepaiedGas(job.StdMsg.AddrAndSignature()) // Get the prepaid gas for the deferred execution of the job.
+	*gas += totalPrepaid                                                           // Add the prepaid gas to the gas remaining for execution.
+	return true
+}
+
+// This function refunds the prepaid gas when the prepaid gas is more than the gas used by the job.
+func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
+	job := this.eu.(interface{ Job() *eucommon.Job }).Job() // Get the job from the EVM
+	if !job.IsDeferred {
+		return false // Not a deferred execution, no need to refund the prepaid gas.
+	}
+
+	if prepayers, ok := this.gasPrepayer.payers[job.StdMsg.AddrAndSignature()]; ok && prepayers.First > 0 {
+		originalGasRemaining := float64(job.GasRemaining) * float64(*gasLeft) / float64(job.GasRemaining+prepayers.First)
+		refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(len(prepayers.Second)))
+
+		// Minus the prepaid portion.
+		(*gasLeft) -= (*gasLeft) - uint64(math.Round(originalGasRemaining))
+
+		// Refund the prepaid gas portion back to each payer.
+		for _, payer := range prepayers.Second {
+			remaining := uint256.NewInt(refundPerPayer)
+			remaining = remaining.Mul(remaining, uint256.MustFromBig(payer.StdMsg.Native.GasPrice))
+
+			// Credit the gas back to the payer's account.
+			this.eu.(interface{ StateDB() vm.StateDB }).StateDB().AddBalance(payer.StdMsg.Native.From, remaining)
+		}
+		return true
+	}
+
+	return false
 }

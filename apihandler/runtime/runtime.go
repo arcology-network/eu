@@ -82,14 +82,14 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 	case [4]byte{0x19, 0x7f, 0x62, 0x5f}: // 19 7f 62 5f
 		return this.deferCall(caller, callee, input[4:])
 
-	case [4]byte{0x7a, 0x2b, 0x97, 0x0b}:
-		return this.sponsorGas(caller, callee, input[4:]) // Send gas to another account.
+	// case [4]byte{0x7a, 0x2b, 0x97, 0x0b}:
+	// 	return this.sponsorGas(caller, callee, input[4:]) // Send gas to another account.
 
-	case [4]byte{0x9b, 0x24, 0x26, 0x76}:
-		return this.useSponsoredGas(caller, callee, input[4:])
+	// case [4]byte{0x30, 0x03, 0x64, 0x24}:
+	// 	return this.authorizeGasUsage(caller, callee, input[4:]) // Authorize the current TX to use the sponsored gas from the contract.
 
-	case [4]byte{0x2a, 0xbe, 0xf8, 0x41}:
-		return this.getSponsoredGas(caller, callee, input[4:])
+	// case [4]byte{0x2a, 0xbe, 0xf8, 0x41}:
+	// 	return this.getSponsoredGas(caller, callee, input[4:])
 
 	case [4]byte{0x37, 0x66, 0x82, 0xb5}: // 19 7f 62 5f
 		return this.print(caller, callee, input[4:])
@@ -148,7 +148,7 @@ func (this *RuntimeHandlers) instances(caller evmcommon.Address, callee evmcommo
 }
 
 func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, input []byte, executionMethod uint8) ([]byte, bool, int64) {
-	if !this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.IsInConstructor() {
+	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
 		return []byte{}, false, eucommon.GAS_READ // Can only be called from a constructor.
 	}
 
@@ -212,7 +212,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 
 // This function needs to schedule a defer call to the next generation.
 func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	if !this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.IsInConstructor() {
+	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
 		return []byte{}, false, eucommon.GAS_READ // Can only be called from a constructor.
 	}
 
@@ -232,68 +232,6 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	deferPath := stgcommon.DeferrablePath(caller, funSign)                           // Generate the sub path for the deferrable.
 	_, err := tempcache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
 	return []byte{}, err == nil, eucommon.GAS_READ + eucommon.GAS_DEFER
-}
-
-func (this *RuntimeHandlers) sponsorGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	currentAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
-	if !this.api.VM().(*vm.EVM).StateDB.Exist(currentAddr) { // Check the balance of the contract.
-		return []byte{}, false, eucommon.GAS_READ
-	}
-
-	// valBytes, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
-	gasBytes, err := abi.DecodeTo(input, 0, []byte{}, 1, 32)
-	if err != nil {
-		return []byte{}, false, eucommon.GAS_DECODE
-	}
-	gasTransfer := (&uint256.Int{}).SetBytes(gasBytes).ToBig().Uint64()
-
-	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
-	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
-
-	// Write the gas transfer to the sponsored gas path.
-	fee, error := this.api.WriteCache().(*tempcache.WriteCache).Write(txID, sponsoredGasPath, commutative.NewU256DeltaFromU64(gasTransfer, true))
-	if error != nil {
-		return []byte{}, false, eucommon.GAS_READ + eucommon.GAS_DECODE + fee
-	}
-	return []byte{}, true, eucommon.GAS_READ + eucommon.GAS_DECODE + fee + int64(gasTransfer)
-}
-
-// This function is used to top up the gas of the contract to compensate for the gas used by defer transaction.
-func (this *RuntimeHandlers) useSponsoredGas(_, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	currentAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
-	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
-	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
-	total := eucommon.GAS_USE_SPONSORED_GAS + eucommon.GAS_READ
-
-	// Get the amount of sponsored gas to use for the transaction.
-	gasBytes, err := abi.DecodeTo(input, 0, []byte{}, 1, 32)
-	total += eucommon.GAS_DECODE
-	if err != nil {
-		return []byte{}, false, total
-	}
-	gasTransfer := (&uint256.Int{}).SetBytes(gasBytes).ToBig().Uint64() // Get the amount of sponsored gas to use for the transaction.
-
-	// No need to check the balance of the contract, the accumulator will check it after the transaction is executed.
-	fee, error := this.api.WriteCache().(*tempcache.WriteCache).WritePersistent(txID, sponsoredGasPath, commutative.NewU256DeltaFromU64(gasTransfer, false))
-	total += fee
-	if error != nil {
-		return []byte{}, false, total
-	}
-	return []byte{}, false, total - int64(gasTransfer)
-}
-
-func (this *RuntimeHandlers) getSponsoredGas(_, _ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	currentAddr := this.api.VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Address()
-	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
-	sponsoredGasPath := stgcommon.SponsoredGasPath(currentAddr) // Get the sponsored gas path for the contract.
-
-	v, _, _ := this.api.WriteCache().(*tempcache.WriteCache).Read(txID, sponsoredGasPath, new(commutative.U256))
-	if v == nil { // not found
-		return []byte{}, false, eucommon.GAS_READ
-	}
-
-	encoded, err := abi.Encode(v.(uint256.Int))
-	return encoded, err == nil, eucommon.GAS_READ + eucommon.GAS_DECODE
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {

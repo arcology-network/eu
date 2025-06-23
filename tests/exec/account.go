@@ -21,8 +21,8 @@ package exectest
 import (
 	"strconv"
 
-	eu "github.com/arcology-network/eu"
 	adaptorcommon "github.com/arcology-network/eu/common"
+	eucommon "github.com/arcology-network/eu/common"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/type/univalue"
@@ -57,7 +57,7 @@ func GenRandomAccounts(num int) []ethcommon.Address {
 }
 
 type TestEu struct {
-	eu          *eu.EU
+	eu          *eucommon.EU
 	config      *adaptorcommon.Config
 	store       stgcommon.ReadOnlyStore
 	committer   *stgcomm.StateCommitter
