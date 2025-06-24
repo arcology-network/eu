@@ -229,6 +229,10 @@ func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]b
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
 func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
+	if job.PrepaidGas == 0 {
+		return 0 // No prepaid gas, nothing to do.
+	}
+
 	job.InitialGas = *initGas        // Set the initial gas for the job from the EVM
 	job.GasRemaining = *gasRemaining // Set the gas remaining for the job from the EVM
 
