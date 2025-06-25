@@ -46,7 +46,7 @@ type Job struct {
 
 	InitialGas   uint64 // Initial gas amount for the contract, used to determine if the contract has enough gas to execute
 	GasRemaining uint64 // Remaining gas for the contract, used to determine if the contract has enough gas to execute
-	PrepaidGas   int64  // Gas paid for the deferred execution, negative is paying for the others, positive is paied by others.
+	PrepaidGas   uint64 // Gas paid for the deferred execution, negative is paying for the others, positive is paied by others.
 }
 
 // Execute executes the job.

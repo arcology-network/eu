@@ -226,6 +226,11 @@ func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]b
 	return false, []byte{}, true, 0 // not an Arcology call, used 0 gas
 }
 
+// For runtime caller to get the job information for the current call.
+func (this *APIHandler) Job() any {
+	return this.eu.(interface{ Job() *eucommon.Job }).Job()
+}
+
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
 func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()

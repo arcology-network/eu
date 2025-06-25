@@ -28,7 +28,6 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/holiman/uint256"
 
 	adaptorcommon "github.com/arcology-network/eu/common"
 	eth "github.com/arcology-network/eu/eth"
@@ -70,26 +69,14 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 	case [4]byte{0xbb, 0x07, 0xe8, 0x5d}: // bb 07 e8 5d
 		return this.uuid(caller, callee, input[4:])
 
-	case [4]byte{0x68, 0x7b, 0x09, 0xb7}: //
-		return this.setExecutionMethod(caller, callee, input[4:], stgcommon.SEQUENTIAL_EXECUTION)
+	case [4]byte{0x0f, 0x0d, 0x97, 0xaa}: //
+		return this.setParallelism(caller, callee, input[4:])
 
-	case [4]byte{0xc4, 0xdf, 0xfe, 0x6e}: //
-		return this.setExecutionMethod(caller, callee, input[4:], stgcommon.PARALLEL_EXECUTION)
-
-	// case [4]byte{0xa8, 0x7a, 0xe4, 0x81}: // bb 07 e8 5d
-	// return this.instances(caller, callee, input[4:])
-
-	case [4]byte{0x19, 0x7f, 0x62, 0x5f}: // 19 7f 62 5f
+	case [4]byte{0xac, 0x8f, 0x58, 0xf3}: // 1c 2f 3b 6d	case [4]byte{0xac, 0x8f, 0x58, 0xf3}: // 19 7f 62 5f
 		return this.deferCall(caller, callee, input[4:])
 
-	// case [4]byte{0x7a, 0x2b, 0x97, 0x0b}:
-	// 	return this.sponsorGas(caller, callee, input[4:]) // Send gas to another account.
-
-	// case [4]byte{0x30, 0x03, 0x64, 0x24}:
-	// 	return this.authorizeGasUsage(caller, callee, input[4:]) // Authorize the current TX to use the sponsored gas from the contract.
-
-	// case [4]byte{0x2a, 0xbe, 0xf8, 0x41}:
-	// 	return this.getSponsoredGas(caller, callee, input[4:])
+	case [4]byte{0x21, 0xcb, 0x6b, 0xc3}: // bb 07 e8 5d
+		return this.isInDeferred(caller, callee, input[4:])
 
 	case [4]byte{0x37, 0x66, 0x82, 0xb5}: // 19 7f 62 5f
 		return this.print(caller, callee, input[4:])
@@ -103,7 +90,7 @@ func (this *RuntimeHandlers) pid(_ evmcommon.Address, _ []byte) ([]byte, bool, i
 	if encoded, err := abi.Encode(this.api.Pid()); err == nil {
 		return encoded, true, eucommon.GAS_DECODE
 	}
-	return []byte{}, false, eucommon.GAS_PID
+	return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO
 }
 
 // This function rolls back the storage to the previous generation. It should be used with extreme caution.
@@ -112,44 +99,37 @@ func (this *RuntimeHandlers) pid(_ evmcommon.Address, _ []byte) ([]byte, bool, i
 // 	return []byte{}, true, 0
 // }
 
-func (this *RuntimeHandlers) uuid(caller, callee evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	return this.api.ElementUID(), true, eucommon.GAS_UUID
+func (this *RuntimeHandlers) uuid(_, _ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
+	return this.api.ElementUID(), true, eucommon.GAS_GET_RUNTIME_INFO
 }
 
 // Get the number of running instances of a function.
-func (this *RuntimeHandlers) instances(caller evmcommon.Address, callee evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	if this.api.GetSchedule() == nil {
+func (this *RuntimeHandlers) isInDeferred(_ evmcommon.Address, _ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
+	job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
+	if encoded, err := abi.Encode(job.(*eucommon.Job).IsDeferred); err == nil {
+		return encoded, true, eucommon.GAS_DECODE + eucommon.GAS_GET_RUNTIME_INFO
+	}
+
+	return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO
+}
+
+func (this *RuntimeHandlers) setParallelism(caller, addr evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	paraLvl, err := abi.Decode(input, 3, uint64(0), 1, 1)
+	if err != nil {
 		return []byte{}, false, eucommon.GAS_DECODE
 	}
 
-	address, err := abi.DecodeTo(input, 0, [20]byte{}, 1, 4)
-	if err != nil {
-		return []byte{}, false, eucommon.GAS_DECODE * 2
+	executionMethod := stgcommon.PARALLEL_EXECUTION
+	if paraLvl == 1 {
+		executionMethod = stgcommon.SEQUENTIAL_EXECUTION // If the parallelism level is 1, set the execution method to sequential.
 	}
-
-	funSign, err := abi.DecodeTo(input, 1, []byte{}, 1, 4)
-	if err != nil {
-		return []byte{}, false, eucommon.GAS_DECODE * 3
-	}
-
-	dict := this.api.GetSchedule().(*map[string]int)
-	key := schtype.CallToKey(address[:], funSign)
-
-	// Encode the total number of instances and return
-	if encoded, err := abi.Encode(uint256.NewInt(uint64((*dict)[key]))); err == nil {
-		// encoded, _ := abi.Encode(uint256.NewInt(2))
-		// if !bytes.Equal(encoded, encoded2) {
-		// 	panic("")
-		// }
-
-		return encoded, true, eucommon.GAS_DECODE * 3
-	}
-	return []byte{}, false, eucommon.GAS_DECODE * 3
+	return this.setExecutionMethod(caller, addr, input, uint8(executionMethod))
 }
 
 func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, input []byte, executionMethod uint8) ([]byte, bool, int64) {
+	totalFee := eucommon.GAS_GET_RUNTIME_INFO
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
-		return []byte{}, false, eucommon.GAS_READ // Can only be called from a constructor.
+		return []byte{}, false, totalFee // Can only be called from a constructor.
 	}
 
 	// Get the target contract address.
@@ -176,14 +156,23 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	}
 
 	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
+	propertyPath := stgcommon.FuncPropertyPath(caller, sourceFunc)
 	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
-	// Create the parent path for the properties.
-	propertyPath := stgcommon.FuncPropertyPath(caller, sourceFunc)
-	writePathFee, err := tempcache.Write(txID, propertyPath, commutative.NewPath())
-	if err != nil {
-		return []byte{}, err == nil, eucommon.GAS_READ + eucommon.GAS_DECODE*4 + writePathFee
+	// Check if the property path exists, if not create it.
+	if path, _, _ := tempcache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
+		_, err := tempcache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
+		totalFee += eucommon.GAS_WRITE
+		if err != nil {
+			return []byte{}, false, totalFee // If the property path write fails, return an error.
+		}
 	}
+
+	// Create the parent path for the properties.
+	// writePathFee, err := tempcache.Write(txID, propertyPath, commutative.NewPath())
+	// if err != nil {
+	// 	return []byte{}, err == nil, eucommon.GAS_READ + eucommon.GAS_DECODE*4 + writePathFee
+	// }
 
 	// Either the function is parallel or sequential.
 	path := stgcommon.ExecutionMethodPath(caller, sourceFunc)
@@ -195,9 +184,9 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 		globalMethod = stgcommon.SEQUENTIAL_EXECUTION
 	}
 
-	writeMethodFee, err := tempcache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod}))
+	_, err = tempcache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod}))
 	if err != nil { //
-		return []byte{}, false, eucommon.GAS_READ + eucommon.GAS_DECODE*4 + writePathFee + writeMethodFee
+		return []byte{}, false, totalFee
 	}
 
 	// Users can add some excepted callees so they can be handled differently.
@@ -206,32 +195,60 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	})
 
 	path = stgcommon.ExceptPaths(caller, sourceFunc)
-	writeCalleeFee, err := tempcache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
-	return []byte{}, err == nil, eucommon.GAS_READ + eucommon.GAS_DECODE*4 + writePathFee + writeMethodFee + writeCalleeFee
+	_, err = tempcache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
+	return []byte{}, err == nil, totalFee
 }
 
 // This function needs to schedule a defer call to the next generation.
+
 func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+	totalFee := eucommon.GAS_DEFER + eucommon.GAS_GET_RUNTIME_INFO
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
-		return []byte{}, false, eucommon.GAS_READ // Can only be called from a constructor.
+		return []byte{}, false, totalFee // Can only be called from a constructor.
 	}
 
-	if len(input) < 4 {
-		return []byte{}, false, eucommon.GAS_READ
+	// Decode the function signature from the input.
+	funSignBytes, err := abi.DecodeTo(input, 0, []uint8{}, 1, 32)
+	totalFee += eucommon.GAS_DECODE
+	if err != nil {
+		return []byte{}, false, totalFee
 	}
 
-	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
+	// Decode the amount of prepaid gas from the input.
+	prepaidGas, err := abi.Decode(input, 1, uint64(0), 1, 8)
+	totalFee += eucommon.GAS_DECODE
+	if err != nil {
+		return []byte{}, false, totalFee
+	}
 
-	funSign := new(codec.Bytes4).FromBytes(input[:4])
+	funSign := new(codec.Bytes4).FromBytes(funSignBytes)
 	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
 	// Get the function signature.
 	propertyPath := stgcommon.FuncPropertyPath(caller, funSign)
-	tempcache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
+	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
 
-	deferPath := stgcommon.DeferrablePath(caller, funSign)                           // Generate the sub path for the deferrable.
-	_, err := tempcache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
-	return []byte{}, err == nil, eucommon.GAS_READ + eucommon.GAS_DEFER
+	// Check if the property path exists, if not create it.
+	if path, _, _ := tempcache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
+		_, err := tempcache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
+		totalFee += eucommon.GAS_WRITE
+		if err != nil {
+			return []byte{}, false, totalFee // If the property path write fails, return an error.
+		}
+	}
+
+	// Write deferrable information to the property path.
+	deferPath := stgcommon.DeferrablePath(caller, funSign)                          // Generate the sub path for the deferrable.
+	_, err = tempcache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
+	totalFee += eucommon.GAS_WRITE
+	if err != nil {
+		return []byte{}, false, totalFee
+	}
+
+	job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
+	totalFee += eucommon.GAS_GET_RUNTIME_INFO
+	job.(*eucommon.Job).PrepaidGas = prepaidGas.(uint64) // Set the prepaid gas for the deferred call.
+	return []byte{}, err == nil, totalFee
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
@@ -239,5 +256,5 @@ func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([
 
 	msg = evmcommon.TrimRightZeroes(msg)
 	fmt.Println("From=", caller, " Msg=", (msg), " Error=", err)
-	return []byte{}, true, eucommon.GAS_DEBUG_PRINT
+	return []byte{}, true, eucommon.GAS_SET_RUNTIME_INFO
 }

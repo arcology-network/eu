@@ -44,6 +44,7 @@ type ChainContext interface {
 type EthApiRouter interface {
 	// Used in EVM to call the kernel API
 	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash, isReadOnly bool) (bool, []byte, bool, int64)
+	Job() any                          // Get the job information for the current call
 	PrepayGas(*uint64, *uint64) uint64 // Prepay gas for deferred execution.
 	UsePrepaidGas(*uint64) bool        // Use the prepaid gas pay for the deferred TX.
 	RefundPrepaidGas(*uint64) bool     // Refund sponsored gas
