@@ -39,10 +39,9 @@ import (
 )
 
 type Job struct {
-	MsgID      uint64 // message id
-	StdMsg     *commontype.StandardMessage
-	Results    *Result
-	IsDeferred bool // If the message is deferred execution.
+	MsgID   uint64 // message id
+	StdMsg  *commontype.StandardMessage
+	Results *Result
 
 	InitialGas   uint64 // Initial gas amount for the contract, used to determine if the contract has enough gas to execute
 	GasRemaining uint64 // Remaining gas for the contract, used to determine if the contract has enough gas to execute
