@@ -245,9 +245,15 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 		return []byte{}, false, totalFee
 	}
 
-	job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
+	// Set the prepaid gas value for the deferred call.
 	totalFee += eucommon.GAS_GET_RUNTIME_INFO
-	job.(*eucommon.Job).PrepaidGas = prepaidGas.(uint64) // Set the prepaid gas for the deferred call.
+	job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
+	PrepaidGasPath := stgcommon.PrepaidGasPath(caller, funSign) // Generate the sub path for the prepaid gas.
+
+	// Write to storage
+	_, err = tempcache.Write(txID, PrepaidGasPath, noncommutative.NewInt64(int64(prepaidGas.(uint64))))
+
+	job.(*eucommon.Job).StdMsg.PrepaidGas = prepaidGas.(uint64) // Set the prepaid gas for the deferred call.
 	return []byte{}, err == nil, totalFee
 }
 

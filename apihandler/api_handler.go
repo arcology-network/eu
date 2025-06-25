@@ -28,6 +28,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -234,7 +235,27 @@ func (this *APIHandler) Job() any {
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
 func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if job.PrepaidGas == 0 {
+
+	if len(job.StdMsg.Native.Data) < 4 {
+		return 0 // Not a valid job, no prepaid gas to pay.
+	}
+
+	// Get the prepaid gas value from storage.
+	txID := this.GetEU().(interface{ ID() uint64 }).ID()
+	tempcache := this.WriteCache().(*tempcache.WriteCache)
+
+	to := job.StdMsg.Native.From
+	funSign := [4]byte{}
+	copy(funSign[:], job.StdMsg.Native.Data[:4]) // Get the function signature from the job's native data.
+
+	path := stgcommon.PrepaidGasPath(to, funSign) // Generate the sub path for the prepaid gas.
+	prepaidGas, _, _ := tempcache.Read(txID, path, int64(0))
+	if prepaidGas == nil {
+		return 0 // No prepaid gas found, nothing to do.
+	}
+
+	job.StdMsg.PrepaidGas = uint64(prepaidGas.(int64))
+	if job.StdMsg.PrepaidGas == 0 {
 		return 0 // No prepaid gas, nothing to do.
 	}
 
