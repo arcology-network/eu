@@ -255,7 +255,7 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 
 // Add the prepaid gas to the job's prepaid gas. This is used to pay for the deferred execution of the job.
 func (this *APIHandler) UsePrepaidGas(gas *uint64) bool {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if !job.IsDeferred { // Only available for deferred execution jobs.
+	if !job.StdMsg.IsDeferred { // Only available for deferred execution jobs.
 		return false
 	}
 
@@ -268,7 +268,7 @@ func (this *APIHandler) UsePrepaidGas(gas *uint64) bool {
 // This function refunds the prepaid gas when the prepaid gas is more than the gas used by the job.
 func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job() // Get the job from the EVM
-	if !job.IsDeferred {
+	if !job.StdMsg.IsDeferred {
 		return false // Not a deferred execution, no need to refund the prepaid gas.
 	}
 

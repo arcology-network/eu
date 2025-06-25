@@ -106,7 +106,7 @@ func (this *RuntimeHandlers) uuid(_, _ evmcommon.Address, _ []byte) ([]byte, boo
 // Get the number of running instances of a function.
 func (this *RuntimeHandlers) isInDeferred(_ evmcommon.Address, _ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
-	if encoded, err := abi.Encode(job.(*eucommon.Job).IsDeferred); err == nil {
+	if encoded, err := abi.Encode(job.(*eucommon.Job).StdMsg.IsDeferred); err == nil {
 		return encoded, true, eucommon.GAS_DECODE + eucommon.GAS_GET_RUNTIME_INFO
 	}
 
