@@ -28,6 +28,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
+	gas "github.com/arcology-network/eu/gas"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -47,16 +48,17 @@ type APIHandler struct {
 	depth      uint8
 	serialNums [4]uint64 // sub-process/container/element/uuid generator,
 
-	schedule interface{}
-	eu       interface{}
+	schedule any
+	eu       any
 
 	handlerDict map[[20]byte]intf.ApiCallHandler // APIs under the atomic namespace
 
 	writeCachePool *mempool.Mempool[*tempcache.WriteCache]
 	localCache     *tempcache.WriteCache // The private tempcache for the current APIHandler
 
-	auxDict     map[string]interface{} // Auxiliary data generated during the execution of the APIHandler
-	gasPrepayer *GasPrepayer           // Pay for the deferred execution gas.
+	auxDict map[string]interface{} // Auxiliary data generated during the execution of the APIHandler
+
+	gasPrepayer *gas.GasPrepayer // Pay for the deferred execution gas.
 }
 
 func NewAPIHandler(writeCachePool *mempool.Mempool[*tempcache.WriteCache], gasPrepayer any) *APIHandler {
@@ -64,12 +66,12 @@ func NewAPIHandler(writeCachePool *mempool.Mempool[*tempcache.WriteCache], gasPr
 		writeCachePool: writeCachePool,
 		eu:             nil,
 		localCache:     writeCachePool.New(),
-		auxDict:        make(map[string]interface{}),
+		auxDict:        make(map[string]any),
 		handlerDict:    make(map[[20]byte]intf.ApiCallHandler),
 		depth:          0,
 		serialNums:     [4]uint64{},
 
-		gasPrepayer: gasPrepayer.(*GasPrepayer),
+		gasPrepayer: gasPrepayer.(*gas.GasPrepayer),
 	}
 
 	handlers := []intf.ApiCallHandler{
@@ -103,7 +105,7 @@ func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, 
 	api.schedule = schedule
 	api.auxDict = make(map[string]interface{})
 
-	api.gasPrepayer = gasPayer.(*GasPrepayer) // Use the same gas prepayer as the parent APIHandler
+	api.gasPrepayer = gasPayer.(*gas.GasPrepayer) // Use the same gas prepayer as the parent APIHandler
 	return api
 }
 
@@ -222,7 +224,7 @@ func (this *APIHandler) Call(caller, callee [20]byte, input []byte, origin [20]b
 			nonce,
 			isReadOnly,
 		)
-		return true, result, successful, fees
+		return true, result, successful, eucommon.GAS_CALL_API + fees
 	}
 	return false, []byte{}, true, 0 // not an Arcology call, used 0 gas
 }
@@ -293,7 +295,7 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 		return false // Not a deferred execution, no need to refund the prepaid gas.
 	}
 
-	if prepayers, ok := this.gasPrepayer.payers[job.StdMsg.AddrAndSignature()]; ok && prepayers.First > 0 {
+	if prepayers, ok := this.gasPrepayer.Payers[job.StdMsg.AddrAndSignature()]; ok && prepayers.First > 0 {
 		originalGasRemaining := float64(job.GasRemaining) * float64(*gasLeft) / float64(job.GasRemaining+prepayers.First)
 		refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(len(prepayers.Second)))
 

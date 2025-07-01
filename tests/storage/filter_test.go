@@ -176,11 +176,11 @@ func TestAccessFilters(t *testing.T) {
 	}
 
 	idx, v := slice.FindFirstIf(acctTrans, func(_ int, v *univalue.Univalue) bool {
-		return strings.Index(*v.GetPath(), "/balance") == -1 && strings.Index(*v.GetPath(), "/nonce") == -1 && v.Value() != nil
+		// If balance is nil or nonce is nil, which shoudn't happen
+		return (strings.Contains(*v.GetPath(), "/balance") && v.Value() == nil) || (strings.Contains(*v.GetPath(), "/nonce") && v.Value() == nil)
 	})
 
 	if idx != -1 {
 		t.Error("Error: Nonce non-path commutative variables may keep their initial values", v)
 	}
-
 }

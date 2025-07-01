@@ -96,7 +96,7 @@ type JobSequence struct {
 	SeqAPI intf.EthApiRouter
 }
 
-func NewJobSequence(seqID uint64, tx []uint64, evmMsgs []*evmcore.Message, txHash [32]byte, api intf.EthApiRouter) *JobSequence {
+func NewJobSequence(seqID uint64, tx []uint64, evmMsgs []*evmcore.Message, txHash [][32]byte, api intf.EthApiRouter) *JobSequence {
 	newJobSeq := &JobSequence{
 		ID:     seqID,
 		SeqAPI: api,
@@ -106,7 +106,7 @@ func NewJobSequence(seqID uint64, tx []uint64, evmMsgs []*evmcore.Message, txHas
 		newJobSeq.AppendMsg(&commontype.StandardMessage{
 			ID:     tx[i],
 			Native: evmMsg,
-			TxHash: txHash,
+			TxHash: txHash[i],
 		})
 	}
 	return newJobSeq

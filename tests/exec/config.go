@@ -50,6 +50,7 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/compiler"
 	ethimpl "github.com/arcology-network/eu/eth"
+	"github.com/arcology-network/eu/gas"
 )
 
 const (
@@ -93,9 +94,9 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	sstore := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
 
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
+	api := apihandler.NewAPIHandler(mempool.NewMempool(16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(sstore.WriteCache, 32, 1) // Generation writecache
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), apihandler.NewGasPrepayer())
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), gas.NewGasPrepayer())
 
 	statedb := ethimpl.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -119,7 +120,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	// Init a new API
 	api = apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(sstore, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), apihandler.NewGasPrepayer())
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), gas.NewGasPrepayer())
 
 	statedb = ethimpl.NewImplStateDB(api)
 
@@ -244,7 +245,7 @@ func AliceCall(executor *eucommon.EU, contractAddress evmcommon.Address, funcNam
 	// localCache := tempcache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
 		return tempcache.NewWriteCache(datastore, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), apihandler.NewGasPrepayer())
+	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), gas.NewGasPrepayer())
 
 	statedb := ethimpl.NewImplStateDB(api)
 	eucommon.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)

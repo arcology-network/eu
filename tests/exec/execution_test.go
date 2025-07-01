@@ -52,7 +52,7 @@ func TestSequence(t *testing.T) {
 	testEu := NewTestEU(Coinbase, Alice, Bob)
 
 	api := testEu.eu.Api()
-	seq := eucommon.NewJobSequence(1, []uint64{1}, []*evmcore.Message{&deployMsg}, [32]byte{}, api)
+	seq := eucommon.NewJobSequence(1, []uint64{1}, []*evmcore.Message{&deployMsg}, slice.New(1, [32]byte{}), api)
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Jobs[0].Results.Receipt.ContractAddress
 
@@ -72,7 +72,7 @@ func TestSequence(t *testing.T) {
 
 	// Put the messages into the sequence and run it in sequence.
 	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
-	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), [32]byte{}, testEu.eu.Api())
+	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), slice.New(2, [32]byte{}), testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 }
 
@@ -90,7 +90,7 @@ func TestSequence2(t *testing.T) {
 	testEu := NewTestEU(Coinbase, Alice, Bob)
 
 	api := testEu.eu.Api()
-	seq := eucommon.NewJobSequence(1, []uint64{1}, []*evmcore.Message{&deployMsg}, [32]byte{}, api)
+	seq := eucommon.NewJobSequence(1, []uint64{1}, []*evmcore.Message{&deployMsg}, slice.New(1, [32]byte{}), api)
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Jobs[0].Results.Receipt.ContractAddress
 
@@ -109,7 +109,7 @@ func TestSequence2(t *testing.T) {
 
 	// // Put the messages into the sequence and run it in sequence.
 	// testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
-	seq = eucommon.NewJobSequence(1, []uint64{1, 2, 3}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2, &msgCallCheck), [32]byte{}, testEu.eu.Api())
+	seq = eucommon.NewJobSequence(1, []uint64{1, 2, 3}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2, &msgCallCheck), slice.New(3, [32]byte{}), testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 }
 
@@ -134,7 +134,7 @@ func TestGeneration(t *testing.T) {
 	// ================================== contract Deployment  ==================================
 	testEu := NewTestEU(Coinbase, Alice, Bob)
 	api := testEu.eu.Api()
-	_0thSeq := eucommon.NewJobSequence(1, []uint64{1, 2, 3}, slice.ToSlice(&deployNativeStorageMsg, &deploySequentialMsg), [32]byte{1}, testEu.eu.Api())
+	_0thSeq := eucommon.NewJobSequence(1, []uint64{1, 2, 3}, slice.ToSlice(&deployNativeStorageMsg, &deploySequentialMsg), slice.New(3, [32]byte{}), testEu.eu.Api())
 	// _, seqUniv := _0thSeq.Run(testEu.config, api, 0)
 	gen := eu.NewGeneration(0, 2, []*eucommon.JobSequence{_0thSeq})
 	gen.Execute(testEu.config, api)
@@ -145,13 +145,13 @@ func TestGeneration(t *testing.T) {
 	contractNativeStorageAddr := _0thSeq.Jobs[0].Results.Receipt.ContractAddress
 	msgNativeCall := core.NewMessage(Alice, &contractNativeStorageAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("call()"))[:4], nil, false)
 	msgNativeCheck := core.NewMessage(Alice, &contractNativeStorageAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check()"))[:4], nil, false)
-	nativeSeq := eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgNativeCall, &msgNativeCheck), [32]byte{1}, testEu.eu.Api())
+	nativeSeq := eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgNativeCall, &msgNativeCheck), slice.New(2, [32]byte{}), testEu.eu.Api())
 
 	// ================================== 2nd contract Call  ==================================
 	contractSequentialAddr := _0thSeq.Jobs[1].Results.Receipt.ContractAddress
 	msgSequentialAdd := core.NewMessage(Alice, &contractSequentialAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("add()"))[:4], nil, false)
 	msgSequentialCheck := core.NewMessage(Alice, &contractSequentialAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check()"))[:4], nil, false)
-	sequentialSeq := eucommon.NewJobSequence(2, []uint64{3, 4}, slice.ToSlice(&msgSequentialAdd, &msgSequentialCheck), [32]byte{1}, testEu.eu.Api())
+	sequentialSeq := eucommon.NewJobSequence(2, []uint64{3, 4}, slice.ToSlice(&msgSequentialAdd, &msgSequentialCheck), slice.New(2, [32]byte{}), testEu.eu.Api())
 
 	_1stGen := eu.NewGeneration(0, 2, []*eucommon.JobSequence{nativeSeq, sequentialSeq})
 	clearTransitions := _1stGen.Execute(testEu.config, api) // Export transitions
@@ -163,20 +163,20 @@ func TestGeneration(t *testing.T) {
 	msgNativeCheck2 := core.NewMessage(Alice, &contractNativeStorageAddr, 3, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
 	// msgSequentialCheck2 := core.NewMessage(Alice, &contractSequentialAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
 
-	seq := eucommon.NewJobSequence(1, []uint64{1}, slice.ToSlice(&msgNativeCheck2), [32]byte{}, testEu.eu.Api())
+	seq := eucommon.NewJobSequence(1, []uint64{1}, slice.ToSlice(&msgNativeCheck2), slice.New(1, [32]byte{}), testEu.eu.Api())
 	_2ndGen := eu.NewGeneration(0, 2, []*eucommon.JobSequence{seq})
 	_2ndGen.Execute(testEu.config, testEu.eu.Api())
 
 	// Add again
 	addMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("call2()"))[:4], nil, false)
-	seq = eucommon.NewJobSequence(1, []uint64{1}, slice.ToSlice(&addMsg), [32]byte{}, testEu.eu.Api())
+	seq = eucommon.NewJobSequence(1, []uint64{1}, slice.ToSlice(&addMsg), slice.New(1, [32]byte{}), testEu.eu.Api())
 	clearTransitions = eu.NewGeneration(0, 2, []*eucommon.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
 	acctTrans = univalue.Univalues(clearTransitions).To(univalue.IPTransition{})
 
 	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear().Insert(acctTrans)
 
 	checkMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 5, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check3()"))[:4], nil, false)
-	seq = eucommon.NewJobSequence(1, []uint64{1}, slice.ToSlice(&checkMsg), [32]byte{}, testEu.eu.Api())
+	seq = eucommon.NewJobSequence(1, []uint64{1}, slice.ToSlice(&checkMsg), slice.New(1, [32]byte{}), testEu.eu.Api())
 	eu.NewGeneration(0, 2, []*eucommon.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
 }
 
@@ -194,7 +194,7 @@ func TestMultiCummutiaves(t *testing.T) {
 	testEu := NewTestEU(Coinbase, Alice, Bob)
 
 	api := testEu.eu.Api()
-	seq := eucommon.NewJobSequence(1, []uint64{1}, []*evmcore.Message{&deployMsg}, [32]byte{}, api)
+	seq := eucommon.NewJobSequence(1, []uint64{1}, []*evmcore.Message{&deployMsg}, slice.New(1, [32]byte{}), api)
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Jobs[0].Results.Receipt.ContractAddress
 
@@ -214,7 +214,7 @@ func TestMultiCummutiaves(t *testing.T) {
 
 	// // Put the messages into the sequence and run it in sequence.
 	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
-	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), [32]byte{}, testEu.eu.Api())
+	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), slice.New(2, [32]byte{}), testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 
 	if seq.Jobs[0].Results.Receipt.Status != 1 || seq.Jobs[1].Results.Receipt.Status != 1 {
@@ -230,7 +230,7 @@ func TestMultiCummutiaves(t *testing.T) {
 	msgCallCheck := core.NewMessage(Alice, &contractAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 
 	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
-	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallCheck), [32]byte{}, testEu.eu.Api())
+	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallCheck), slice.New(1, [32]byte{}), testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 
 	if seq.Jobs[0].Results.Receipt.Status != 1 {

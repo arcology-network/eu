@@ -14,7 +14,7 @@
 *   You should have received a copy of the GNU General Public License
 *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package apihandler
+package gas
 
 import (
 	associative "github.com/arcology-network/common-lib/exp/associative"
@@ -27,12 +27,12 @@ GasPrepayer is a structure that holds a map of contract addresses to their prepa
 It is used to manage the prepaid gas for contracts with deferred execution.
 */
 type GasPrepayer struct {
-	payers map[string]associative.Pair[uint64, []*eucommon.Job]
+	Payers map[string]associative.Pair[uint64, []*eucommon.Job]
 }
 
 func NewGasPrepayer() *GasPrepayer {
 	return &GasPrepayer{
-		payers: make(map[string]associative.Pair[uint64, []*eucommon.Job]),
+		Payers: make(map[string]associative.Pair[uint64, []*eucommon.Job]),
 	}
 }
 
@@ -47,13 +47,13 @@ func (this *GasPrepayer) AddPrepayer(job *eucommon.Job) uint64 {
 		return 0
 	}
 
-	if _, exists := this.payers[addrSign]; !exists {
-		this.payers[addrSign] = associative.Pair[uint64, []*eucommon.Job]{First: job.StdMsg.PrepaidGas, Second: []*eucommon.Job{job}}
+	if _, exists := this.Payers[addrSign]; !exists {
+		this.Payers[addrSign] = associative.Pair[uint64, []*eucommon.Job]{First: job.StdMsg.PrepaidGas, Second: []*eucommon.Job{job}}
 	}
 
-	this.payers[addrSign] = associative.Pair[uint64, []*eucommon.Job]{
-		First:  this.payers[addrSign].First + job.StdMsg.PrepaidGas,
-		Second: append(this.payers[addrSign].Second, job)}
+	this.Payers[addrSign] = associative.Pair[uint64, []*eucommon.Job]{
+		First:  this.Payers[addrSign].First + job.StdMsg.PrepaidGas,
+		Second: append(this.Payers[addrSign].Second, job)}
 	return gasAmount
 }
 
@@ -64,11 +64,11 @@ func (this *GasPrepayer) AddPrepayer(job *eucommon.Job) uint64 {
 // 		return false
 // 	}
 
-// 	_, exists := this.payers[addrSign]
+// 	_, exists := this.Payers[addrSign]
 // 	if exists {
-// 		delete(this.payers, addrSign)
+// 		delete(this.Payers, addrSign)
 // 	}
 // 	return exists
 // }
 
-func (this *GasPrepayer) GetPrepaiedGas(addrSign string) uint64 { return this.payers[addrSign].First }
+func (this *GasPrepayer) GetPrepaiedGas(addrSign string) uint64 { return this.Payers[addrSign].First }

@@ -127,9 +127,9 @@ func (this *RuntimeHandlers) setParallelism(caller, addr evmcommon.Address, inpu
 }
 
 func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, input []byte, executionMethod uint8) ([]byte, bool, int64) {
-	totalFee := eucommon.GAS_GET_RUNTIME_INFO
+	accumFee := eucommon.GAS_GET_RUNTIME_INFO
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
-		return []byte{}, false, totalFee // Can only be called from a constructor.
+		return []byte{}, false, accumFee // Can only be called from a constructor.
 	}
 
 	// Get the target contract address.
@@ -162,9 +162,9 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	// Check if the property path exists, if not create it.
 	if path, _, _ := tempcache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
 		_, err := tempcache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
-		totalFee += eucommon.GAS_WRITE
+		accumFee += eucommon.GAS_WRITE
 		if err != nil {
-			return []byte{}, false, totalFee // If the property path write fails, return an error.
+			return []byte{}, false, accumFee // If the property path write fails, return an error.
 		}
 	}
 
@@ -186,7 +186,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 
 	_, err = tempcache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod}))
 	if err != nil { //
-		return []byte{}, false, totalFee
+		return []byte{}, false, accumFee
 	}
 
 	// Users can add some excepted callees so they can be handled differently.
@@ -196,29 +196,29 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 
 	path = stgcommon.ExceptPaths(caller, sourceFunc)
 	_, err = tempcache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
-	return []byte{}, err == nil, totalFee
+	return []byte{}, err == nil, accumFee
 }
 
 // This function needs to schedule a defer call to the next generation.
 
 func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	totalFee := eucommon.GAS_DEFER + eucommon.GAS_GET_RUNTIME_INFO
+	accumFee := eucommon.GAS_DEFER + eucommon.GAS_GET_RUNTIME_INFO
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
-		return []byte{}, false, totalFee // Can only be called from a constructor.
+		return []byte{}, false, accumFee // Can only be called from a constructor.
 	}
 
 	// Decode the function signature from the input.
 	funSignBytes, err := abi.DecodeTo(input, 0, []uint8{}, 1, 32)
-	totalFee += eucommon.GAS_DECODE
+	accumFee += eucommon.GAS_DECODE
 	if err != nil {
-		return []byte{}, false, totalFee
+		return []byte{}, false, accumFee
 	}
 
 	// Decode the amount of prepaid gas from the input.
 	prepaidGas, err := abi.Decode(input, 1, uint64(0), 1, 8)
-	totalFee += eucommon.GAS_DECODE
+	accumFee += eucommon.GAS_DECODE
 	if err != nil {
-		return []byte{}, false, totalFee
+		return []byte{}, false, accumFee
 	}
 
 	funSign := new(codec.Bytes4).FromBytes(funSignBytes)
@@ -231,22 +231,22 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	// Check if the property path exists, if not create it.
 	if path, _, _ := tempcache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
 		_, err := tempcache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
-		totalFee += eucommon.GAS_WRITE
+		accumFee += eucommon.GAS_WRITE
 		if err != nil {
-			return []byte{}, false, totalFee // If the property path write fails, return an error.
+			return []byte{}, false, accumFee // If the property path write fails, return an error.
 		}
 	}
 
 	// Write deferrable information to the property path.
 	deferPath := stgcommon.DeferrablePath(caller, funSign)                          // Generate the sub path for the deferrable.
 	_, err = tempcache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
-	totalFee += eucommon.GAS_WRITE
+	accumFee += eucommon.GAS_WRITE
 	if err != nil {
-		return []byte{}, false, totalFee
+		return []byte{}, false, accumFee
 	}
 
 	// Set the prepaid gas value for the deferred call.
-	totalFee += eucommon.GAS_GET_RUNTIME_INFO
+	accumFee += eucommon.GAS_GET_RUNTIME_INFO
 	job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
 	PrepaidGasPath := stgcommon.PrepaidGasPath(caller, funSign) // Generate the sub path for the prepaid gas.
 
@@ -254,7 +254,7 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	_, err = tempcache.Write(txID, PrepaidGasPath, noncommutative.NewInt64(int64(prepaidGas.(uint64))))
 
 	job.(*eucommon.Job).StdMsg.PrepaidGas = prepaidGas.(uint64) // Set the prepaid gas for the deferred call.
-	return []byte{}, err == nil, totalFee
+	return []byte{}, err == nil, accumFee
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
