@@ -32,10 +32,10 @@ const (
 	GAS_CALL_UNKNOW      = int64(1000) // Call an unknown function, which is not defined in the contract, but the gas is still charged.
 	GAS_CALL_API         = int64(1000) // The gas to pay for calling an API function, regardless if the result is successful or not.
 	GAS_ENCODE           = int64(2000)
-	GAS_DECODE           = int64(1000)
+	GAS_DECODE           = int64(1000) // Decode the minimum 32 bytes of data, which is the size of a single data unit in the container.
 	GAS_GET_RUNTIME_INFO = int64(1000) // Get the information of the current  transaction, such as the gas, the pid, the uuid, etc.
 	GAS_SET_RUNTIME_INFO = int64(2000)
-	GAS_DEFER            = int64(10000)
+	GAS_DEFER            = int64(10000) // The gas to pay for deferring the call. Regardless of the result, the gas is charged.
 
 	GAS_NEW_CONTAINER  = int64(10000)
 	GAS_CONTAINER_META = int64(1000)
