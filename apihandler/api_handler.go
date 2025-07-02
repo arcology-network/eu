@@ -253,13 +253,13 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 
 	funSign := [4]byte{}
 	copy(funSign[:], job.StdMsg.Native.Data[:4]) // Get the function signature from the job's native data.
 
-	path := stgcommon.PrepaidGasPath(to, funSign) // Generate the sub path for the prepaid gas.
-	prepaidGas, _, _ := tempcache.Read(txID, path, int64(0))
-	if prepaidGas == nil {
-		return 0 // No prepaid gas found, nothing to do.
+	path := stgcommon.PrepaidGasPath(to, funSign)                  // Generate the sub path for the prepaid gas.
+	prepaidGasAmount, _, _ := tempcache.Read(txID, path, int64(0)) // Get the prepaid gas amount required from the Contract definition.
+	if prepaidGasAmount == nil {
+		return 0 // No prepaid gas found info found, nothing to do.
 	}
 
-	job.StdMsg.PrepaidGas = uint64(prepaidGas.(int64))
+	job.StdMsg.PrepaidGas = uint64(prepaidGasAmount.(int64))
 	if job.StdMsg.PrepaidGas == 0 {
 		return 0 // No prepaid gas, nothing to do.
 	}
