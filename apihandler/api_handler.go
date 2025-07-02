@@ -237,6 +237,9 @@ func (this *APIHandler) Job() any {
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
 func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
+	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil {
+		return 0 // Deployment or a simple transfer TX
+	}
 
 	if len(job.StdMsg.Native.Data) < 4 {
 		return 0 // Not a valid job, no prepaid gas to pay.
@@ -246,7 +249,7 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 
 	txID := this.GetEU().(interface{ ID() uint64 }).ID()
 	tempcache := this.WriteCache().(*tempcache.WriteCache)
 
-	to := job.StdMsg.Native.From
+	to := *job.StdMsg.Native.To
 	funSign := [4]byte{}
 	copy(funSign[:], job.StdMsg.Native.Data[:4]) // Get the function signature from the job's native data.
 
