@@ -17,8 +17,7 @@
 package gas
 
 import (
-	associative "github.com/arcology-network/common-lib/exp/associative"
-
+	slice "github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 )
 
@@ -27,20 +26,16 @@ GasPrepayer is a structure that holds a map of contract addresses to their prepa
 It is used to manage the prepaid gas for contracts with deferred execution.
 */
 type GasPrepayer struct {
-	Payers map[string]associative.Pair[uint64, []*eucommon.Job]
+	Payers map[string][]*eucommon.Job
 }
 
 func NewGasPrepayer() *GasPrepayer {
 	return &GasPrepayer{
-		Payers: make(map[string]associative.Pair[uint64, []*eucommon.Job]),
+		Payers: make(map[string][]*eucommon.Job),
 	}
 }
 
 func (this *GasPrepayer) AddPrepayer(job *eucommon.Job) uint64 {
-	if !job.Successful() {
-		return 0
-	}
-
 	addrSign := job.StdMsg.AddrAndSignature()
 	gasAmount := job.StdMsg.PrepaidGas
 	if len(addrSign) == 0 || gasAmount == 0 {
@@ -48,27 +43,21 @@ func (this *GasPrepayer) AddPrepayer(job *eucommon.Job) uint64 {
 	}
 
 	if _, exists := this.Payers[addrSign]; !exists {
-		this.Payers[addrSign] = associative.Pair[uint64, []*eucommon.Job]{First: job.StdMsg.PrepaidGas, Second: []*eucommon.Job{job}}
+		this.Payers[addrSign] = []*eucommon.Job{}
 	}
 
-	this.Payers[addrSign] = associative.Pair[uint64, []*eucommon.Job]{
-		First:  this.Payers[addrSign].First + job.StdMsg.PrepaidGas,
-		Second: append(this.Payers[addrSign].Second, job)}
+	this.Payers[addrSign] = append(this.Payers[addrSign], job)
 	return gasAmount
 }
 
-// func (this *GasPrepayer) RemovePrepayer(job *eucommon.Job) bool {
-// 	addrSign := job.StdMsg.AddrAndSignature()
-// 	gasAmount := job.StdMsg.PrepaidGas
-// 	if len(addrSign) == 0 || gasAmount == 0 {
-// 		return false
-// 	}
-
-// 	_, exists := this.Payers[addrSign]
-// 	if exists {
-// 		delete(this.Payers, addrSign)
-// 	}
-// 	return exists
-// }
-
-func (this *GasPrepayer) GetPrepaiedGas(addrSign string) uint64 { return this.Payers[addrSign].First }
+func (this *GasPrepayer) SumPrepaiedGas(addrSign string) (uint64, uint64) {
+	totalPayers := uint64(0)
+	totalPrepaied := slice.Accumulate(this.Payers[addrSign], 0, func(i int, job *eucommon.Job) uint64 {
+		if job.Successful() {
+			totalPayers++
+			return job.StdMsg.PrepaidGas
+		}
+		return 0
+	})
+	return totalPayers, totalPrepaied
+}

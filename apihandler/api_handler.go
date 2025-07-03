@@ -277,8 +277,8 @@ func (this *APIHandler) UsePrepaidGas(gas *uint64) bool {
 	}
 
 	// Deferred execution, use the prepaid gas to the job.
-	totalPrepaid := this.gasPrepayer.GetPrepaiedGas(job.StdMsg.AddrAndSignature()) // Get the prepaid gas for the deferred execution of the job.
-	*gas += totalPrepaid                                                           // Add the prepaid gas to the gas remaining for execution.
+	_, totalPrepaid := this.gasPrepayer.SumPrepaiedGas(job.StdMsg.AddrAndSignature()) // Get the prepaid gas for the deferred execution of the job.
+	*gas += totalPrepaid                                                              // Add the prepaid gas to the gas remaining for execution.
 	return true
 }
 
@@ -289,15 +289,26 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 		return false // Not a deferred execution, no need to refund the prepaid gas.
 	}
 
-	if prepayers, ok := this.gasPrepayer.Payers[job.StdMsg.AddrAndSignature()]; ok && prepayers.First > 0 {
-		originalGasRemaining := float64(job.GasRemaining) * float64(*gasLeft) / float64(job.GasRemaining+prepayers.First)
-		refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(len(prepayers.Second)))
+	// Get the total prepaid gas and the number of payers for the job.
+	totalPayers, totalPrepaid := this.gasPrepayer.SumPrepaiedGas(job.StdMsg.AddrAndSignature())
 
-		// Minus the prepaid portion.
+	// Calculate the gas left after the job execution.
+	if prepayers, ok := this.gasPrepayer.Payers[job.StdMsg.AddrAndSignature()]; ok && totalPrepaid > 0 {
+		originalGasRemaining := float64(job.GasRemaining) * float64(*gasLeft) / float64(job.GasRemaining+totalPrepaid)
+
+		// Calculate the refund per payer based on the gas left and the number of payers.
+		refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(totalPayers))
+
+		// Minus the prepaid portion from the gas left.
 		(*gasLeft) -= (*gasLeft) - uint64(math.Round(originalGasRemaining))
 
 		// Refund the prepaid gas portion back to each prepayer.
-		for _, payer := range prepayers.Second {
+		for _, payer := range prepayers {
+			// Check if the payer has successfully executed the job and prepaid for the gas.
+			if payer.Successful() {
+				continue // Skip the failed jobs.
+			}
+
 			remaining := uint256.NewInt(refundPerPayer)
 			remaining = remaining.Mul(remaining, uint256.MustFromBig(payer.StdMsg.Native.GasPrice))
 
