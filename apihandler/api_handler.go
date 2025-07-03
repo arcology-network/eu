@@ -305,7 +305,7 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 		// Refund the prepaid gas portion back to each prepayer.
 		for _, payer := range prepayers {
 			// Check if the payer has successfully executed the job and prepaid for the gas.
-			if payer.Successful() {
+			if !payer.Successful() {
 				continue // Skip the failed jobs.
 			}
 
