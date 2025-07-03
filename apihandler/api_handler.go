@@ -237,7 +237,7 @@ func (this *APIHandler) Job() any {
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
 func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil {
+	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !job.StdMsg.IsDeferred {
 		return 0 // Deployment or a simple transfer TX
 	}
 
@@ -281,7 +281,7 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 
 // Add the prepaid gas to the job's prepaid gas. This is used to pay for the deferred execution of the job.
 func (this *APIHandler) UsePrepaidGas(gas *uint64) bool {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if !job.StdMsg.IsDeferred { // Only available for deferred execution jobs.
+	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !job.StdMsg.IsDeferred { // Only available for deferred execution jobs.
 		return false
 	}
 
