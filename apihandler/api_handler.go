@@ -237,12 +237,8 @@ func (this *APIHandler) Job() any {
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
 func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !job.StdMsg.IsDeferred {
+	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil {
 		return 0 // Deployment or a simple transfer TX
-	}
-
-	if len(job.StdMsg.Native.Data) < 4 {
-		return 0 // Not a valid job, no prepaid gas to pay.
 	}
 
 	// Get the prepaid gas value from storage.
@@ -255,15 +251,11 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 
 
 	path := stgcommon.PrepaidGasPath(to, funSign)                  // Generate the sub path for the prepaid gas.
 	prepaidGasAmount, _, _ := tempcache.Read(txID, path, int64(0)) // Get the prepaid gas amount required from the Contract definition.
-	if prepaidGasAmount == nil {
+	if prepaidGasAmount == nil || prepaidGasAmount.(int64) == 0 {
 		return 0 // No prepaid gas found info found, nothing to do.
 	}
 
 	job.StdMsg.PrepaidGas = uint64(prepaidGasAmount.(int64))
-	if job.StdMsg.PrepaidGas == 0 {
-		return 0 // No prepaid gas, nothing to do.
-	}
-
 	job.InitialGas = *initGas        // Set the initial gas for the job from the EVM
 	job.GasRemaining = *gasRemaining // Set the gas remaining for the job from the EVM
 
@@ -275,7 +267,6 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 
 		return paid
 	}
 	return 0
-
 }
 
 // Add the prepaid gas to the job's prepaid gas. This is used to pay for the deferred execution of the job.
