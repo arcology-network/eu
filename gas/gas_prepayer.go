@@ -50,14 +50,14 @@ func (this *GasPrepayer) AddPrepayer(job *eucommon.Job) uint64 {
 	return gasAmount
 }
 
-func (this *GasPrepayer) SumPrepaiedGas(addrSign string) (uint64, uint64) {
+func (this *GasPrepayer) SumPrepaidGas(addrSign string) (uint64, uint64) {
 	totalPayers := uint64(0)
-	totalPrepaied := slice.Accumulate(this.Payers[addrSign], 0, func(i int, job *eucommon.Job) uint64 {
+	totalPrepaid := slice.Accumulate(this.Payers[addrSign], 0, func(i int, job *eucommon.Job) uint64 {
 		if job.Successful() {
 			totalPayers++
 			return job.StdMsg.PrepaidGas
 		}
 		return 0
 	})
-	return totalPayers, totalPrepaied
+	return totalPayers, totalPrepaid
 }

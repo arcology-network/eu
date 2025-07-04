@@ -277,8 +277,8 @@ func (this *APIHandler) UsePrepaidGas(gas *uint64) bool {
 	}
 
 	// Deferred execution, use the prepaid gas to the job.
-	_, totalPrepaid := this.gasPrepayer.SumPrepaiedGas(job.StdMsg.AddrAndSignature()) // Get the prepaid gas for the deferred execution of the job.
-	*gas += totalPrepaid                                                              // Add the prepaid gas to the gas remaining for execution.
+	_, totalPrepaid := this.gasPrepayer.SumPrepaidGas(job.StdMsg.AddrAndSignature()) // Get the prepaid gas for the deferred execution of the job.
+	*gas += totalPrepaid                                                             // Add the prepaid gas to the gas remaining for execution.
 	return true
 }
 
@@ -290,7 +290,7 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 	}
 
 	// Get the total prepaid gas and the number of payers for the job.
-	totalPayers, totalPrepaid := this.gasPrepayer.SumPrepaiedGas(job.StdMsg.AddrAndSignature())
+	totalPayers, totalPrepaid := this.gasPrepayer.SumPrepaidGas(job.StdMsg.AddrAndSignature())
 
 	// Calculate the gas left after the job execution.
 	if prepayers, ok := this.gasPrepayer.Payers[job.StdMsg.AddrAndSignature()]; ok && totalPrepaid > 0 {
