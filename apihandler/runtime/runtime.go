@@ -110,10 +110,14 @@ func (this *RuntimeHandlers) isInDeferred(_ evmcommon.Address, _ evmcommon.Addre
 }
 
 func (this *RuntimeHandlers) setParallelism(caller, addr evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
+		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
+	}
 
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the input
+	gasTracker := gas.NewGasTracker()
 	paraLvl, err := abi.Decode(input, 3, uint64(0), 1, 1)
+	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the input
+
 	if err != nil {
 		return []byte{}, false, gasTracker.TotalGasUsed
 	}
@@ -123,23 +127,20 @@ func (this *RuntimeHandlers) setParallelism(caller, addr evmcommon.Address, inpu
 		executionMethod = stgcommon.SEQUENTIAL_EXECUTION // If the parallelism level is 1, set the execution method to sequential.
 	}
 
-	result, successful, gas := this.setExecutionMethod(caller, addr, input, executionMethod)
+	result, successful, gas := this.setExecutionParallelism(caller, addr, input, executionMethod)
 	gasTracker.UseGas(0, 0, gas) // Add the gas used for setting the execution method.
 
 	return result, successful, gasTracker.TotalGasUsed
 }
 
-func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, input []byte, executionMethod uint8) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
-
-	gasTracker.UseGas(0, 0, eucommon.GAS_GET_RUNTIME_INFO)
+func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address, input []byte, executionMethod uint8) ([]byte, bool, int64) {
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
-		return []byte{}, false, gasTracker.TotalGasUsed // Can only be called from a constructor.
+		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
 	}
 
-	// Get the target contract address.
-	sourceFunc, err := abi.DecodeTo(input, 0, [4]byte{}, 1, 4)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE)
+	gasTracker := gas.NewGasTracker()
+	sourceFunc, err := abi.DecodeTo(input, 0, [4]byte{}, 1, 4) // Get the target contract address.
+	gasTracker.UseGas(0, 0, eucommon.GAS_GET_RUNTIME_INFO+eucommon.GAS_DECODE)
 	if err != nil {
 		return []byte{}, false, gasTracker.TotalGasUsed
 	}
@@ -187,7 +188,7 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 	// }
 
 	// Either the function is parallel or sequential.
-	path := stgcommon.ExecutionMethodPath(caller, sourceFunc)
+	path := stgcommon.ExecutionParallelism(caller, sourceFunc)
 
 	// If local method is parallel, global method is sequential and vice versa.
 	// How the scheduler all the function under the contract should be executed in parallel or sequentially by DEFAULT.
@@ -196,9 +197,9 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 		globalMethod = stgcommon.SEQUENTIAL_EXECUTION
 	}
 
+	// Write the execution method to the property path.
 	writeDataSize, err := tempcache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod}))
 	gasTracker.UseGas(0, (writeDataSize), 0)
-
 	if err != nil { //
 		return []byte{}, false, gasTracker.TotalGasUsed
 	}
@@ -217,16 +218,16 @@ func (this *RuntimeHandlers) setExecutionMethod(caller, _ evmcommon.Address, inp
 
 // This function needs to schedule a defer call to the next generation.
 func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
-
-	gasTracker.UseGas(0, 0, eucommon.GAS_DEFER+eucommon.GAS_GET_RUNTIME_INFO) // Gas for deferring the call.
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
-		return []byte{}, false, gasTracker.TotalGasUsed // Can only be called from a constructor.
+		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
 	}
+
+	gasTracker := gas.NewGasTracker()
 
 	// Decode the function signature from the input.
 	funSignBytes, err := abi.DecodeTo(input, 0, []uint8{}, 1, 32)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE)
+	gasTracker.UseGas(0, 0, eucommon.GAS_GET_RUNTIME_INFO+eucommon.GAS_DEFER) // Gas for deferring the call.
+
 	if err != nil {
 		return []byte{}, false, gasTracker.TotalGasUsed
 	}
