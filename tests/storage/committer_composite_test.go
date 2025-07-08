@@ -26,7 +26,7 @@ import (
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
@@ -101,7 +101,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	delv, _ := transitions[0].Value().(stgtype.Type).Delta()
+	delv, _ := transitions[0].Value().(stgcommon.Type).Delta()
 	if len(transitions) == 0 || !reflect.DeepEqual(delv.(*deltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}

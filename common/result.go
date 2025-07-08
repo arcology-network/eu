@@ -41,7 +41,7 @@ type Result struct {
 	From             [20]byte
 	Coinbase         [20]byte
 	RawStateAccesses []*univalue.Univalue
-	immuned          []*univalue.Univalue //These transitions will take effect anyway even if the execution fails.
+	Immuned          []*univalue.Univalue //These transitions will take effect anyway even if the execution fails.
 	Receipt          *ethcoretypes.Receipt
 	EvmResult        *evmcore.ExecutionResult
 	StdMsg           *commontype.StandardMessage
@@ -88,11 +88,11 @@ func (this *Result) Postprocess() *Result {
 			// Separate the gas fee from the balance change and generate a new transition for that. It will be immune to the execution status.
 			gasUsedInWei := new(uint256.Int).Mul(uint256.NewInt(this.Receipt.GasUsed), uint256.NewInt(this.StdMsg.Native.GasPrice.Uint64()))
 			if senderGasDebit := this.GenGasTransition(*senderBalance, gasUsedInWei, false); senderGasDebit != nil {
-				this.immuned = append(this.immuned, senderGasDebit)
+				this.Immuned = append(this.Immuned, senderGasDebit)
 			}
 
 			if coinbaseGasCredit := this.GenGasTransition(*coinbaseBalance, gasUsedInWei, true); coinbaseGasCredit != nil {
-				this.immuned = append(this.immuned, coinbaseGasCredit)
+				this.Immuned = append(this.Immuned, coinbaseGasCredit)
 			}
 		}
 	}
@@ -103,7 +103,7 @@ func (this *Result) Postprocess() *Result {
 
 	if senderNonce != nil {
 		(*senderNonce).Property.SetPersistent(true)       // Won't be affect by conflicts either
-		this.immuned = append(this.immuned, *senderNonce) // Add the nonce transition to the immune list even if the execution is unsuccessful.
+		this.Immuned = append(this.Immuned, *senderNonce) // Add the nonce transition to the immune list even if the execution is unsuccessful.
 	}
 	this.RawStateAccesses = this.Transitions() // Return all the successful transitions
 	return this
@@ -112,7 +112,7 @@ func (this *Result) Postprocess() *Result {
 // If the execution is unsuccessful, only keep the transitions that are immune to failures.
 func (this *Result) Transitions() []*univalue.Univalue {
 	if this.Err != nil {
-		return this.immuned // Immune transitions include the gas fee and the nonce, which are independent of the execution status.
+		return this.Immuned // Immune transitions include the gas fee and the nonce, which are independent of the execution status.
 	}
 	return this.RawStateAccesses
 }

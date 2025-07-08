@@ -30,7 +30,7 @@ import (
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
@@ -454,7 +454,7 @@ func TestBasic(t *testing.T) {
 	trans := slice.Clone(writeCache.Export(univalue.Sorter))
 	transitions := univalue.Univalues(trans).To(univalue.ITTransition{})
 
-	deltav, _ := transitions[0].Value().(stgtype.Type).Delta()
+	deltav, _ := transitions[0].Value().(stgcommon.Type).Delta()
 	if !reflect.DeepEqual(deltav.(*deltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the Updated buffer!", deltav.(*deltaset.DeltaSet[string]).Added())
 	}
@@ -576,7 +576,7 @@ func TestCommitter(t *testing.T) {
 	// 	t.Error("Error: keys don't match")
 	// }
 
-	deltav, _ := transitions[2].Value().(stgtype.Type).Delta()
+	deltav, _ := transitions[2].Value().(stgcommon.Type).Delta()
 	addedkeys := codec.Strings(deltav.(*deltaset.DeltaSet[string]).Added().Elements()).Sort()
 	if !reflect.DeepEqual([]string(addedkeys), []string{"elem-0", "elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match", addedkeys)

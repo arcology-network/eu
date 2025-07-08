@@ -34,7 +34,7 @@ import (
 	eth "github.com/arcology-network/eu/eth"
 	"github.com/arcology-network/eu/gas"
 	intf "github.com/arcology-network/eu/interface"
-	stgtype "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
@@ -278,7 +278,7 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, _ []byte) ([
 
 	if typedv != nil {
 		type measurable interface{ Length() int }
-		numKeys := uint64(typedv.(stgtype.Type).Value().(measurable).Length())
+		numKeys := uint64(typedv.(stgcommon.Type).Value().(measurable).Length())
 		if encoded, err := abi.Encode(uint256.NewInt(numKeys)); err == nil {
 			return encoded, true, gasTracker.TotalGasUsed + eucommon.GAS_ENCODE
 		}

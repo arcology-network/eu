@@ -263,7 +263,7 @@ func (this *JobSequence) FlagConflict(dict map[uint64]uint64, err error) {
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
 	// for _, v := range *this.SeqAPI.WriteCache().(*cache.WriteCache).Cache() {
-	// 	typed := v.Value().(stgtype.Type)
+	// 	typed := v.Value().(stgcommon.Type)
 	// 	amount += common.IfThen(
 	// 		!v.Preexist(),
 	// 		(uint64(typed.Size())/32)*uint64(v.Writes())*ethparams.SstoreSetGas,
