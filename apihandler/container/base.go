@@ -35,7 +35,7 @@ import (
 	"github.com/arcology-network/eu/gas"
 	intf "github.com/arcology-network/eu/interface"
 	stgtype "github.com/arcology-network/storage-committer/common"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -164,7 +164,7 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 	)
 
 	// Add the type info to the container here.
-	path, readDataSize := this.api.WriteCache().(*tempcache.WriteCache).PeekRaw(pathStr, commutative.Path{})
+	path, readDataSize := this.api.WriteCache().(*cache.WriteCache).PeekRaw(pathStr, commutative.Path{})
 	gasTracker.UseGas(readDataSize, 0, 0)
 
 	if typeID, err := abi.Decode(input, 0, uint8(0), 1, 32); err == nil {
@@ -182,7 +182,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 	gasTracker.UseGas(0, 0, eucommon.GAS_NEW_CONTAINER) // Gas for creating a new container
 
 	path := this.pathBuilder.Key(caller)
-	if !this.api.WriteCache().(*tempcache.WriteCache).IfExists(path) { // Check if the container exists
+	if !this.api.WriteCache().(*cache.WriteCache).IfExists(path) { // Check if the container exists
 		gasTracker.UseGas(eucommon.DATA_MIN_READ_SIZE, 0, 0) // No gas used for non-existent container
 		return []byte{}, false, gasTracker.TotalGasUsed      // Doesn't exist, cannot initialize in a non-existent container.
 	}
@@ -194,7 +194,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 	}
 
 	//Get the type info here
-	pathData, readDataSize := this.api.WriteCache().(*tempcache.WriteCache).PeekRaw(path, commutative.Path{})
+	pathData, readDataSize := this.api.WriteCache().(*cache.WriteCache).PeekRaw(path, commutative.Path{})
 	gasTracker.UseGas(readDataSize, 0, eucommon.GAS_READ)
 
 	if pathData == nil {
@@ -228,7 +228,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 		v := commutative.NewBoundedU256(minv, maxv)
 
 		str := hex.EncodeToString(key)
-		writeDataSize, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str, v)
+		writeDataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str, v)
 		gasTracker.UseGas(0, writeDataSize, 0)               // Gas for writing the value
 		return []byte{}, err == nil, gasTracker.TotalGasUsed // Write the value to the container
 	}
@@ -273,7 +273,7 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, _ []byte) ([
 	gasTracker := gas.NewGasTracker()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
-	typedv, dataSize := this.api.WriteCache().(*tempcache.WriteCache).PeekCommitted(path, new(commutative.Path))
+	typedv, dataSize := this.api.WriteCache().(*cache.WriteCache).PeekCommitted(path, new(commutative.Path))
 	gasTracker.UseGas(uint64(dataSize), 0, 0) // Gas for reading the path
 
 	if typedv != nil {
@@ -487,7 +487,7 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, boo
 	path := this.pathBuilder.Key(caller) // Build container path
 
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
-	_, dataSize, err := this.api.WriteCache().(*tempcache.WriteCache).EraseAll(tx, path, nil)
+	_, dataSize, err := this.api.WriteCache().(*cache.WriteCache).EraseAll(tx, path, nil)
 	gasTracker.UseGas(0, dataSize, 0) // Gas for erasing the container
 
 	return []byte{}, err == nil, gasTracker.TotalGasUsed

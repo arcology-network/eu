@@ -29,10 +29,10 @@ import (
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
@@ -337,7 +337,7 @@ func TestUint64Delta(t *testing.T) {
 		t.Error(err)
 	}
 
-	writeCache2 := tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	writeCache2 := cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	deltav2 := commutative.NewUint64Delta(21)
 	if _, err := writeCache2.Write(2, "blcc://eth1.0/account/"+alice+"/nonce", deltav2); err != nil {
 		t.Error(err)

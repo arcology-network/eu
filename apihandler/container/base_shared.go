@@ -24,7 +24,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	abi "github.com/arcology-network/eu/abi"
 	eucommon "github.com/arcology-network/eu/common"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/holiman/uint256"
@@ -32,7 +32,7 @@ import (
 
 // Get the number of elements in the container, EXCLUDING the nil elements.
 func (this *BaseHandlers) NonNilLength(path string) (uint64, bool, int64) {
-	if path, _, dataSize := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(commutative.Path)); path != nil {
+	if path, _, dataSize := this.api.WriteCache().(*cache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(commutative.Path)); path != nil {
 		return path.(*deltaset.DeltaSet[string]).NonNilCount(), true, int64(dataSize)
 	}
 	return 0, false, int64(eucommon.DATA_MIN_READ_SIZE)
@@ -40,7 +40,7 @@ func (this *BaseHandlers) NonNilLength(path string) (uint64, bool, int64) {
 
 // Get the number of elements in the container, INCLUDING the nil elements.
 func (this *BaseHandlers) FullLength(path string) (uint64, bool, int64) {
-	if path, _, dataSize := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(commutative.Path)); path != nil {
+	if path, _, dataSize := this.api.WriteCache().(*cache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(commutative.Path)); path != nil {
 		return path.(*deltaset.DeltaSet[string]).Length(), true, int64(dataSize)
 	}
 	return 0, false, int64(eucommon.DATA_MIN_READ_SIZE) // Return 0 if the path does not exist, but return a data size of 32 bytes to avoid errors in the client code.
@@ -64,7 +64,7 @@ func (this *BaseHandlers) ReadAll(path string) ([][]byte, []bool, int64) {
 
 // Get the element by its key
 func (this *BaseHandlers) GetByKey(path string, T any) (any, bool, int64) {
-	value, _, dataSize := this.api.WriteCache().(*tempcache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, T)
+	value, _, dataSize := this.api.WriteCache().(*cache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, T)
 	return value, true, int64(dataSize)
 }
 
@@ -83,7 +83,7 @@ func (this *BaseHandlers) GetByIndex(path string, idx uint64) ([]byte, bool, int
 		typedV = new(noncommutative.Int64)
 	}
 
-	value, dataSize, err := this.api.WriteCache().(*tempcache.WriteCache).ReadAt(
+	value, dataSize, err := this.api.WriteCache().(*cache.WriteCache).ReadAt(
 		this.api.GetEU().(interface{ ID() uint64 }).ID(), path, idx, typedV)
 
 	if err == nil && value != nil {
@@ -101,25 +101,25 @@ func (this *BaseHandlers) GetByIndex(path string, idx uint64) ([]byte, bool, int
 
 // Set the element by its index
 func (this *BaseHandlers) SetByIndex(path string, idx uint64, value any) (bool, int64) {
-	dataSize, err := this.api.WriteCache().(*tempcache.WriteCache).WriteAt(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, idx, value)
+	dataSize, err := this.api.WriteCache().(*cache.WriteCache).WriteAt(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, idx, value)
 	return err == nil, dataSize
 }
 
 // Set the element by its key
 func (this *BaseHandlers) SetByKey(path string, value any) (bool, int64) {
-	dataSize, err := this.api.WriteCache().(*tempcache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, value)
+	dataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, value)
 	return err == nil, dataSize
 }
 
 // Get the index of a key
 func (this *BaseHandlers) KeyAt(path string, index uint64) (string, uint64) {
-	key, dataSize := this.api.WriteCache().(*tempcache.WriteCache).KeyAt(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, index, new(noncommutative.Bytes))
+	key, dataSize := this.api.WriteCache().(*cache.WriteCache).KeyAt(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, index, new(noncommutative.Bytes))
 	return key, dataSize
 }
 
 // Get the index of a key
 func (this *BaseHandlers) IndexOf(path string, key string) (uint64, int64) {
-	index, dataSize := this.api.WriteCache().(*tempcache.WriteCache).IndexOf(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, key, new(noncommutative.Bytes))
+	index, dataSize := this.api.WriteCache().(*cache.WriteCache).IndexOf(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, key, new(noncommutative.Bytes))
 	return index, int64(dataSize)
 }
 
@@ -130,7 +130,7 @@ func (this *BaseHandlers) ResetByKey(path string, key string) ([]byte, bool, int
 	var v any
 	switch typeID {
 	case commutative.UINT256: // Commutative container
-		v, readDataSize = this.api.WriteCache().(*tempcache.WriteCache).PeekRaw(path+key, new(commutative.U256))
+		v, readDataSize = this.api.WriteCache().(*cache.WriteCache).PeekRaw(path+key, new(commutative.U256))
 		if v == nil {
 			return []byte{}, false, int64(readDataSize) // Not found
 		}
@@ -153,7 +153,7 @@ func (this *BaseHandlers) ResetByKey(path string, key string) ([]byte, bool, int
 	}
 
 	// Bytes by default
-	writeDataSize, err := this.api.WriteCache().(*tempcache.WriteCache).Write(
+	writeDataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(
 		this.api.GetEU().(interface{ ID() uint64 }).ID(), path+key, typedV)
 
 	return []byte{}, err == nil, int64(readDataSize) + writeDataSize

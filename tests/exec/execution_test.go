@@ -30,7 +30,7 @@ import (
 	"github.com/arcology-network/eu/compiler"
 	tests "github.com/arcology-network/eu/tests/storage"
 	statestore "github.com/arcology-network/storage-committer"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	"github.com/arcology-network/storage-committer/type/univalue"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -71,7 +71,7 @@ func TestSequence(t *testing.T) {
 	msgCallAdd2 := core.NewMessage(Alice, &contractAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 
 	// Put the messages into the sequence and run it in sequence.
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
 	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), slice.New(2, [32]byte{}), testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 }
@@ -94,8 +94,8 @@ func TestSequence2(t *testing.T) {
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Jobs[0].Results.Receipt.ContractAddress
 
-	// seq.SeqAPI.WriteCache().(*tempcache.WriteCache).FlushToStore(testEu.store)
-	// tests.FlushToStore(seq.SeqAPI.WriteCache().(*tempcache.WriteCache), testEu.store)
+	// seq.SeqAPI.WriteCache().(*cache.WriteCache).FlushToStore(testEu.store)
+	// tests.FlushToStore(seq.SeqAPI.WriteCache().(*cache.WriteCache), testEu.store)
 	tests.FlushToStore(testEu.store.(*statestore.StateStore))
 	// // Prepare the messages for the contract calls
 	data := crypto.Keccak256([]byte("add()"))[:4]
@@ -108,7 +108,7 @@ func TestSequence2(t *testing.T) {
 	msgCallCheck := core.NewMessage(Alice, &contractAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 
 	// // Put the messages into the sequence and run it in sequence.
-	// testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	// testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
 	seq = eucommon.NewJobSequence(1, []uint64{1, 2, 3}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2, &msgCallCheck), slice.New(3, [32]byte{}), testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 }
@@ -158,7 +158,7 @@ func TestGeneration(t *testing.T) {
 
 	// // ================================== Commit to DB  ==================================
 	acctTrans := univalue.Univalues(clearTransitions).To(univalue.IPTransition{})
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Insert(acctTrans)
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Insert(acctTrans)
 
 	msgNativeCheck2 := core.NewMessage(Alice, &contractNativeStorageAddr, 3, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
 	// msgSequentialCheck2 := core.NewMessage(Alice, &contractSequentialAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check2()"))[:4], nil, false)
@@ -173,7 +173,7 @@ func TestGeneration(t *testing.T) {
 	clearTransitions = eu.NewGeneration(0, 2, []*eucommon.JobSequence{seq}).Execute(testEu.config, testEu.eu.Api())
 	acctTrans = univalue.Univalues(clearTransitions).To(univalue.IPTransition{})
 
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear().Insert(acctTrans)
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear().Insert(acctTrans)
 
 	checkMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 5, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("check3()"))[:4], nil, false)
 	seq = eucommon.NewJobSequence(1, []uint64{1}, slice.ToSlice(&checkMsg), slice.New(1, [32]byte{}), testEu.eu.Api())
@@ -198,8 +198,8 @@ func TestMultiCummutiaves(t *testing.T) {
 	seq.Run(testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Jobs[0].Results.Receipt.ContractAddress
 
-	// Move all the transitions from local write tempcache to the global write tempcache, so they can be inserted.
-	wcache := seq.SeqAPI.WriteCache().(*tempcache.WriteCache)
+	// Move all the transitions from local write cache to the global write cache, so they can be inserted.
+	wcache := seq.SeqAPI.WriteCache().(*cache.WriteCache)
 	testEu.store.(*statestore.StateStore).WriteCache.Insert(wcache.Export())
 	tests.FlushGeneration(testEu.store.(*statestore.StateStore))
 	testEu.store.(*statestore.StateStore).Commit(10)
@@ -213,7 +213,7 @@ func TestMultiCummutiaves(t *testing.T) {
 	msgCallAdd2 := core.NewMessage(Alice, &contractAddr, 2, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 
 	// // Put the messages into the sequence and run it in sequence.
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
 	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), slice.New(2, [32]byte{}), testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 
@@ -221,15 +221,15 @@ func TestMultiCummutiaves(t *testing.T) {
 		t.Error("Error: Failed to call")
 	}
 
-	// Move all the transitions from local write tempcache to the global write tempcache, so they can be inserted.
-	wcache = seq.SeqAPI.WriteCache().(*tempcache.WriteCache)
+	// Move all the transitions from local write cache to the global write cache, so they can be inserted.
+	wcache = seq.SeqAPI.WriteCache().(*cache.WriteCache)
 	testEu.store.(*statestore.StateStore).WriteCache.Insert(wcache.Export())
 	tests.FlushGeneration(testEu.store.(*statestore.StateStore))
 
 	data = crypto.Keccak256([]byte("check()"))[:4]
 	msgCallCheck := core.NewMessage(Alice, &contractAddr, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
 
-	testEu.eu.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	testEu.eu.Api().WriteCache().(*cache.WriteCache).Clear()
 	seq = eucommon.NewJobSequence(1, []uint64{1, 2}, slice.ToSlice(&msgCallCheck), slice.New(1, [32]byte{}), testEu.eu.Api())
 	seq.Run(testEu.config, api, 0)
 

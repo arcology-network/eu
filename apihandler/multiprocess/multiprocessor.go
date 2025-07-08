@@ -26,7 +26,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
 
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -111,7 +111,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	// Unify tx IDs
 	mainTxID := uint64(this.Api().GetEU().(interface{ ID() uint64 }).ID())
 	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) { (*v).SetTx(mainTxID) })
-	this.Api().WriteCache().(*tempcache.WriteCache).Insert(transitions) // Merge the write tempcache to the main tempcache
+	this.Api().WriteCache().(*cache.WriteCache).Insert(transitions) // Merge the write cache to the main cache
 
 	// Prepare the return values to return to the caller.
 	returnValues := make([][]byte, length)

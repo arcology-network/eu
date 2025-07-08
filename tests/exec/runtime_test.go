@@ -79,7 +79,7 @@ func TestPropertiesToCalleeStruct(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	// trans := eu.Api().WriteCache().(*tempcache.WriteCache).Export()
+	// trans := eu.Api().WriteCache().(*cache.WriteCache).Export()
 	// univalue.Univalues(trans).Print()
 
 	// Extract callees from the transition set and save them to a dictionary.

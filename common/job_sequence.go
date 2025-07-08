@@ -28,7 +28,7 @@ import (
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
 	stgcommon "github.com/arcology-network/storage-committer/common"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
 
@@ -71,7 +71,7 @@ func (this *Job) execute(StdMsg *commontype.StandardMessage, config *Config, api
 	this.Results = (&Result{
 		TxIndex:          uint64(this.StdMsg.ID),
 		TxHash:           common.IfThenDo1st(receipt != nil, func() evmcommon.Hash { return receipt.TxHash }, evmcommon.Hash{}),
-		RawStateAccesses: tempcache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),
+		RawStateAccesses: cache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),
 		Err:              common.IfThenDo1st(prechkErr == nil, func() error { return evmResult.Err }, prechkErr),
 		From:             this.StdMsg.Native.From,
 		Coinbase:         *config.Coinbase,
@@ -161,7 +161,7 @@ func (this *JobSequence) Length() int { return len(this.Jobs) }
 // Run executes the job sequence and returns the results. nonceOffset is used to calculate the nonce of the transaction, in
 // case there is a contract deployment in the sequence.
 func (this *JobSequence) Run(config *Config, seqAPI intf.EthApiRouter, threadId uint64) ([]uint64, []*univalue.Univalue) {
-	this.SeqAPI = seqAPI //.Cascade() // Create a new write tempcache for the sequence with the main router as the data source.
+	this.SeqAPI = seqAPI //.Cascade() // Create a new write cache for the sequence with the main router as the data source.
 	this.SeqAPI.DecrementDepth()
 
 	// Only one transaction in the sequence, no need to create a new API router.
@@ -180,20 +180,20 @@ func (this *JobSequence) Run(config *Config, seqAPI intf.EthApiRouter, threadId 
 		// this.Jobs[i].Results = this.execute(job.StdMsg, config, txApi) // Execute the message and store the result.
 		this.Jobs[i].execute(job.StdMsg, config, txApi) // Execute the message and store the result.
 
-		// the line below modifies the tempcache in the major api as well.
-		this.SeqAPI.WriteCache().(*tempcache.WriteCache).Insert(this.Jobs[i].Results.RawStateAccesses) // Merge the txApi write tempcache back into the api router.
-		mapi.Merge(txApi.AuxDict(), this.SeqAPI.AuxDict())                                             // The tx may generate new aux data, so merge it into the main api router.
+		// the line below modifies the cache in the major api as well.
+		this.SeqAPI.WriteCache().(*cache.WriteCache).Insert(this.Jobs[i].Results.RawStateAccesses) // Merge the txApi write cache back into the api router.
+		mapi.Merge(txApi.AuxDict(), this.SeqAPI.AuxDict())                                         // The tx may generate new aux data, so merge it into the main api router.
 	}
 
 	// Get acumulated state access records from all the transactions in the sequence.
-	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*tempcache.WriteCache).Export()).To(univalue.IPAccess{})
+	accmulatedAccessRecords := univalue.Univalues(this.SeqAPI.WriteCache().(*cache.WriteCache).Export()).To(univalue.IPAccess{})
 	return slice.Fill(make([]uint64, len(accmulatedAccessRecords)), this.ID), accmulatedAccessRecords
 }
 
 // GetClearedTransition returns the cleared transitions of the JobSequence.
 func (this *JobSequence) GetClearedTransition() []*univalue.Univalue {
 	// if idx, _ := slice.FindFirstIf(this.Results, func(v *Result) bool { return v.Err != nil }); idx < 0 {
-	// 	return this.SeqAPI.WriteCache().(*tempcache.WriteCache).Export()
+	// 	return this.SeqAPI.WriteCache().(*cache.WriteCache).Export()
 	// }
 
 	trans := slice.Concate(this.Jobs,
@@ -249,7 +249,7 @@ func (this *JobSequence) FlagConflict(dict map[uint64]uint64, err error) {
 // 	return (&Result{
 // 		TxIndex:          uint64(StdMsg.ID),
 // 		TxHash:           common.IfThenDo1st(receipt != nil, func() evmcommon.Hash { return receipt.TxHash }, evmcommon.Hash{}),
-// 		RawStateAccesses: tempcache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),
+// 		RawStateAccesses: cache.NewWriteCacheFilter(api.WriteCache()).ToBuffer(),
 // 		Err:              common.IfThenDo1st(prechkErr == nil, func() error { return evmResult.Err }, prechkErr),
 // 		From:             StdMsg.Native.From,
 // 		Coinbase:         *config.Coinbase,
@@ -262,7 +262,7 @@ func (this *JobSequence) FlagConflict(dict map[uint64]uint64, err error) {
 // CalcualteRefund calculates the refund amount for the JobSequence.
 func (this *JobSequence) CalcualteRefund() uint64 {
 	amount := uint64(0)
-	// for _, v := range *this.SeqAPI.WriteCache().(*tempcache.WriteCache).Cache() {
+	// for _, v := range *this.SeqAPI.WriteCache().(*cache.WriteCache).Cache() {
 	// 	typed := v.Value().(stgtype.Type)
 	// 	amount += common.IfThen(
 	// 		!v.Preexist(),

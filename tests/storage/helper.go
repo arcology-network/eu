@@ -30,8 +30,8 @@ import (
 
 	// "github.com/arcology-network/storage-committer/interfaces"
 	interfaces "github.com/arcology-network/storage-committer/common"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	"github.com/arcology-network/storage-committer/storage/proxy"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 )
 
 func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*univalue.Univalue, error) {
@@ -98,7 +98,7 @@ func Create_Ctrn_1(account string, store interfaces.ReadOnlyStore) ([]byte, erro
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
-func CheckPaths(account string, writeCache *tempcache.WriteCache) error {
+func CheckPaths(account string, writeCache *cache.WriteCache) error {
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
 	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")

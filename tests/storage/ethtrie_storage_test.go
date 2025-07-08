@@ -35,9 +35,9 @@ import (
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
@@ -117,7 +117,7 @@ func TestConcurrentDB(t *testing.T) {
 
 // TestTrieUpdates tests the updates to the trie data structure.
 // It creates multiple accounts and performs write operations on their storage.
-// It checks the correctness of the storage updates and tempcache management.
+// It checks the correctness of the storage updates and cache management.
 func TestTrieUpdates(t *testing.T) {
 	store := chooseDataStore()
 
@@ -236,7 +236,7 @@ func TestEthStorageConnection(t *testing.T) {
 	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
-	writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform()) // Reset the write tempcache
+	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform()) // Reset the write cache
 	v, _, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
 	if v == nil {
 		t.Error(err)

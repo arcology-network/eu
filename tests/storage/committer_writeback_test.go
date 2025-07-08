@@ -27,9 +27,9 @@ import (
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	platform "github.com/arcology-network/storage-committer/platform"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
@@ -220,7 +220,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
-	writeCache = tempcache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 	_1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.String))
 	if _1 != "1" {
 		t.Error("Error: Not match")

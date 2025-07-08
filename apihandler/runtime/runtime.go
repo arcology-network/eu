@@ -35,7 +35,7 @@ import (
 	intf "github.com/arcology-network/eu/interface"
 	schtype "github.com/arcology-network/scheduler"
 	stgcommon "github.com/arcology-network/storage-committer/common"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/noncommutative"
 )
@@ -94,7 +94,7 @@ func (this *RuntimeHandlers) pid(_ evmcommon.Address, _ []byte) ([]byte, bool, i
 
 // This function rolls back the storage to the previous generation. It should be used with extreme caution.
 // func (this *RuntimeHandlers) rollback(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-// 	tempcache.NewWriteCacheFilter(this.api.WriteCache()).RemoveByAddress(codec.Bytes20(caller).Hex())
+// 	cache.NewWriteCacheFilter(this.api.WriteCache()).RemoveByAddress(codec.Bytes20(caller).Hex())
 // 	return []byte{}, true, 0
 // }
 
@@ -167,14 +167,14 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 		return []byte{}, false, gasTracker.TotalGasUsed
 	}
 
-	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
+	cache := this.api.WriteCache().(*cache.WriteCache)
 	propertyPath := stgcommon.FuncPropertyPath(caller, sourceFunc)
 	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
 	// Check if the property path exists, if not create it.
-	if path, _, readDataSize := tempcache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
-		writeDataSize, err := tempcache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
-		gasTracker.UseGas(readDataSize, int64(writeDataSize), 0)                         // Gas for writing the property path.
+	if path, _, readDataSize := cache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
+		writeDataSize, err := cache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
+		gasTracker.UseGas(readDataSize, int64(writeDataSize), 0)                     // Gas for writing the property path.
 
 		if err != nil {
 			return []byte{}, false, gasTracker.TotalGasUsed // If the property path write fails, return an error.
@@ -182,7 +182,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	}
 
 	// Create the parent path for the properties.
-	// writePathFee, err := tempcache.Write(txID, propertyPath, commutative.NewPath())
+	// writePathFee, err := cache.Write(txID, propertyPath, commutative.NewPath())
 	// if err != nil {
 	// 	return []byte{}, err == nil, eucommon.GAS_READ + eucommon.GAS_DECODE*4 + writePathFee
 	// }
@@ -198,7 +198,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	}
 
 	// Write the execution method to the property path.
-	writeDataSize, err := tempcache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod}))
+	writeDataSize, err := cache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod}))
 	gasTracker.UseGas(0, (writeDataSize), 0)
 	if err != nil { //
 		return []byte{}, false, gasTracker.TotalGasUsed
@@ -210,7 +210,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	})
 
 	path = stgcommon.ExceptPaths(caller, sourceFunc)
-	writeDataSize, err = tempcache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
+	writeDataSize, err = cache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
 	gasTracker.UseGas(0, writeDataSize, 0)
 
 	return []byte{}, err == nil, gasTracker.TotalGasUsed
@@ -244,20 +244,20 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 
 	// Get the function signature.
 	propertyPath := stgcommon.FuncPropertyPath(caller, funSign)
-	tempcache := this.api.WriteCache().(*tempcache.WriteCache)
+	cache := this.api.WriteCache().(*cache.WriteCache)
 
 	// Check if the property path exists, if not create it.
-	if path, _, _ := tempcache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
-		writeDataSize, err := tempcache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
-		gasTracker.UseGas(0, writeDataSize, 0)                                           // Gas for writing the property path.
+	if path, _, _ := cache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
+		writeDataSize, err := cache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
+		gasTracker.UseGas(0, writeDataSize, 0)                                       // Gas for writing the property path.
 		if err != nil {
 			return []byte{}, false, gasTracker.TotalGasUsed // If the property path write fails, return an error.
 		}
 	}
 
 	// Write deferrable information to the property path.
-	deferPath := stgcommon.DeferrablePath(caller, funSign)                                       // Generate the sub path for the deferrable.
-	writeDataSize, err := tempcache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
+	deferPath := stgcommon.DeferrablePath(caller, funSign)                                   // Generate the sub path for the deferrable.
+	writeDataSize, err := cache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
 	gasTracker.UseGas(0, writeDataSize, 0)
 	if err != nil {
 		return []byte{}, false, gasTracker.TotalGasUsed
@@ -269,7 +269,7 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	PrepaidGasPath := stgcommon.PrepaidGasPath(caller, funSign) // Generate the sub path for the prepaid gas.
 
 	// Write to storage
-	writeDataSize, err = tempcache.Write(txID, PrepaidGasPath, noncommutative.NewInt64(int64(prepaidGas.(uint64))))
+	writeDataSize, err = cache.Write(txID, PrepaidGasPath, noncommutative.NewInt64(int64(prepaidGas.(uint64))))
 	gasTracker.UseGas(0, writeDataSize, 0)
 
 	job.(*eucommon.Job).StdMsg.PrepaidGas = prepaidGas.(uint64) // Set the prepaid gas for the deferred call.

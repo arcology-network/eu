@@ -21,12 +21,12 @@ import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/types"
 	ccurlcommon "github.com/arcology-network/storage-committer/common"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	// adaptorcommon ""github.com/arcology-network/storage-committer/storage/tempcache""
+	// adaptorcommon ""github.com/arcology-network/storage-committer/storage/cache""
 	intf "github.com/arcology-network/eu/interface"
 )
 
@@ -55,10 +55,10 @@ func (this *PathBuilder) New(txIndex uint64, deploymentAddr types.Address) (bool
 
 func (this *PathBuilder) newStorageRoot(account types.Address, txIndex uint64) bool {
 	accountRoot := common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(account), "/")
-	if !this.apiRouter.WriteCache().(*tempcache.WriteCache).IfExists(accountRoot) {
-		_, err := CreateNewAccount(txIndex, string(account), this.apiRouter.WriteCache().(*tempcache.WriteCache))
+	if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(accountRoot) {
+		_, err := CreateNewAccount(txIndex, string(account), this.apiRouter.WriteCache().(*cache.WriteCache))
 		return err == nil
-		// return common.FilterFirst(this.apiRouter.WriteCache().(*tempcache.WriteCache).CreateNewAccount() != nil // Create a new account
+		// return common.FilterFirst(this.apiRouter.WriteCache().(*cache.WriteCache).CreateNewAccount() != nil // Create a new account
 	}
 	return true // ALready exists
 }
@@ -66,8 +66,8 @@ func (this *PathBuilder) newStorageRoot(account types.Address, txIndex uint64) b
 func (this *PathBuilder) newContainerRoot(account types.Address, txIndex uint64) (bool, string) {
 	containerRoot := this.key(account)
 
-	if !this.apiRouter.WriteCache().(*tempcache.WriteCache).IfExists(containerRoot) {
-		_, err := this.apiRouter.WriteCache().(*tempcache.WriteCache).Write(txIndex, containerRoot, commutative.NewPath()) // Create a new container
+	if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(containerRoot) {
+		_, err := this.apiRouter.WriteCache().(*cache.WriteCache).Write(txIndex, containerRoot, commutative.NewPath()) // Create a new container
 		return err == nil, ""
 	}
 	return true, containerRoot // Already exists
@@ -94,6 +94,6 @@ func (this *PathBuilder) GetPathType(caller evmcommon.Address) uint8 {
 }
 
 func (this *PathBuilder) PathTypeID(pathStr string) uint8 {
-	path, _ := this.apiRouter.WriteCache().(*tempcache.WriteCache).PeekRaw(pathStr, commutative.Path{})
+	path, _ := this.apiRouter.WriteCache().(*cache.WriteCache).PeekRaw(pathStr, commutative.Path{})
 	return path.(*commutative.Path).Type
 }

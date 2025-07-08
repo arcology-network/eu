@@ -29,11 +29,11 @@ import (
 	commontype "github.com/arcology-network/common-lib/types"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommon "github.com/arcology-network/storage-committer/common"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	storage "github.com/arcology-network/storage-committer/storage/proxy"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
@@ -94,9 +94,9 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	sstore := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
 
-	api := apihandler.NewAPIHandler(mempool.NewMempool(16, 1, func() *tempcache.WriteCache {
-		return tempcache.NewWriteCache(sstore.WriteCache, 32, 1) // Generation writecache
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), gas.NewGasPrepayer())
+	api := apihandler.NewAPIHandler(mempool.NewMempool(16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(sstore.WriteCache, 32, 1) // Generation writecache
+	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
 
 	statedb := ethimpl.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -109,7 +109,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	}
 
 	// Apply the transitions to the storage.
-	_, transitions := tempcache.NewWriteCacheFilter(api.WriteCache()).ByType()
+	_, transitions := cache.NewWriteCacheFilter(api.WriteCache()).ByType()
 
 	store := statestore.NewStateStore(datastore.(*proxy.StorageProxy))
 	committer := stgcomm.NewStateCommitter(datastore, store.GetWriters())
@@ -118,9 +118,9 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	committer.Commit(20)
 
 	// Init a new API
-	api = apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
-		return tempcache.NewWriteCache(sstore, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), gas.NewGasPrepayer())
+	api = apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(sstore, 32, 1)
+	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
 
 	statedb = ethimpl.NewImplStateDB(api)
 
@@ -215,7 +215,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	}
 
 	receipt, execResult, err := testEu.eu.Run(job, adaptorcommon.NewEVMBlockContext(testEu.config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
-	_, transitions := tempcache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
+	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
 	// fmt.Print(v)
 	if receipt.Status != 1 || err != nil || execResult.Err != nil {
@@ -229,7 +229,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 	testEu.committer.Precommit([]uint64{1})
 	testEu.committer.Commit(20)
 
-	// testeucommon.EU.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	// testeucommon.EU.Api().WriteCache().(*cache.WriteCache).Clear()
 
 	return *&testEu.eu, &contractAddress, testEu.store, evmcommon.Hex2Bytes(code), nil
 }
@@ -240,12 +240,12 @@ func AliceCall(executor *eucommon.EU, contractAddress evmcommon.Address, funcNam
 	config.BlockNumber = new(big.Int).SetUint64(10000000)
 	config.Time = new(big.Int).SetUint64(10000000)
 
-	executor.Api().WriteCache().(*tempcache.WriteCache).Clear()
+	executor.Api().WriteCache().(*cache.WriteCache).Clear()
 
-	// localCache := tempcache.NewWriteCache(datastore, 32, 1)
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*tempcache.WriteCache](16, 1, func() *tempcache.WriteCache {
-		return tempcache.NewWriteCache(datastore, 32, 1)
-	}, func(tempcache *tempcache.WriteCache) { tempcache.Clear() }), gas.NewGasPrepayer())
+	// localCache := cache.NewWriteCache(datastore, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
+		return cache.NewWriteCache(datastore, 32, 1)
+	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
 
 	statedb := ethimpl.NewImplStateDB(api)
 	eucommon.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
@@ -301,7 +301,7 @@ func DepolyContract(eu *eucommon.EU, committer *stgcomm.StateCommitter, config *
 		return errors.New("Error: Deployment failed!!!" + errmsg), config, eu, nil
 	}
 
-	_, transitionsFiltered := tempcache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
+	_, transitionsFiltered := cache.NewWriteCacheFilter(eu.Api().WriteCache()).ByType()
 	// committer := eu.Api().Ccurl()
 	committer.Import(transitionsFiltered)
 	committer.Precommit([]uint64{1})
