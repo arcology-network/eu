@@ -101,7 +101,8 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	if len(transitions) == 0 || !reflect.DeepEqual(transitions[0].Value().(stgtype.Type).Delta().(*deltaset.DeltaSet[string]).Updated().Elements(), []string{"elem-000"}) {
+	delv, _ := transitions[0].Value().(stgtype.Type).Delta()
+	if len(transitions) == 0 || !reflect.DeepEqual(delv.(*deltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 

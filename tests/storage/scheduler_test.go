@@ -58,7 +58,7 @@ func TestSchedulerDeclaration(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/"+stgcommon.PROPERTY_PATH+"1234/"+stgcommon.DEFERRED_FUNC, noncommutative.NewBytes([]byte{255})); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/"+stgcommon.PROPERTY_PATH+"1234/"+stgcommon.DEFERRED, noncommutative.NewBytes([]byte{255})); err != nil {
 		t.Error(err)
 	}
 

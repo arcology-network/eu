@@ -51,7 +51,9 @@ type Result struct {
 // The tx sender has to pay the tx fees regardless the execution status. This function deducts the gas fee from the sender's balance
 // change and generates a new transition for that.
 func (this *Result) GenGasTransition(balanceTransition *univalue.Univalue, gasDelta *uint256.Int, isCredit bool) *univalue.Univalue {
-	totalDelta := balanceTransition.Value().(stgcommon.Type).Delta().(uint256.Int)
+	v, _ := balanceTransition.Value().(stgcommon.Type).Delta()
+	totalDelta := v.(uint256.Int)
+
 	if totalDelta.Cmp(gasDelta) == 0 { // Balance change == gas fee paid.
 		balanceTransition.Property.SetPersistent(true) // Won't be affect by conflicts
 		return balanceTransition
@@ -59,8 +61,8 @@ func (this *Result) GenGasTransition(balanceTransition *univalue.Univalue, gasDe
 
 	// Separate the gas fee from the balance change and generate a new transition for that.
 	gasTransition := balanceTransition.Clone().(*univalue.Univalue)
-	gasTransition.Value().(stgcommon.Type).SetDelta(*gasDelta)    // Set the gas fee.
-	gasTransition.Value().(stgcommon.Type).SetDeltaSign(isCredit) // Negative for the sender, positive for the coinbase.
+	gasTransition.Value().(stgcommon.Type).SetDelta(*gasDelta, isCredit) // Set the gas fee.
+	// gasTransition.Value().(stgcommon.Type).SetDeltaSign(isCredit) // Negative for the sender, positive for the coinbase.
 	gasTransition.Property.SetPersistent(true)
 	return gasTransition
 }

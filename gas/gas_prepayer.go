@@ -26,13 +26,32 @@ GasPrepayer is a structure that holds a map of contract addresses to their prepa
 It is used to manage the prepaid gas for contracts with deferred execution.
 */
 type GasPrepayer struct {
-	Payers map[string][]*eucommon.Job
+	Payers    map[string][]*eucommon.Job
+	PayersNew map[string][]*PrepayerInfo
 }
 
 func NewGasPrepayer() *GasPrepayer {
 	return &GasPrepayer{
-		Payers: make(map[string][]*eucommon.Job),
+		Payers:    make(map[string][]*eucommon.Job),
+		PayersNew: make(map[string][]*PrepayerInfo),
 	}
+}
+
+func (this *GasPrepayer) Add(payerInfo []*PrepayerInfo) uint64 {
+	for _, info := range payerInfo {
+		addrSign := info.UID()
+		gasAmount := info.PrepayedAmount
+		if gasAmount == 0 {
+			return 0
+		}
+
+		if _, exists := this.Payers[addrSign]; !exists {
+			this.Payers[addrSign] = []*eucommon.Job{}
+		}
+
+		this.PayersNew[addrSign] = append(this.PayersNew[addrSign], info)
+	}
+	return 0
 }
 
 func (this *GasPrepayer) AddPrepayer(job *eucommon.Job) uint64 {

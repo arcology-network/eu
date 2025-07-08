@@ -1,0 +1,175 @@
+/*
+ *   Copyright (c) 2025 Arcology Network
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package gas
+
+import (
+	codec "github.com/arcology-network/common-lib/codec"
+	eucommon "github.com/arcology-network/eu/common"
+)
+
+type PrepayerInfo struct {
+	Hash           [32]byte // Transaction hash
+	TX             uint64   // Transaction number
+	From           [20]byte // Sender address
+	To             [20]byte // Contract address
+	Signature      [4]byte  // Function signature
+	PrepayedAmount uint64   // Amount of prepaid gas
+	InitialGas     uint64   // Initial gas amount excluding prepaid gas.
+	GasUsed        uint64   // Gas used in the transaction, including prepaid gas.
+	GasRemaining   uint64   // Remaining gas after the transaction execution
+	Successful     bool     // Whether the transaction was successful
+}
+
+func (this *PrepayerInfo) UID() string { return string(this.To[:]) + string(this.Signature[:]) }
+
+func (*PrepayerInfo) FromJob(job *eucommon.Job) *PrepayerInfo {
+	return &PrepayerInfo{
+		Hash:           job.StdMsg.TxHash,
+		TX:             job.StdMsg.ID,
+		From:           job.StdMsg.Native.From,
+		To:             *job.StdMsg.Native.To,
+		Signature:      [4]byte(job.StdMsg.Native.Data[:4]),
+		PrepayedAmount: job.StdMsg.PrepaidGas,
+		InitialGas:     job.InitialGas,
+		GasUsed:        job.Results.Receipt.GasUsed,
+		GasRemaining:   job.GasRemaining,
+		Successful:     job.Successful(),
+	}
+}
+
+func (this *PrepayerInfo) Equal(other *PrepayerInfo) bool {
+	return this.Hash == other.Hash &&
+		this.TX == other.TX &&
+		this.From == other.From &&
+		this.To == other.To &&
+		this.Signature == other.Signature &&
+		this.PrepayedAmount == other.PrepayedAmount &&
+		this.InitialGas == other.InitialGas &&
+		this.GasUsed == other.GasUsed &&
+		this.GasRemaining == other.GasRemaining &&
+		this.Successful == other.Successful
+}
+
+func (this *PrepayerInfo) Size() uint64 {
+	return uint64(len(this.Hash) +
+		32 + // Hash
+		8 + // TX
+		20 + // From
+		20 + // To
+		4 + // Signature
+		8 + // PrepayedAmount
+		8 + // InitialGas
+		8 + // GasUsed
+		8 + // GasRemaining
+		1, // Successful
+	)
+}
+
+func (this *PrepayerInfo) FullSize() uint64 {
+	return this.HeaderSize() + this.Size()
+}
+
+func (this *PrepayerInfo) HeaderSize() uint64 {
+	return 10 * 8
+}
+
+func (this *PrepayerInfo) Encode() []byte {
+	buffer := make([]byte, this.FullSize())
+	this.EncodeToBuffer(buffer)
+	return buffer
+}
+
+func (this *PrepayerInfo) EncodeToBuffer(buffer []byte) int {
+	offset := codec.Encoder{}.FillHeader(buffer,
+		[]uint64{
+			32,
+			8,
+			20,
+			20,
+			4,
+			8,
+			8,
+			8,
+			8,
+			1, // Successful
+
+		},
+	)
+
+	offset += codec.Bytes32(this.Hash).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.TX).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bytes20(this.From[:]).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bytes20(this.To[:]).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bytes(this.Signature[:]).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.PrepayedAmount).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.InitialGas).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.GasUsed).EncodeToBuffer(buffer[offset:])
+	offset += codec.Uint64(this.GasRemaining).EncodeToBuffer(buffer[offset:])
+	codec.Bool(this.Successful).EncodeToBuffer(buffer[offset:])
+	return int(this.FullSize())
+}
+
+func (*PrepayerInfo) Decode(buffer []byte) any {
+	if len(buffer) == 0 {
+		return nil
+	}
+	this := &PrepayerInfo{}
+	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
+
+	this.Hash = codec.Bytes32{}.Decode(fields[0]).(codec.Bytes32)
+	this.TX = uint64(codec.Uint64(0).Decode(fields[1]).(codec.Uint64))
+	this.From = codec.Bytes20{}.Decode(fields[2]).(codec.Bytes20)
+	this.To = codec.Bytes20{}.Decode(fields[3]).(codec.Bytes20)
+	this.Signature = codec.Bytes4{}.Decode(fields[4]).(codec.Bytes4)
+	this.PrepayedAmount = uint64(codec.Uint64(0).Decode(fields[5]).(codec.Uint64))
+	this.InitialGas = uint64(codec.Uint64(0).Decode(fields[6]).(codec.Uint64))
+	this.GasUsed = uint64(codec.Uint64(0).Decode(fields[7]).(codec.Uint64))
+	this.GasRemaining = uint64(codec.Uint64(0).Decode(fields[8]).(codec.Uint64))
+	this.Successful = bool(codec.Bool(false).Decode(fields[9]).(codec.Bool))
+	return this
+}
+
+type PrepayerInfoArr []*PrepayerInfo
+
+func (this PrepayerInfoArr) Encode() []byte {
+	if this == nil {
+		return nil
+	}
+
+	offset := 0
+	buffer := make([]byte, len(this)*int((&PrepayerInfo{}).FullSize()))
+	for i := 0; i < len(this); i++ {
+		offset += (this)[i].EncodeToBuffer(buffer[offset:])
+	}
+	return buffer
+}
+
+func (PrepayerInfoArr) Decode(buffer []byte) any {
+	if len(buffer) == 0 {
+		return nil
+	}
+
+	total := (len(buffer)) / int((&PrepayerInfo{}).FullSize())
+	result := make(PrepayerInfoArr, total)
+	for i := 0; i < len(result); i++ {
+		buf := buffer[i*int((&PrepayerInfo{}).FullSize()) : (i+1)*int((&PrepayerInfo{}).FullSize())]
+		info := (&PrepayerInfo{}).Decode(buf).(*PrepayerInfo)
+		result[i] = info
+	}
+	return result
+}
