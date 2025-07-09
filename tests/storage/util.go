@@ -56,6 +56,10 @@ func RandomAccount() string {
 	return addr
 }
 
+func CreateAccount(b [20]byte) string {
+	return hexutil.Encode(b[:])
+}
+
 func AliceAccount() string {
 	b := make([]byte, 20)
 	slice.Fill(b, 10)

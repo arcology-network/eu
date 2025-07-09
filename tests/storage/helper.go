@@ -23,7 +23,9 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	eth "github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
@@ -31,8 +33,29 @@ import (
 	// "github.com/arcology-network/storage-committer/interfaces"
 	interfaces "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 )
+
+func GenerateDB(addr [20]uint8) (string, *cache.WriteCache, stgcommcommon.ReadOnlyStore, error) {
+	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	acct := CreateAccount(addr)
+	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
+		return acct, nil, nil, errors.New("Failed to create new account: " + err.Error())
+	}
+
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
+	committer.Commit(10)
+
+	return acct, writeCache, store, nil
+}
 
 func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*univalue.Univalue, error) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
