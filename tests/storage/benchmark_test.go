@@ -24,7 +24,6 @@ import (
 	"testing"
 	"time"
 
-	addrcompressor "github.com/arcology-network/common-lib/addrcompressor"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
@@ -389,7 +388,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 }
 
 func BenchmarkAccountCreationWithMerkle(b *testing.B) {
-	// lut := addrcompressor.NewCompressionLut()
+	// lut := NewCompressionLut()
 	// fileDB, err := datastore.NewFileDB(ROOT_PATH, 8, 2)
 	// if err != nil {
 	// 	b.Error(err)
@@ -404,7 +403,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	for i := 0; i < 10; i++ {
-		acct := addrcompressor.RandomAccount()
+		acct := RandomAccount()
 		if _, err := eth.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
@@ -460,7 +459,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 // func TestPathRepeats(t *testing.T) {
 // 	paths := make([]string, 0, 2)
 // 	for i := 0; i < 1; i++ {
-// 		acct := addrcompressor.RandomAccount()
+// 		acct := RandomAccount()
 // 		for j := 0; j < 10; j++ {
 // 			paths = append(paths, (&stgcommitter.Platform{}).Eth10Account()+acct+"/"+fmt.Sprint(rand.Float64()))
 // 		}
@@ -483,7 +482,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 func BenchmarkStringSort(b *testing.B) {
 	paths := make([][]*univalue.Univalue, 100000)
 	for i := 0; i < 100000; i++ {
-		acct := addrcompressor.RandomAccount()
+		acct := RandomAccount()
 		for j := 9; j >= 1; j-- {
 
 			paths[i] = append(paths[i], univalue.NewUnivalue(uint64(j), acct, 0, 0, 0, noncommutative.NewString(fmt.Sprint(rand.Float64())), nil))
@@ -595,7 +594,7 @@ func (s String) Less(b btree.Item) bool {
 
 // 	records := make([]string, 10000)
 // 	for i := 0; i < len(records); i++ {
-// 		records[i] = (&stgcommitter.Platform{}).Eth10() + addrcompressor.RandomAccount()
+// 		records[i] = (&stgcommitter.Platform{}).Eth10() + RandomAccount()
 // 	}
 
 // 	t0 := time.Now()
@@ -629,7 +628,7 @@ func (s String) Less(b btree.Item) bool {
 
 // 	// writeCache := committer.WriteCache()
 // 	for i := 0; i < 150000; i++ {
-// 		acct := addrcompressor.RandomAccount()
+// 		acct := RandomAccount()
 // 		if _, err := eth.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
@@ -660,7 +659,7 @@ func (s String) Less(b btree.Item) bool {
 // 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.WriteCache()
 // 	for i := 0; i < 90000; i++ {
-// 		acct := addrcompressor.RandomAccount()
+// 		acct := RandomAccount()
 // 		if _, err := eth.CreateNewAccount(0, acct);err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
@@ -692,7 +691,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	// sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	// writeCache := sstore.WriteCache
 	// for i := 0; i < 100000; i++ {
-	// 	acct := addrcompressor.RandomAccount()
+	// 	acct := RandomAccount()
 	// 	if _, err := eth.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
 	// 		// b.Error(err)
 	// 	}

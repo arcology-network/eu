@@ -19,7 +19,6 @@ package apihandler
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"sync/atomic"
 
@@ -28,12 +27,12 @@ import (
 	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
-	gas "github.com/arcology-network/eu/gas"
+	"github.com/arcology-network/eu/gas"
+
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
+	"github.com/arcology-network/storage-committer/type/commutative"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/holiman/uint256"
 
 	apicontainer "github.com/arcology-network/eu/apihandler/container"
 	apicumulative "github.com/arcology-network/eu/apihandler/cumulative"
@@ -58,10 +57,10 @@ type APIHandler struct {
 
 	auxDict map[string]interface{} // Auxiliary data generated during the execution of the APIHandler
 
-	gasPrepayer *gas.GasPrepayer // Pay for the deferred execution gas.
+	// gasPrepayer *gas.GasPrepayer // Pay for the deferred execution gas.
 }
 
-func NewAPIHandler(writeCachePool *mempool.Mempool[*cache.WriteCache], gasPrepayer any) *APIHandler {
+func NewAPIHandler(writeCachePool *mempool.Mempool[*cache.WriteCache]) *APIHandler {
 	api := &APIHandler{
 		writeCachePool: writeCachePool,
 		eu:             nil,
@@ -71,7 +70,7 @@ func NewAPIHandler(writeCachePool *mempool.Mempool[*cache.WriteCache], gasPrepay
 		depth:          0,
 		serialNums:     [4]uint64{},
 
-		gasPrepayer: gasPrepayer.(*gas.GasPrepayer),
+		// gasPrepayer: gasPrepayer.(*gas.GasPrepayer),
 	}
 
 	handlers := []intf.ApiCallHandler{
@@ -93,9 +92,9 @@ func NewAPIHandler(writeCachePool *mempool.Mempool[*cache.WriteCache], gasPrepay
 }
 
 // Initliaze a new APIHandler from an existing writeCache. This is different from the NewAPIHandler() function in that it does not create a new writeCache.
-func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, deployer ethcommon.Address, schedule any, gasPayer any) intf.EthApiRouter {
+func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, deployer ethcommon.Address, schedule any) intf.EthApiRouter {
 	// localCache := writeCachePool.(*mempool.Mempool[*cache.WriteCache]).New()
-	api := NewAPIHandler(this.writeCachePool, gasPayer)
+	api := NewAPIHandler(this.writeCachePool)
 	api.SetDeployer(deployer)
 	// api.writeCachePool = writeCachePool.(*mempool.Mempool[*cache.WriteCache])
 	api.writeCachePool = this.writeCachePool
@@ -105,14 +104,14 @@ func (this *APIHandler) New(writeCachePool interface{}, localCache interface{}, 
 	api.schedule = schedule
 	api.auxDict = make(map[string]interface{})
 
-	api.gasPrepayer = gasPayer.(*gas.GasPrepayer) // Use the same gas prepayer as the parent APIHandler
+	// api.gasPrepayer = gasPayer.(*gas.GasPrepayer) // Use the same gas prepayer as the parent APIHandler
 	return api
 }
 
 // The Cascade() function creates a new APIHandler whose writeCache uses the parent APIHandler's writeCache as the
 // read-only data store.  writecache -> parent's writecache -> backend datastore
 func (this *APIHandler) Cascade() intf.EthApiRouter {
-	api := NewAPIHandler(this.writeCachePool, this.gasPrepayer)
+	api := NewAPIHandler(this.writeCachePool)
 	api.SetDeployer(this.deployer)
 	api.depth = this.depth + 1
 	api.schedule = this.schedule
@@ -235,38 +234,55 @@ func (this *APIHandler) Job() any {
 }
 
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
-func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) uint64 {
+func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) (uint64, bool) {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
 	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil {
-		return 0 // Deployment or a simple transfer TX
+		return 0, true // Deployment or a simple transfer TX, no need to prepay gas.
 	}
 
-	// Get the prepaid gas value from storage.
+	// If the job is not deferred, we don't need to prepay the gas.
 	txID := this.GetEU().(interface{ ID() uint64 }).ID()
 	storage := this.WriteCache().(*cache.WriteCache)
 
-	to := *job.StdMsg.Native.To
 	funSign := [4]byte{}
 	copy(funSign[:], job.StdMsg.Native.Data[:4]) // Get the function signature from the job's native data.
 
-	path := stgcommon.PrepaidGasPath(to, funSign)                // Generate the sub path for the prepaid gas.
-	prepaidGasAmount, _, _ := storage.Read(txID, path, int64(0)) // Get the prepaid gas amount required from the Contract definition.
+	// Get the path for the prepaid gas amount.
+	payerAmountPath := stgcommon.PrepaidGasPath(*job.StdMsg.Native.To, funSign)
+	prepaidGasAmount, _, _ := storage.Read(txID, payerAmountPath, commutative.GrowOnlySet[*gas.PrepayerInfo]{})
 	if prepaidGasAmount == nil || prepaidGasAmount.(int64) == 0 {
-		return 0 // No prepaid gas found info found, nothing to do.
+		return 0, true // No prepaid gas found info found, nothing to do.
 	}
 
-	job.StdMsg.PrepaidGas = uint64(prepaidGasAmount.(int64))
-	job.InitialGas = *initGas        // Set the initial gas for the job from the EVM
-	job.GasRemaining = *gasRemaining // Set the gas remaining for the job from the EVM
-
-	// Pre deferred execution, pay the gas for the deferred execution of the job.
-	if job.StdMsg.PrepaidGas <= *gasRemaining {
-		paid := this.gasPrepayer.AddPrepayer(job) // Add itself as a gas prepayer.
-		*initGas -= paid                          // Subtract the prepaid gas from the initial gas.
-		*gasRemaining -= paid                     // Subtract the prepaid gas from the gas remaining.
-		return paid
+	// Check if the prepaid gas amount is enough to pay for the deferred execution of the job.
+	PrepaidGas := uint64(prepaidGasAmount.(int64)) // Set
+	if PrepaidGas > *gasRemaining {
+		return 0, false // Not enough gas remaining to pay for the deferred execution.
 	}
-	return 0
+
+	//Check if the prepayer info path exists.
+	prepayerInfoPath := stgcommon.PrepayersPath(*job.StdMsg.Native.To, funSign)
+	if !storage.IfExists(prepayerInfoPath) {
+		return 0, false // No prepayer found, cannot prepay gas.
+	}
+
+	// info := (&gas.PrepayerInfo{}).FromJob(job)
+	//
+	// info.GasRemaining = *gasRemaining // Set the gas remaining for the job from the EVM
+	// info.InitialGas = *initGas        // Set the initial gas for the job from the EVM
+	// info.PrepayedAmount = paid        // Set the prepaid gas amount for the job from the EVM
+
+	// paid := this.gasPrepayer.AddPrepayer(job) // Add itself as a gas prepayer.
+	// *initGas -= paid                          // Subtract the prepaid gas from the initial gas.
+	// *gasRemaining -= paid                     // Subtract the prepaid gas from the gas remaining.
+
+	return 0, true
+	//
+	// job.InitialGas = *initGas        // Set the initial gas for the job from the EVM
+	// job.GasRemaining = *gasRemaining // Set the gas remaining for the job from the EVM
+
+	// // Pre deferred execution, pay the gas for the deferred execution of the job.
+
 }
 
 // Add the prepaid gas to the job's prepaid gas. This is used to pay for the deferred execution of the job.
@@ -277,46 +293,46 @@ func (this *APIHandler) UsePrepaidGas(gas *uint64) bool {
 	}
 
 	// Deferred execution, use the prepaid gas to the job.
-	_, totalPrepaid := this.gasPrepayer.SumPrepaidGas(job.StdMsg.AddrAndSignature()) // Get the prepaid gas for the deferred execution of the job.
-	*gas += totalPrepaid                                                             // Add the prepaid gas to the gas remaining for execution.
+	// _, totalPrepaid := this.gasPrepayer.SumPrepaidGas(job.StdMsg.AddrAndSignature()) // Get the prepaid gas for the deferred execution of the job.
+	// *gas += totalPrepaid                                                             // Add the prepaid gas to the gas remaining for execution.
 	return true
 }
 
 // This function refunds the prepaid gas when the prepaid gas is more than the gas used by the job.
 func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
-	job := this.eu.(interface{ Job() *eucommon.Job }).Job() // Get the job from the EVM
-	if !job.StdMsg.IsDeferred {
-		return false // Not a deferred execution, no need to refund the prepaid gas.
-	}
+	// job := this.eu.(interface{ Job() *eucommon.Job }).Job() // Get the job from the EVM
+	// if !job.StdMsg.IsDeferred {
+	// 	return false // Not a deferred execution, no need to refund the prepaid gas.
+	// }
 
-	// Get the total prepaid gas and the number of payers for the job.
-	totalPayers, totalPrepaid := this.gasPrepayer.SumPrepaidGas(job.StdMsg.AddrAndSignature())
+	// // Get the total prepaid gas and the number of payers for the job.
+	// totalPayers, totalPrepaid := this.gasPrepayer.SumPrepaidGas(job.StdMsg.AddrAndSignature())
 
-	// Calculate the gas left after the job execution.
-	if prepayers, ok := this.gasPrepayer.Payers[job.StdMsg.AddrAndSignature()]; ok && totalPrepaid > 0 {
-		originalGasRemaining := float64(job.GasRemaining) * float64(*gasLeft) / float64(job.GasRemaining+totalPrepaid)
+	// // Calculate the gas left after the job execution.
+	// if prepayers, ok := this.gasPrepayer.Payers[job.StdMsg.AddrAndSignature()]; ok && totalPrepaid > 0 {
+	// 	originalGasRemaining := float64(job.GasRemaining) * float64(*gasLeft) / float64(job.GasRemaining+totalPrepaid)
 
-		// Calculate the refund per payer based on the gas left and the number of payers.
-		refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(totalPayers))
+	// 	// Calculate the refund per payer based on the gas left and the number of payers.
+	// 	refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(totalPayers))
 
-		// Minus the prepaid portion from the gas left.
-		(*gasLeft) -= (*gasLeft) - uint64(math.Round(originalGasRemaining))
+	// 	// Minus the prepaid portion from the gas left.
+	// 	(*gasLeft) -= (*gasLeft) - uint64(math.Round(originalGasRemaining))
 
-		// Refund the prepaid gas portion back to each prepayer.
-		for _, payer := range prepayers {
-			// Check if the payer has successfully executed the job and prepaid for the gas.
-			if !payer.Successful() {
-				continue // Skip the failed jobs.
-			}
+	// 	// Refund the prepaid gas portion back to each prepayer.
+	// 	for _, payer := range prepayers {
+	// 		// Check if the payer has successfully executed the job and prepaid for the gas.
+	// 		if !payer.Successful() {
+	// 			continue // Skip the failed jobs.
+	// 		}
 
-			remaining := uint256.NewInt(refundPerPayer)
-			remaining = remaining.Mul(remaining, uint256.MustFromBig(payer.StdMsg.Native.GasPrice))
+	// 		remaining := uint256.NewInt(refundPerPayer)
+	// 		remaining = remaining.Mul(remaining, uint256.MustFromBig(payer.StdMsg.Native.GasPrice))
 
-			// Credit the gas back to the payer's account.
-			this.eu.(interface{ StateDB() vm.StateDB }).StateDB().AddBalance(payer.StdMsg.Native.From, remaining)
-		}
-		return true
-	}
+	// 		// Credit the gas back to the payer's account.
+	// 		this.eu.(interface{ StateDB() vm.StateDB }).StateDB().AddBalance(payer.StdMsg.Native.From, remaining)
+	// 	}
+	// 	return true
+	// }
 
 	return false
 }

@@ -50,7 +50,6 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/compiler"
 	ethimpl "github.com/arcology-network/eu/eth"
-	"github.com/arcology-network/eu/gas"
 )
 
 const (
@@ -96,7 +95,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 
 	api := apihandler.NewAPIHandler(mempool.NewMempool(16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(sstore.WriteCache, 32, 1) // Generation writecache
-	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
 	statedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 0)
@@ -120,7 +119,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	// Init a new API
 	api = apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(sstore, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb = ethimpl.NewImplStateDB(api)
 
@@ -245,7 +244,7 @@ func AliceCall(executor *eucommon.EU, contractAddress evmcommon.Address, funcNam
 	// localCache := cache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(datastore, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
 	eucommon.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)

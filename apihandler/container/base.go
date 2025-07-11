@@ -155,7 +155,7 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 }
 
 func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 
 	addr := codec.Bytes20(caller).Hex()
 	connected, pathStr := this.pathBuilder.New(
@@ -165,40 +165,40 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 
 	// Add the type info to the container here.
 	path, readDataSize := this.api.WriteCache().(*cache.WriteCache).PeekRaw(pathStr, commutative.Path{})
-	gasTracker.UseGas(readDataSize, 0, 0)
+	gasMeter.Use(readDataSize, 0, 0)
 
 	if typeID, err := abi.Decode(input, 0, uint8(0), 1, 32); err == nil {
 		path.(*commutative.Path).Type = typeID.(uint8) // Set the path type Info
-		gasTracker.UseGas(0, 0, eucommon.GAS_DECODE)   // Gas for decoding
+		gasMeter.Use(0, 0, eucommon.GAS_DECODE)        // Gas for decoding
 	}
 
-	this.api.SetDeployer(caller)                         // Store the MP address to the API
-	return caller[:], connected, gasTracker.TotalGasUsed // Create a new container
+	this.api.SetDeployer(caller)                       // Store the MP address to the API
+	return caller[:], connected, gasMeter.TotalGasUsed // Create a new container
 }
 
 // Only works for uing256 commutative container
 func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
-	gasTracker.UseGas(0, 0, eucommon.GAS_NEW_CONTAINER) // Gas for creating a new container
+	gasMeter := gas.NewGasMeter()
+	gasMeter.Use(0, 0, eucommon.GAS_NEW_CONTAINER) // Gas for creating a new container
 
 	path := this.pathBuilder.Key(caller)
 	if !this.api.WriteCache().(*cache.WriteCache).IfExists(path) { // Check if the container exists
-		gasTracker.UseGas(eucommon.DATA_MIN_READ_SIZE, 0, 0) // No gas used for non-existent container
-		return []byte{}, false, gasTracker.TotalGasUsed      // Doesn't exist, cannot initialize in a non-existent container.
+		gasMeter.Use(eucommon.DATA_MIN_READ_SIZE, 0, 0) // No gas used for non-existent container
+		return []byte{}, false, gasMeter.TotalGasUsed   // Doesn't exist, cannot initialize in a non-existent container.
 	}
 
 	// If the key already exists
 	if _, ok, readDataSize := this.getByKey(caller, []byte{}); ok {
-		gasTracker.UseGas(uint64(readDataSize), 0, 0)
-		return []byte{}, false, gasTracker.TotalGasUsed
+		gasMeter.Use(uint64(readDataSize), 0, 0)
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	//Get the type info here
 	pathData, readDataSize := this.api.WriteCache().(*cache.WriteCache).PeekRaw(path, commutative.Path{})
-	gasTracker.UseGas(readDataSize, 0, eucommon.GAS_READ)
+	gasMeter.Use(readDataSize, 0, eucommon.GAS_READ)
 
 	if pathData == nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Check if it is a cumulative container. Only cumulative elements can be initialized.
@@ -218,22 +218,22 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 		// Pass pointers to variables so they can be decoded into
 		var key, min, max []byte
 		abi.DecodeEth(abiDef, "0x"+hex.EncodeToString(input), "init", []any{&key, &min, &max})
-		gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding
+		gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding
 
 		// Initialize the element with the lower and upper bounds
 		minv, maxv := uint256.NewInt(0).SetBytes(min), uint256.NewInt(0).SetBytes(max)
 		if minv.Cmp(maxv) > 0 {
-			return []byte{}, false, gasTracker.TotalGasUsed // The lower bound is greater than the upper bound
+			return []byte{}, false, gasMeter.TotalGasUsed // The lower bound is greater than the upper bound
 		}
 		v := commutative.NewBoundedU256(minv, maxv)
 
 		str := hex.EncodeToString(key)
 		writeDataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str, v)
-		gasTracker.UseGas(0, writeDataSize, 0)               // Gas for writing the value
-		return []byte{}, err == nil, gasTracker.TotalGasUsed // Write the value to the container
+		gasMeter.Use(0, writeDataSize, 0)                  // Gas for writing the value
+		return []byte{}, err == nil, gasMeter.TotalGasUsed // Write the value to the container
 	}
 
-	return []byte{}, false, gasTracker.TotalGasUsed // unknown type
+	return []byte{}, false, gasMeter.TotalGasUsed // unknown type
 }
 
 func (this *BaseHandlers) pid(_ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
@@ -254,57 +254,57 @@ func (this *BaseHandlers) fullLength(caller evmcommon.Address, _ []byte) ([]byte
 
 // getByIndex the number of elements in the container
 func (this *BaseHandlers) length(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
-	gasTracker.UseGas(0, 0, eucommon.GAS_CONTAINER_META) // Gas for getting the container meta.
+	gasMeter := gas.NewGasMeter()
+	gasMeter.Use(0, 0, eucommon.GAS_CONTAINER_META) // Gas for getting the container meta.
 
 	path := this.pathBuilder.Key(caller)
 	if length, successful, dataSize := this.NonNilLength(path); successful {
-		gasTracker.UseGas(uint64(dataSize), 0, 0) // Gas for reading the length
+		gasMeter.Use(uint64(dataSize), 0, 0) // Gas for reading the length
 
 		if encoded, err := abi.Encode(uint256.NewInt(length)); err == nil {
-			return encoded, true, gasTracker.TotalGasUsed + eucommon.GAS_ENCODE
+			return encoded, true, gasMeter.TotalGasUsed + eucommon.GAS_ENCODE
 		}
 	}
-	return []byte{}, false, gasTracker.TotalGasUsed
+	return []byte{}, false, gasMeter.TotalGasUsed
 }
 
 // committedLength the initial length of the container, which would remain the same in the same block.
 func (this *BaseHandlers) committedLength(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
 	typedv, dataSize := this.api.WriteCache().(*cache.WriteCache).PeekCommitted(path, new(commutative.Path))
-	gasTracker.UseGas(uint64(dataSize), 0, 0) // Gas for reading the path
+	gasMeter.Use(uint64(dataSize), 0, 0) // Gas for reading the path
 
 	if typedv != nil {
 		type measurable interface{ Length() int }
 		numKeys := uint64(typedv.(stgcommon.Type).Value().(measurable).Length())
 		if encoded, err := abi.Encode(uint256.NewInt(numKeys)); err == nil {
-			return encoded, true, gasTracker.TotalGasUsed + eucommon.GAS_ENCODE
+			return encoded, true, gasMeter.TotalGasUsed + eucommon.GAS_ENCODE
 		}
 	}
-	return []byte{}, false, gasTracker.TotalGasUsed
+	return []byte{}, false, gasMeter.TotalGasUsed
 }
 
 func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
-	gasTracker.UseGas(0, 0, eucommon.GAS_CONTAINER_META)
+	gasMeter.Use(0, 0, eucommon.GAS_CONTAINER_META)
 
 	// Get the key of the element
 	key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
 	if err != nil || len(key) == 0 {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Get the type of the container info
 	str := hex.EncodeToString(key)
-	gasTracker.UseGas(0, 0, eucommon.GAS_ENCODE)
+	gasMeter.Use(0, 0, eucommon.GAS_ENCODE)
 
 	// Non-commutative bytes container by default
 	typeID := this.pathBuilder.GetPathType(caller) // Get the type of the container
-	gasTracker.UseGas(0, 0, eucommon.GAS_GET_RUNTIME_INFO)
+	gasMeter.Use(0, 0, eucommon.GAS_GET_RUNTIME_INFO)
 
 	var typedV any
 	switch typeID {
@@ -317,7 +317,7 @@ func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]by
 	}
 
 	v, _, readDataSize := this.GetByKey(path+str, typedV)
-	gasTracker.UseGas(uint64(readDataSize), 0, 0)
+	gasMeter.Use(uint64(readDataSize), 0, 0)
 
 	if v != nil {
 		// special decoder for byte array
@@ -326,35 +326,35 @@ func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]by
 			return b, ok, nil
 		}
 
-		gasTracker.UseGas(0, 0, eucommon.GAS_ENCODE) // Gas for encoding the value
+		gasMeter.Use(0, 0, eucommon.GAS_ENCODE) // Gas for encoding the value
 		if encoded, err := abi.Encode(v, fun); err == nil {
-			return encoded, true, gasTracker.TotalGasUsed
+			return encoded, true, gasMeter.TotalGasUsed
 		}
 	}
-	return []byte{}, false, gasTracker.TotalGasUsed
+	return []byte{}, false, gasMeter.TotalGasUsed
 }
 
 func (this *BaseHandlers) getByIndex(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Container path
-	gasTracker.UseGas(0, 0, eucommon.GAS_GET_CONTAINER_META)
+	gasMeter.Use(0, 0, eucommon.GAS_GET_CONTAINER_META)
 	// if len(path) == 0 {
-	// 	return []byte{}, false, gasTracker.TotalGasUsed
+	// 	return []byte{}, false, gasMeter.TotalGasUsed
 	// }
 
 	index, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the index
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the index
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	data, successful, readDataSize := this.GetByIndex(path, index)
-	return data, successful, readDataSize + gasTracker.TotalGasUsed // Get the value by its key.
+	return data, successful, readDataSize + gasMeter.TotalGasUsed // Get the value by its key.
 }
 
 // Push a new element into the container. If the key does not exist, it will be created and the value will be set.
 func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Container path
 	// if len(path) == 0 {
 	// 	return []byte{}, false, 0
@@ -362,14 +362,14 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 	// fee := int64(0)
 
 	// Decode the input value
-	gasTracker.UseGas(0, 0, eucommon.GAS_ENCODE) // Gas for decoding the input
+	gasMeter.Use(0, 0, eucommon.GAS_ENCODE) // Gas for decoding the input
 	key, valueBytes, err := abi.Parse2(input,
 		[]byte{}, 2, math.MaxInt,
 		[]byte{}, 2, math.MaxInt,
 	)
 
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Get the type of the container info
@@ -382,8 +382,8 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 		// Decode the input delta value, could be negative or positive.
 		var v *big.Int
 		if v, err = abi.DecodeInt256(valueBytes); err != nil {
-			gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the value
-			return []byte{}, false, gasTracker.TotalGasUsed
+			gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the value
+			return []byte{}, false, gasMeter.TotalGasUsed
 		}
 
 		// Get the bytes from the delta bytes and Create a new delta value for the element
@@ -400,133 +400,133 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 	}
 
 	successful, writeDataSize := this.SetByKey(path+hex.EncodeToString(key), val)
-	gasTracker.UseGas(0, writeDataSize, 0) // Gas for writing the value
-	return []byte{}, successful, gasTracker.TotalGasUsed
+	gasMeter.Use(0, writeDataSize, 0) // Gas for writing the value
+	return []byte{}, successful, gasMeter.TotalGasUsed
 }
 
 func (this *BaseHandlers) delByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
 
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
 	if key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt); err == nil {
 
 		if successful, writeGas := this.SetByKey(path+hex.EncodeToString(key), nil); successful {
-			gasTracker.UseGas(0, writeGas, 0)              // Gas for writing the value
-			return []byte{}, true, gasTracker.TotalGasUsed // Delete the element by its key.
+			gasMeter.Use(0, writeGas, 0)                 // Gas for writing the value
+			return []byte{}, true, gasMeter.TotalGasUsed // Delete the element by its key.
 		}
 	}
-	return []byte{}, false, gasTracker.TotalGasUsed
+	return []byte{}, false, gasMeter.TotalGasUsed
 }
 
 func (this *BaseHandlers) keyToInd(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
 	if key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt); err == nil {
 		index, dataSize := this.IndexOf(path, hex.EncodeToString(key))
-		gasTracker.UseGas(uint64(dataSize), 0, 0) // Gas for reading the index
+		gasMeter.Use(uint64(dataSize), 0, 0) // Gas for reading the index
 
 		if encoded, err := abi.Encode(index); index != math.MaxUint64 && err == nil { // Encode the result
-			gasTracker.UseGas(0, 0, eucommon.GAS_ENCODE) // Gas for encoding the index
-			return encoded, true, gasTracker.TotalGasUsed
+			gasMeter.Use(0, 0, eucommon.GAS_ENCODE) // Gas for encoding the index
+			return encoded, true, gasMeter.TotalGasUsed
 		}
 	}
-	return []byte{}, false, gasTracker.TotalGasUsed
+	return []byte{}, false, gasMeter.TotalGasUsed
 }
 
 func (this *BaseHandlers) indToKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the index
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the index
 	if index, err := abi.DecodeTo(input, 0, uint64(0), 1, 32); err == nil {
 		key, dataSize := this.KeyAt(path, index)
-		gasTracker.UseGas(uint64(dataSize), 0, 0) // Gas for reading the key
+		gasMeter.Use(uint64(dataSize), 0, 0) // Gas for reading the key
 
 		if len(key) == 0 {
-			return []byte{}, false, gasTracker.TotalGasUsed // No key at the index
+			return []byte{}, false, gasMeter.TotalGasUsed // No key at the index
 		}
 
 		v, _ := hex.DecodeString(key)
-		return v, true, gasTracker.TotalGasUsed
+		return v, true, gasMeter.TotalGasUsed
 	}
-	return []byte{}, false, gasTracker.TotalGasUsed
+	return []byte{}, false, gasMeter.TotalGasUsed
 }
 
 // Get the last element in the container and remove it from the container.
 // The size will remain the same, but the last element will be nil.
 func (this *BaseHandlers) delLast(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
 	length, successful, readGas := this.NonNilLength(path)
-	gasTracker.UseGas(uint64(readGas), 0, 0) // Gas for reading the length of the container
+	gasMeter.Use(uint64(readGas), 0, 0) // Gas for reading the length of the container
 	if !successful || length == 0 {
-		return []byte{}, successful, gasTracker.TotalGasUsed // No elements in the container, nothing to delete
+		return []byte{}, successful, gasMeter.TotalGasUsed // No elements in the container, nothing to delete
 	}
 
 	// Get the last element in the container first before
 	// deleting it from the container.
 	values, successful, readGas := this.GetByIndex(path, length-1)
-	gasTracker.UseGas(uint64(readGas), 0, 0) // Gas for reading the last element
+	gasMeter.Use(uint64(readGas), 0, 0) // Gas for reading the last element
 	if len(values) == 0 || !successful {
-		return values, false, gasTracker.TotalGasUsed // Failed to get the last element
+		return values, false, gasMeter.TotalGasUsed // Failed to get the last element
 	}
 
 	// Delete the last element in the container.
 	successful, writeGas := this.SetByIndex(path, length-1, nil)
-	gasTracker.UseGas(0, writeGas, 0) // Gas for writing the value
-	return values, successful, gasTracker.TotalGasUsed
+	gasMeter.Use(0, writeGas, 0) // Gas for writing the value
+	return values, successful, gasMeter.TotalGasUsed
 }
 
 // Delete all elements in the container.
 func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
 
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	_, dataSize, err := this.api.WriteCache().(*cache.WriteCache).EraseAll(tx, path, nil)
-	gasTracker.UseGas(0, dataSize, 0) // Gas for erasing the container
+	gasMeter.Use(0, dataSize, 0) // Gas for erasing the container
 
-	return []byte{}, err == nil, gasTracker.TotalGasUsed
+	return []byte{}, err == nil, gasMeter.TotalGasUsed
 }
 
 // Set all elements in the container to their default value.
 func (this *BaseHandlers) resetByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
 
 	// Get the key of the element
 	key, err := abi.DecodeTo(input, 0, []byte{}, 2, math.MaxInt)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
 	if err != nil || len(key) == 0 {
-		return []byte{}, false, gasTracker.TotalGasUsed // Gas for decoding the key
+		return []byte{}, false, gasMeter.TotalGasUsed // Gas for decoding the key
 	}
 
 	// Get the type of the container info
 	data, successful, writeDataSize := this.ResetByKey(path, hex.EncodeToString(key))
-	gasTracker.UseGas(0, int64(writeDataSize), 0)    // Gas for reading the value
-	return data, successful, gasTracker.TotalGasUsed // Reset the element by its key.
+	gasMeter.Use(0, int64(writeDataSize), 0)       // Gas for reading the value
+	return data, successful, gasMeter.TotalGasUsed // Reset the element by its key.
 }
 
 func (this *BaseHandlers) resetByInd(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
 	index, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE)
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed // Gas for decoding the index
+		return []byte{}, false, gasMeter.TotalGasUsed // Gas for decoding the index
 	}
 
 	key, dataSize := this.KeyAt(path, index)
-	gasTracker.UseGas(dataSize, 0, 0)
+	gasMeter.Use(dataSize, 0, 0)
 	if len(key) == 0 {
-		return []byte{}, false, gasTracker.TotalGasUsed // Gas for reading the key
+		return []byte{}, false, gasMeter.TotalGasUsed // Gas for reading the key
 	}
 
 	data, successful, writeDataSize := this.ResetByKey(path, key)
-	return data, successful, gasTracker.UseGas(0, int64(writeDataSize), 0).TotalGasUsed // Reset the element by its index.
+	return data, successful, gasMeter.Use(0, int64(writeDataSize), 0).TotalGasUsed // Reset the element by its index.
 }

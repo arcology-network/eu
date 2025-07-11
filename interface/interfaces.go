@@ -44,10 +44,10 @@ type ChainContext interface {
 type EthApiRouter interface {
 	// Used in EVM to call the kernel API
 	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash, isReadOnly bool) (bool, []byte, bool, int64)
-	Job() any                          // Get the job information for the current call
-	PrepayGas(*uint64, *uint64) uint64 // Prepay gas for deferred execution.
-	UsePrepaidGas(*uint64) bool        // Use the prepaid gas pay for the deferred TX.
-	RefundPrepaidGas(*uint64) bool     // Refund sponsored gas
+	Job() any                                  // Get the job information for the current call
+	PrepayGas(*uint64, *uint64) (uint64, bool) // Prepay gas for deferred execution.
+	UsePrepaidGas(*uint64) bool                // Use the prepaid gas pay for the deferred TX.
+	RefundPrepaidGas(*uint64) bool             // Refund sponsored gas
 
 	// Arcology specific APIs
 	GetDeployer() evmcommon.Address
@@ -63,7 +63,7 @@ type EthApiRouter interface {
 	WriteCachePool() any
 	WriteCache() any
 	SetWriteCache(any) EthApiRouter
-	New(any, any, evmcommon.Address, any, any) EthApiRouter
+	New(any, any, evmcommon.Address, any) EthApiRouter
 	Cascade() EthApiRouter
 
 	Origin() evmcommon.Address

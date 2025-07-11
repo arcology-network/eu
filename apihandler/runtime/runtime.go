@@ -114,12 +114,12 @@ func (this *RuntimeHandlers) setParallelism(caller, addr evmcommon.Address, inpu
 		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
 	}
 
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	paraLvl, err := abi.Decode(input, 3, uint64(0), 1, 1)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE) // Gas for decoding the input
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the input
 
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	executionMethod := stgcommon.PARALLEL_EXECUTION
@@ -128,9 +128,9 @@ func (this *RuntimeHandlers) setParallelism(caller, addr evmcommon.Address, inpu
 	}
 
 	result, successful, gas := this.setExecutionParallelism(caller, addr, input, executionMethod)
-	gasTracker.UseGas(0, 0, gas) // Add the gas used for setting the execution method.
+	gasMeter.Use(0, 0, gas) // Add the gas used for setting the execution method.
 
-	return result, successful, gasTracker.TotalGasUsed
+	return result, successful, gasMeter.TotalGasUsed
 }
 
 func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address, input []byte, executionMethod uint8) ([]byte, bool, int64) {
@@ -138,33 +138,33 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
 	}
 
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 	sourceFunc, err := abi.DecodeTo(input, 0, [4]byte{}, 1, 4) // Get the target contract address.
-	gasTracker.UseGas(0, 0, eucommon.GAS_GET_RUNTIME_INFO+eucommon.GAS_DECODE)
+	gasMeter.Use(0, 0, eucommon.GAS_GET_RUNTIME_INFO+eucommon.GAS_DECODE)
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	targetAddr, err := abi.DecodeTo(input, 1, [20]byte{}, 1, math.MaxInt)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE)
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
 
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Get the target function signatures
 	signBytes, err := abi.DecodeTo(input, 2, []byte{}, 1, math.MaxInt)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE)
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
 
 	if err != nil || len(signBytes) <= 32 {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Parse the function signatures.
 	signatures, err := abi.DecodeTo(signBytes[32:], 0, [][4]byte{}, 2, math.MaxInt)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE)
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	cache := this.api.WriteCache().(*cache.WriteCache)
@@ -174,10 +174,10 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	// Check if the property path exists, if not create it.
 	if path, _, readDataSize := cache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
 		writeDataSize, err := cache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
-		gasTracker.UseGas(readDataSize, int64(writeDataSize), 0)                     // Gas for writing the property path.
+		gasMeter.Use(readDataSize, int64(writeDataSize), 0)                          // Gas for writing the property path.
 
 		if err != nil {
-			return []byte{}, false, gasTracker.TotalGasUsed // If the property path write fails, return an error.
+			return []byte{}, false, gasMeter.TotalGasUsed // If the property path write fails, return an error.
 		}
 	}
 
@@ -199,9 +199,9 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 
 	// Write the execution method to the property path.
 	writeDataSize, err := cache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod}))
-	gasTracker.UseGas(0, (writeDataSize), 0)
+	gasMeter.Use(0, (writeDataSize), 0)
 	if err != nil { //
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Users can add some excepted callees so they can be handled differently.
@@ -211,32 +211,32 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 
 	path = stgcommon.ExceptPaths(caller, sourceFunc)
 	writeDataSize, err = cache.Write(txID, path, commutative.NewPath(callees...)) // Write the excepted callees regardless of its existence.
-	gasTracker.UseGas(0, writeDataSize, 0)
+	gasMeter.Use(0, writeDataSize, 0)
 
-	return []byte{}, err == nil, gasTracker.TotalGasUsed
+	return []byte{}, err == nil, gasMeter.TotalGasUsed
 }
 
-// This function needs to schedule a defer call to the next generation.
+// This function inform the scheduler to scheduler a defer call for a particular function.
 func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
 		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
 	}
 
-	gasTracker := gas.NewGasTracker()
+	gasMeter := gas.NewGasMeter()
 
 	// Decode the function signature from the input.
 	funSignBytes, err := abi.DecodeTo(input, 0, []uint8{}, 1, 32)
-	gasTracker.UseGas(0, 0, eucommon.GAS_GET_RUNTIME_INFO+eucommon.GAS_DEFER) // Gas for deferring the call.
+	gasMeter.Use(0, 0, eucommon.GAS_GET_RUNTIME_INFO+eucommon.GAS_DEFER) // Gas for deferring the call.
 
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Decode the amount of prepaid gas from the input.
 	prepaidGas, err := abi.Decode(input, 1, uint64(0), 1, 8)
-	gasTracker.UseGas(0, 0, eucommon.GAS_DECODE)
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	funSign := new(codec.Bytes4).FromBytes(funSignBytes)
@@ -249,31 +249,28 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	// Check if the property path exists, if not create it.
 	if path, _, _ := cache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
 		writeDataSize, err := cache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
-		gasTracker.UseGas(0, writeDataSize, 0)                                       // Gas for writing the property path.
+		gasMeter.Use(0, writeDataSize, 0)                                            // Gas for writing the property path.
 		if err != nil {
-			return []byte{}, false, gasTracker.TotalGasUsed // If the property path write fails, return an error.
+			return []byte{}, false, gasMeter.TotalGasUsed // If the property path write fails, return an error.
 		}
 	}
 
 	// Write deferrable information to the property path.
 	deferPath := stgcommon.DeferrablePath(caller, funSign)                                   // Generate the sub path for the deferrable.
 	writeDataSize, err := cache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
-	gasTracker.UseGas(0, writeDataSize, 0)
+	gasMeter.Use(0, writeDataSize, 0)
 	if err != nil {
-		return []byte{}, false, gasTracker.TotalGasUsed
+		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
-	// Set the prepaid gas value for the deferred call.
-	// accumFee += eucommon.GAS_GET_RUNTIME_INFO
-	job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
-	PrepaidGasPath := stgcommon.PrepaidGasPath(caller, funSign) // Generate the sub path for the prepaid gas.
-
-	// Write to storage
+	// Write the required prepaid amount to storage
+	PrepaidGasPath := stgcommon.PrepaidGasPath(caller, funSign) // Generate the sub path for the prepaid gas amount.
 	writeDataSize, err = cache.Write(txID, PrepaidGasPath, noncommutative.NewInt64(int64(prepaidGas.(uint64))))
-	gasTracker.UseGas(0, writeDataSize, 0)
+	gasMeter.Use(0, writeDataSize, 0)
 
-	job.(*eucommon.Job).StdMsg.PrepaidGas = prepaidGas.(uint64) // Set the prepaid gas for the deferred call.
-	return []byte{}, err == nil, gasTracker.TotalGasUsed
+	// job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
+	// job.(*eucommon.Job).StdMsg.PrepaidGas = prepaidGas.(uint64) // Set the prepaid gas for the deferred call.
+	return []byte{}, err == nil, gasMeter.TotalGasUsed
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {

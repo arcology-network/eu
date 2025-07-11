@@ -24,21 +24,21 @@ import (
 )
 
 // CalculateGas is a placeholder function for calculating gas costs.
-type GasTracker struct {
+type GasMeter struct {
 	ReadDataSize  uint64
 	WriteDataSize int64
 	TotalGasUsed  int64
 }
 
-func NewGasTracker() *GasTracker {
-	return &GasTracker{
+func NewGasMeter() *GasMeter {
+	return &GasMeter{
 		ReadDataSize:  0,
 		WriteDataSize: 0,
 		TotalGasUsed:  0,
 	}
 }
 
-func (this *GasTracker) UseGas(readDataSize uint64, writeDataSize int64, gasUsed int64) *GasTracker {
+func (this *GasMeter) Use(readDataSize uint64, writeDataSize int64, gasUsed int64) *GasMeter {
 	this.ReadDataSize += readDataSize
 	this.WriteDataSize += writeDataSize
 	this.TotalGasUsed += int64(math.Ceil(float64(readDataSize)/float64(eucommon.DATA_UNIT_SIZE))+

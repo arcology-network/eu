@@ -55,7 +55,7 @@ func (this *Result) GenGasTransition(balanceTransition *univalue.Univalue, gasDe
 	totalDelta := v.(uint256.Int)
 
 	if totalDelta.Cmp(gasDelta) == 0 { // Balance change == gas fee paid.
-		balanceTransition.Property.SetPersistent(true) // Won't be affect by conflicts
+		balanceTransition.Property.SkipConflictCheck(true) // Won't be affect by conflicts
 		return balanceTransition
 	}
 
@@ -63,7 +63,7 @@ func (this *Result) GenGasTransition(balanceTransition *univalue.Univalue, gasDe
 	gasTransition := balanceTransition.Clone().(*univalue.Univalue)
 	gasTransition.Value().(stgcommon.Type).SetDelta(*gasDelta, isCredit) // Set the gas fee.
 	// gasTransition.Value().(stgcommon.Type).SetDeltaSign(isCredit) // Negative for the sender, positive for the coinbase.
-	gasTransition.Property.SetPersistent(true)
+	gasTransition.Property.SkipConflictCheck(true)
 	return gasTransition
 }
 
@@ -102,7 +102,7 @@ func (this *Result) Postprocess() *Result {
 	})
 
 	if senderNonce != nil {
-		(*senderNonce).Property.SetPersistent(true)       // Won't be affect by conflicts either
+		(*senderNonce).Property.SkipConflictCheck(true)   // Won't be affect by conflicts either
 		this.Immuned = append(this.Immuned, *senderNonce) // Add the nonce transition to the immune list even if the execution is unsuccessful.
 	}
 	this.RawStateAccesses = this.Transitions() // Return all the successful transitions

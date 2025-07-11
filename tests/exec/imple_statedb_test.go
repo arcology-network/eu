@@ -23,7 +23,6 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/mempool"
 	eth "github.com/arcology-network/eu/eth"
-	"github.com/arcology-network/eu/gas"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -39,7 +38,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	// localCache := cache.NewWriteCache(datastore, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(db, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
@@ -69,7 +68,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	// localCache := cache.NewWriteCache(db, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(db, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
 	ethStatedb := eth.NewImplStateDB(api)
@@ -101,7 +100,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	// localCache := cache.NewWriteCache(db, 32, 1)
 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
 		return cache.NewWriteCache(db, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }), gas.NewGasPrepayer())
+	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)

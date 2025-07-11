@@ -22,7 +22,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/arcology-network/common-lib/addrcompressor"
 	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
@@ -39,8 +38,8 @@ import (
 func TestTransitionFilters(t *testing.T) {
 	store := chooseDataStore()
 
-	alice := addrcompressor.RandomAccount()
-	bob := addrcompressor.RandomAccount()
+	alice := RandomAccount()
+	bob := RandomAccount()
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
@@ -138,8 +137,8 @@ func TestTransitionFilters(t *testing.T) {
 func TestAccessFilters(t *testing.T) {
 	store := chooseDataStore()
 
-	alice := addrcompressor.RandomAccount()
-	bob := addrcompressor.RandomAccount()
+	alice := RandomAccount()
+	bob := RandomAccount()
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache

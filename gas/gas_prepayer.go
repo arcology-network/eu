@@ -22,59 +22,58 @@ import (
 )
 
 /*
-GasPrepayer is a structure that holds a map of contract addresses to their prepaid gas messages.
+GasPrepayerLookup is a structure that holds a map of contract addresses to their prepaid gas messages.
 It is used to manage the prepaid gas for contracts with deferred execution.
 */
-type GasPrepayer struct {
-	Payers    map[string][]*eucommon.Job
+type GasPrepayerLookup struct {
+	// PayersNew map[string][]*eucommon.Job
 	PayersNew map[string][]*PrepayerInfo
 }
 
-func NewGasPrepayer() *GasPrepayer {
-	return &GasPrepayer{
-		Payers:    make(map[string][]*eucommon.Job),
+func NewGasPrepayer() *GasPrepayerLookup {
+	return &GasPrepayerLookup{
+		// PayersNew:    make(map[string][]*eucommon.Job),
 		PayersNew: make(map[string][]*PrepayerInfo),
 	}
 }
 
-func (this *GasPrepayer) Add(payerInfo []*PrepayerInfo) uint64 {
-	for _, info := range payerInfo {
-		addrSign := info.UID()
-		gasAmount := info.PrepayedAmount
-		if gasAmount == 0 {
-			return 0
-		}
+// func (this *GasPrepayerLookup) Add(payerInfo []*PrepayerInfo) uint64 {
+// 	for _, info := range payerInfo {
+// 		addrSign := info.UID()
+// 		gasAmount := info.PrepayedAmount
+// 		if gasAmount == 0 {
+// 			return 0
+// 		}
 
-		if _, exists := this.Payers[addrSign]; !exists {
-			this.Payers[addrSign] = []*eucommon.Job{}
-		}
+// 		if _, exists := this.PayersNew[addrSign]; !exists {
+// 			this.PayersNew[addrSign] = []*eucommon.Job{}
+// 		}
 
-		this.PayersNew[addrSign] = append(this.PayersNew[addrSign], info)
-	}
-	return 0
-}
+// 		this.PayersNew[addrSign] = append(this.PayersNew[addrSign], info)
+// 	}
+// 	return 0
+// }
 
-func (this *GasPrepayer) AddPrepayer(job *eucommon.Job) uint64 {
+func (this *GasPrepayerLookup) AddPrepayer(job *eucommon.Job) uint64 {
 	addrSign := job.StdMsg.AddrAndSignature()
 	gasAmount := job.StdMsg.PrepaidGas
 	if len(addrSign) == 0 || gasAmount == 0 {
 		return 0
 	}
 
-	if _, exists := this.Payers[addrSign]; !exists {
-		this.Payers[addrSign] = []*eucommon.Job{}
+	if _, exists := this.PayersNew[addrSign]; !exists {
+		this.PayersNew[addrSign] = []*PrepayerInfo{}
 	}
-
-	this.Payers[addrSign] = append(this.Payers[addrSign], job)
+	this.PayersNew[addrSign] = append(this.PayersNew[addrSign], (&PrepayerInfo{}).FromJob(job))
 	return gasAmount
 }
 
-func (this *GasPrepayer) SumPrepaidGas(addrSign string) (uint64, uint64) {
+func (this *GasPrepayerLookup) SumPrepaidGas(addrSign string) (uint64, uint64) {
 	totalPayers := uint64(0)
-	totalPrepaid := slice.Accumulate(this.Payers[addrSign], 0, func(i int, job *eucommon.Job) uint64 {
-		if job.Successful() {
+	totalPrepaid := slice.Accumulate(this.PayersNew[addrSign], 0, func(i int, info *PrepayerInfo) uint64 {
+		if info.Successful {
 			totalPayers++
-			return job.StdMsg.PrepaidGas
+			return info.PrepayedAmount
 		}
 		return 0
 	})
