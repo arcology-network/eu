@@ -36,7 +36,7 @@ func CreateNewAccount(tx uint64, acct string, store interface {
 
 	transitions := []*univalue.Univalue{}
 	for i, path := range paths {
-		var v interface{}
+		var v any
 		switch typeids[i] {
 		case commutative.PATH: // Path
 			v = commutative.NewPath()
@@ -62,6 +62,7 @@ func CreateNewAccount(tx uint64, acct string, store interface {
 			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
 
 			if _, err := store.Write(tx, path, v); err != nil { // root path
+				store.Write(tx, path, v)
 				return nil, err
 			}
 

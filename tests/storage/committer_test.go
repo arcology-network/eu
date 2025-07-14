@@ -184,15 +184,15 @@ func TestSize2(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
+
+	// acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	// committer.Import(acctTrans)
+	// committer.Precommit([]uint64{1})
+	// committer.Commit(111110)
+
 	key := RandomKey(0)
 	alice := AliceAccount()
-
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(acctTrans)
-	committer.Precommit([]uint64{1})
-	committer.Commit(111110)
-
 	eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", noncommutative.NewString("124"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+key, noncommutative.NewBytes(slice.New[byte](320, 11)))
@@ -206,7 +206,7 @@ func TestSize2(t *testing.T) {
 		t.Error("Error: The path should exist")
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	// committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
@@ -835,7 +835,7 @@ func TestPathReadAndWriteBatchCache2(b *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.WriteCache
-	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
+	WriteNewAcountsToCache(writeCache, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
@@ -882,7 +882,7 @@ func BenchmarkPathReadAndWriteBatch(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.WriteCache
-	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
+	WriteNewAcountsToCache(writeCache, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
@@ -1009,7 +1009,7 @@ func TestPathReadAndWrites(b *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.WriteCache
-	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
+	WriteNewAcountsToCache(writeCache, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {
@@ -1081,7 +1081,7 @@ func TestPathReadAndWritesPath(b *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.WriteCache
-	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
+	WriteNewAcountsToCache(writeCache, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
 	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -1146,7 +1146,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.WriteCache
-	NewAcountsInCache(writeCache, AliceAccount())
+	WriteNewAcountsToCache(writeCache, AliceAccount())
 
 	alice := AliceAccount()
 	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -1198,7 +1198,7 @@ func TestPathMultiBatch(b *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.WriteCache
-	NewAcountsInCache(writeCache, AliceAccount())
+	WriteNewAcountsToCache(writeCache, AliceAccount())
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 
@@ -1420,7 +1420,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 
-	NewAcountsInCache(writeCache, AliceAccount(), BobAccount())
+	WriteNewAcountsToCache(writeCache, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath()); err != nil {

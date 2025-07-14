@@ -57,8 +57,10 @@ func (this *RuntimeHandlers) Address() [20]byte {
 }
 
 func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isReadOnly bool) ([]byte, bool, int64) {
-	signature := [4]byte{}
-	copy(signature[:], input)
+	// signature := [4]byte{}
+	// copy(signature[:], input)
+
+	signature := codec.Bytes4{}.FromBytes(input[:])
 
 	switch signature {
 	case [4]byte{0xf1, 0x06, 0x84, 0x54}: // 79 fc 09 a2
@@ -168,27 +170,18 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	}
 
 	cache := this.api.WriteCache().(*cache.WriteCache)
-	propertyPath := stgcommon.FuncPropertyPath(caller, sourceFunc)
 	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
 	// Check if the property path exists, if not create it.
-	if path, _, readDataSize := cache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
-		writeDataSize, err := cache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
-		gasMeter.Use(readDataSize, int64(writeDataSize), 0)                          // Gas for writing the property path.
+	funcPath := stgcommon.FuncPath(caller, sourceFunc)
+	if path, _, readDataSize := cache.Read(txID, funcPath, commutative.NewPath()); path == nil {
+		writeDataSize, err := cache.Write(txID, funcPath, commutative.NewPath()) // Create the property path only when needed.
+		gasMeter.Use(readDataSize, int64(writeDataSize), 0)                      // Gas for writing the property path.
 
 		if err != nil {
 			return []byte{}, false, gasMeter.TotalGasUsed // If the property path write fails, return an error.
 		}
 	}
-
-	// Create the parent path for the properties.
-	// writePathFee, err := cache.Write(txID, propertyPath, commutative.NewPath())
-	// if err != nil {
-	// 	return []byte{}, err == nil, eucommon.GAS_READ + eucommon.GAS_DECODE*4 + writePathFee
-	// }
-
-	// Either the function is parallel or sequential.
-	path := stgcommon.ExecutionParallelism(caller, sourceFunc)
 
 	// If local method is parallel, global method is sequential and vice versa.
 	// How the scheduler all the function under the contract should be executed in parallel or sequentially by DEFAULT.
@@ -198,6 +191,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	}
 
 	// Write the execution method to the property path.
+	path := stgcommon.ExecutionParallelism(caller, sourceFunc) // Either the function is parallel or sequential.
 	writeDataSize, err := cache.Write(txID, path, noncommutative.NewBytes([]byte{globalMethod}))
 	gasMeter.Use(0, (writeDataSize), 0)
 	if err != nil { //
@@ -217,7 +211,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 }
 
 // This function inform the scheduler to scheduler a defer call for a particular function.
-func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
+func (this *RuntimeHandlers) deferCall(caller, callee evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
 		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
 	}
@@ -239,38 +233,41 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
-	funSign := new(codec.Bytes4).FromBytes(funSignBytes)
 	txID := this.api.GetEU().(interface{ ID() uint64 }).ID()
-
-	// Get the function signature.
-	propertyPath := stgcommon.FuncPropertyPath(caller, funSign)
 	cache := this.api.WriteCache().(*cache.WriteCache)
 
-	// Check if the property path exists, if not create it.
-	if path, _, _ := cache.Read(txID, propertyPath, commutative.NewPath()); path == nil {
-		writeDataSize, err := cache.Write(txID, propertyPath, commutative.NewPath()) // Create the property path only when needed.
-		gasMeter.Use(0, writeDataSize, 0)                                            // Gas for writing the property path.
+	// Check if the function path exists, if not create it.
+	funSign := new(codec.Bytes4).FromBytes(funSignBytes)
+	if !cache.IfExists(stgcommon.FuncPath(caller, funSign)) {
+		gas, err := cache.Write(txID, stgcommon.FuncPath(caller, funSign), commutative.NewPath())
+		gasMeter.Use(0, int64(gas), 0) // Gas for writing the function path.
 		if err != nil {
-			return []byte{}, false, gasMeter.TotalGasUsed // If the property path write fails, return an error.
+			return []byte{}, false, gasMeter.TotalGasUsed // If the function path write
 		}
 	}
 
 	// Write deferrable information to the property path.
-	deferPath := stgcommon.DeferrablePath(caller, funSign)                                   // Generate the sub path for the deferrable.
-	writeDataSize, err := cache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
+	// deferPath := stgcommon.DeferrablePath(caller, funSign)                                   // Generate the sub path for the deferrable.
+	// writeDataSize, err := cache.Write(txID, deferPath, noncommutative.NewBytes([]byte{255})) // Set the function deferrable
+	// gasMeter.Use(0, writeDataSize, 0)
+	// if err != nil {
+	// 	return []byte{}, false, gasMeter.TotalGasUsed
+	// }
+
+	// Write the required prepaid amount to storage
+	RequiredPrepaidGasAmountPath := stgcommon.RequiredPrepaidGasAmountPath(caller, funSign) // Generate the sub path for the prepaid gas amount.
+	writeDataSize, err := cache.Write(txID, RequiredPrepaidGasAmountPath, noncommutative.NewInt64(int64(prepaidGas.(uint64))))
 	gasMeter.Use(0, writeDataSize, 0)
 	if err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
-	// Write the required prepaid amount to storage
-	PrepaidGasPath := stgcommon.PrepaidGasPath(caller, funSign) // Generate the sub path for the prepaid gas amount.
-	writeDataSize, err = cache.Write(txID, PrepaidGasPath, noncommutative.NewInt64(int64(prepaidGas.(uint64))))
-	gasMeter.Use(0, writeDataSize, 0)
-
-	// job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
-	// job.(*eucommon.Job).StdMsg.PrepaidGas = prepaidGas.(uint64) // Set the prepaid gas for the deferred call.
-	return []byte{}, err == nil, gasMeter.TotalGasUsed
+	// Create a sub path under the prepayer info path for the contract + function.
+	// This in the contract constructor, we can't get the address and signature from the job.
+	// We get them instead from the input.
+	prepayerPath := stgcommon.PrepayersPath() + new(gas.PrepayerInfo).GenUID(caller, codec.Bytes4{}.FromBytes(funSign[:])) + "/"
+	_, err = cache.Write(txID, prepayerPath, commutative.NewPath())
+	return []byte{}, err == nil, gasMeter.TotalGasUsed // Failed to write the prepayer info, cannot prepay gas.
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {

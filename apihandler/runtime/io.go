@@ -39,12 +39,8 @@ func (this *IoHandlers) Address() [20]byte {
 }
 
 func (this *IoHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, _ bool) ([]byte, bool, int64) {
-	signature := [4]byte{}
-	copy(signature[:], input)
-
+	// signature := codec.Bytes4{}.FromBytes(input[:])
 	return this.print(caller, callee, input, origin, nonce)
-	// }
-	// return []byte{}, false, 0
 }
 
 func (this *IoHandlers) print(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64) ([]byte, bool, int64) {

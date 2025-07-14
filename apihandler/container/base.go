@@ -63,8 +63,7 @@ func (this *BaseHandlers) Connector() *eth.PathBuilder { return this.pathBuilder
 
 func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isFromStaticCall bool) ([]byte, bool, int64) {
 	// Real handlers
-	signature := [4]byte{}
-	copy(signature[:], input)
+	signature := codec.Bytes4{}.FromBytes(input)
 
 	switch signature {
 	case [4]byte{0x66, 0x54, 0x85, 0x21}:
@@ -91,8 +90,7 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 		return []byte{}, false, 0 // Fee has to be 0. Since all the calls will enter here.
 	}
 
-	signature := [4]byte{}
-	copy(signature[:], subInput)
+	signature := codec.Bytes4{}.FromBytes(subInput[:4]) // Get the function signature
 	input = subInput
 
 	switch signature {

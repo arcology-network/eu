@@ -48,6 +48,7 @@ type EthApiRouter interface {
 	PrepayGas(*uint64, *uint64) (uint64, bool) // Prepay gas for deferred execution.
 	UsePrepaidGas(*uint64) bool                // Use the prepaid gas pay for the deferred TX.
 	RefundPrepaidGas(*uint64) bool             // Refund sponsored gas
+	SetExecutionErr(error)                     // Export the execution error from EVM for the current call
 
 	// Arcology specific APIs
 	GetDeployer() evmcommon.Address

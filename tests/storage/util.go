@@ -44,6 +44,10 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+func CreateAccount(b [20]byte) string {
+	return hexutil.Encode(b[:])
+}
+
 func RandomAccount() string {
 	var letters = []byte("abcdef0123456789")
 	rand.Seed(time.Now().UnixNano())
@@ -54,10 +58,6 @@ func RandomAccount() string {
 
 	addr := hexutil.Encode(b)
 	return addr
-}
-
-func CreateAccount(b [20]byte) string {
-	return hexutil.Encode(b[:])
 }
 
 func AliceAccount() string {
@@ -109,7 +109,7 @@ func RandomKeys[T constraints.Integer](s0, s1 T) []string {
 }
 
 // Initiate the input new accounts in the cache
-func NewAcountsInCache(writeCache *cache.WriteCache, accounts ...string) {
+func WriteNewAcountsToCache(writeCache *cache.WriteCache, accounts ...string) {
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	// writeCache := sstore.WriteCache
 	for i := range accounts {

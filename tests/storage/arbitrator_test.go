@@ -53,8 +53,6 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
 	committer.Commit(10)
 
-	time.Sleep(2 * time.Second)
-
 	alice := AliceAccount()
 	if _, err := eth.CreateNewAccount(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
@@ -84,6 +82,9 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 		accesses1.Print()
 		accesses2.Print()
 	}
+
+	// accesses1.Print()
+	// accesses2.Print()
 }
 
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {

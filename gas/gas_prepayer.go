@@ -18,7 +18,6 @@ package gas
 
 import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	eucommon "github.com/arcology-network/eu/common"
 )
 
 /*
@@ -26,56 +25,39 @@ GasPrepayerLookup is a structure that holds a map of contract addresses to their
 It is used to manage the prepaid gas for contracts with deferred execution.
 */
 type GasPrepayerLookup struct {
-	// PayersNew map[string][]*eucommon.Job
-	PayersNew map[string][]*PrepayerInfo
+	Payers map[string][]*PrepayerInfo
 }
 
-func NewGasPrepayer() *GasPrepayerLookup {
-	return &GasPrepayerLookup{
-		// PayersNew:    make(map[string][]*eucommon.Job),
-		PayersNew: make(map[string][]*PrepayerInfo),
+func NewGasPrepayerLookup(payerInfo []*PrepayerInfo) *GasPrepayerLookup {
+	lookup := &GasPrepayerLookup{
+		Payers: make(map[string][]*PrepayerInfo),
 	}
+	return lookup.AddPrepayer(payerInfo)
 }
 
-// func (this *GasPrepayerLookup) Add(payerInfo []*PrepayerInfo) uint64 {
-// 	for _, info := range payerInfo {
-// 		addrSign := info.UID()
-// 		gasAmount := info.PrepayedAmount
-// 		if gasAmount == 0 {
-// 			return 0
-// 		}
-
-// 		if _, exists := this.PayersNew[addrSign]; !exists {
-// 			this.PayersNew[addrSign] = []*eucommon.Job{}
-// 		}
-
-// 		this.PayersNew[addrSign] = append(this.PayersNew[addrSign], info)
-// 	}
-// 	return 0
-// }
-
-func (this *GasPrepayerLookup) AddPrepayer(job *eucommon.Job) uint64 {
-	addrSign := job.StdMsg.AddrAndSignature()
-	gasAmount := job.StdMsg.PrepaidGas
-	if len(addrSign) == 0 || gasAmount == 0 {
-		return 0
-	}
-
-	if _, exists := this.PayersNew[addrSign]; !exists {
-		this.PayersNew[addrSign] = []*PrepayerInfo{}
-	}
-	this.PayersNew[addrSign] = append(this.PayersNew[addrSign], (&PrepayerInfo{}).FromJob(job))
-	return gasAmount
-}
-
-func (this *GasPrepayerLookup) SumPrepaidGas(addrSign string) (uint64, uint64) {
-	totalPayers := uint64(0)
-	totalPrepaid := slice.Accumulate(this.PayersNew[addrSign], 0, func(i int, info *PrepayerInfo) uint64 {
-		if info.Successful {
-			totalPayers++
-			return info.PrepayedAmount
+func (this *GasPrepayerLookup) AddPrepayer(payerInfo []*PrepayerInfo) *GasPrepayerLookup {
+	for _, info := range payerInfo {
+		if this.Payers[info.UID()] == nil {
+			this.Payers[info.UID()] = []*PrepayerInfo{}
 		}
-		return 0
-	})
-	return totalPayers, totalPrepaid
+		this.Payers[info.UID()] = append(this.Payers[info.UID()], info)
+	}
+	return this
+}
+
+func (this *GasPrepayerLookup) SumPrepaidGas(addrSign string) ([]*PrepayerInfo, uint64) {
+	successfulPayers := slice.TransformIf(this.Payers[addrSign], func(_ int, info *PrepayerInfo) (bool, *PrepayerInfo) {
+		return info.Successful, info
+	}) // Successful payers only.
+
+	totalPrepaid := slice.Accumulate(successfulPayers, 0, func(i int, info *PrepayerInfo) uint64 { return info.PrepayedAmount })
+	return successfulPayers, totalPrepaid
+}
+
+func (this *GasPrepayerLookup) Clear(addrSign string) bool {
+	if this.Payers[addrSign] != nil {
+		delete(this.Payers, addrSign)
+		return true
+	}
+	return false
 }

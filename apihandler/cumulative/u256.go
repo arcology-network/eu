@@ -56,8 +56,10 @@ func (this *U256CumHandler) Address() [20]byte {
 }
 
 func (this *U256CumHandler) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isReadOnly bool) ([]byte, bool, int64) {
-	signature := [4]byte{}
-	copy(signature[:], input)
+	// signature := [4]byte{}
+	// copy(signature[:], input)
+
+	signature := codec.Bytes4{}.FromBytes(input)
 
 	if isReadOnly {
 		switch signature {

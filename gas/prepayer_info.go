@@ -18,6 +18,9 @@
 package gas
 
 import (
+	"encoding/hex"
+	"math/big"
+
 	codec "github.com/arcology-network/common-lib/codec"
 	eucommon "github.com/arcology-network/eu/common"
 )
@@ -31,25 +34,44 @@ type PrepayerInfo struct {
 	PrepayedAmount uint64   // Amount of prepaid gas
 	InitialGas     uint64   // Initial gas amount excluding prepaid gas.
 	GasUsed        uint64   // Gas used in the transaction, including prepaid gas.
-	GasRemaining   uint64   // Remaining gas after the transaction execution
-	Successful     bool     // Whether the transaction was successful
+	GasPrice       *big.Int
+	GasRemaining   uint64 // Remaining gas after the transaction execution
+	Successful     bool   // Whether the transaction was successful
 }
 
-func (this *PrepayerInfo) UID() string { return string(this.To[:]) + string(this.Signature[:]) }
+func (this *PrepayerInfo) UID() string {
+	return this.GenUID(this.To, this.Signature)
+}
+
+func (*PrepayerInfo) GenUID(to [20]byte, signature [4]byte) string {
+	return hex.EncodeToString(to[:]) + ":" + hex.EncodeToString(signature[:])
+}
 
 func (*PrepayerInfo) FromJob(job *eucommon.Job) *PrepayerInfo {
-	return &PrepayerInfo{
+	info := &PrepayerInfo{
 		Hash:           job.StdMsg.TxHash,
 		TX:             job.StdMsg.ID,
 		From:           job.StdMsg.Native.From,
-		To:             *job.StdMsg.Native.To,
-		Signature:      [4]byte(job.StdMsg.Native.Data[:4]),
 		PrepayedAmount: job.StdMsg.PrepaidGas,
+		GasPrice:       job.StdMsg.Native.GasPrice,
 		InitialGas:     job.InitialGas,
-		GasUsed:        job.Results.Receipt.GasUsed,
 		GasRemaining:   job.GasRemaining,
-		Successful:     job.Successful(),
 	}
+
+	if len(job.StdMsg.Native.Data) > 0 {
+		info.Signature = codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data[:])
+		// info.Signature = [4]byte(job.StdMsg.Native.Data[:4])
+	}
+
+	if job.StdMsg.Native.To != nil {
+		info.To = *job.StdMsg.Native.To
+	}
+
+	if job.Results != nil {
+		info.GasUsed = job.Results.Receipt.GasUsed
+		info.Successful = job.Successful()
+	}
+	return info
 }
 
 func (this *PrepayerInfo) Equal(other *PrepayerInfo) bool {

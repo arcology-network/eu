@@ -33,6 +33,7 @@ import (
 )
 
 func TestSchedulerDeclaration(t *testing.T) {
+
 	store := stgproxy.NewMemDBStoreProxy()
 	sstore := statestore.NewStateStore(store)
 	writeCache := sstore.WriteCache
@@ -54,11 +55,11 @@ func TestSchedulerDeclaration(t *testing.T) {
 	committer.Import(acctTrans).Precommit([]uint64{stgcommon.SYSTEM})
 	committer.Commit(10)
 
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/"+stgcommon.PROPERTY_PATH+"1234/", commutative.NewPath()); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+stgcommon.FULL_FUNC_PATH+"1234/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/"+stgcommon.PROPERTY_PATH+"1234/"+stgcommon.DEFERRED, noncommutative.NewBytes([]byte{255})); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+stgcommon.FULL_FUNC_PATH+"1234/"+stgcommon.DEFERRED, noncommutative.NewBytes([]byte{255})); err != nil {
 		t.Error(err)
 	}
 

@@ -39,10 +39,10 @@ import (
 )
 
 type Job struct {
-	MsgID   uint64 // message id
-	StdMsg  *commontype.StandardMessage
-	Results *Result
-
+	MsgID        uint64 // message id
+	StdMsg       *commontype.StandardMessage
+	Results      *Result
+	Err          error  // Execution error directly from the EVM, not from the receipt.
 	InitialGas   uint64 // Initial gas amount for the contract, used to determine if the contract has enough gas to execute
 	GasRemaining uint64 // Remaining gas for the contract, used to determine if the contract has enough gas to execute
 	// PrepaidGas   uint64 // Gas paid for the deferred execution, negative is paying for the others, positive is paied by others.
@@ -82,10 +82,12 @@ func (this *Job) execute(StdMsg *commontype.StandardMessage, config *Config, api
 }
 
 func (this *Job) Successful() bool {
-	return this.Results != nil &&
-		this.Results.Receipt != nil &&
-		this.Results.Receipt.Status == 1 &&
-		this.Results.Err == nil
+	if this.Results != nil {
+		return this.Results.Receipt != nil &&
+			this.Results.Receipt.Status == 1 &&
+			this.Results.Err == nil
+	}
+	return this.Err == nil
 }
 
 // JobSequence represents a sequence of jobs to be executed.
