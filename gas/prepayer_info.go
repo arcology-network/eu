@@ -25,6 +25,7 @@ import (
 	eucommon "github.com/arcology-network/eu/common"
 )
 
+// PrepayerInfo represents the information of a gas prepayment for a deferred execution contract.
 type PrepayerInfo struct {
 	Hash           [32]byte // Transaction hash
 	TX             uint64   // Transaction number

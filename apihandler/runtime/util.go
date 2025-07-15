@@ -17,14 +17,14 @@
 package runtime
 
 import (
-	"github.com/arcology-network/eu/gas"
+	eucommon "github.com/arcology-network/eu/common"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	"github.com/arcology-network/storage-committer/type/commutative"
 )
 
 // Check if the property parent path exists, if not create it.
-func (this *RuntimeHandlers) CreateFuncParentPath(caller [20]byte, txID uint64, cache *cache.WriteCache, gasMeter *gas.GasMeter) bool {
+func (this *RuntimeHandlers) CreateFuncParentPath(caller [20]byte, txID uint64, cache *cache.WriteCache, gasMeter *eucommon.GasMeter) bool {
 	propertyParent := stgcommon.PropertyPath(caller)
 	if !cache.IfExists(propertyParent) {
 		writeDataSize, err := cache.Write(txID, propertyParent, commutative.NewPath()) // Create the property path only when needed.

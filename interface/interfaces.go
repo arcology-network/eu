@@ -21,6 +21,7 @@ package interfaces
 import (
 	"github.com/ethereum/go-ethereum/common"
 
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -82,4 +83,6 @@ type EthApiRouter interface {
 	Pid() [32]byte
 	UUID() []byte
 	ElementUID() []byte
+
+	GetTxContext() (uint64, *cache.WriteCache)
 }

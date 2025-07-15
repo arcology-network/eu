@@ -15,15 +15,14 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package gas
+package common
 
 import (
 	"math"
-
-	eucommon "github.com/arcology-network/eu/common"
 )
 
-// CalculateGas is a placeholder function for calculating gas costs.
+// GasMeter is a structure that holds the gas usage information for a transaction with respect to data read and written
+// happening in the Arcology part of the execution.
 type GasMeter struct {
 	ReadDataSize  uint64
 	WriteDataSize int64
@@ -41,7 +40,7 @@ func NewGasMeter() *GasMeter {
 func (this *GasMeter) Use(readDataSize uint64, writeDataSize int64, gasUsed int64) *GasMeter {
 	this.ReadDataSize += readDataSize
 	this.WriteDataSize += writeDataSize
-	this.TotalGasUsed += int64(math.Ceil(float64(readDataSize)/float64(eucommon.DATA_UNIT_SIZE))+
-		math.Ceil(float64(writeDataSize)/float64(eucommon.DATA_UNIT_SIZE))) + gasUsed
+	this.TotalGasUsed += int64(math.Ceil(float64(readDataSize)/float64(DATA_UNIT_SIZE))+
+		math.Ceil(float64(writeDataSize)/float64(DATA_UNIT_SIZE))) + gasUsed
 	return this
 }

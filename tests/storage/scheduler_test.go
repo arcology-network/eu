@@ -28,7 +28,6 @@ import (
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
@@ -56,10 +55,6 @@ func TestSchedulerDeclaration(t *testing.T) {
 	committer.Commit(10)
 
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+stgcommon.FULL_FUNC_PATH+"1234/", commutative.NewPath()); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+stgcommon.FULL_FUNC_PATH+"1234/"+stgcommon.DEFERRED, noncommutative.NewBytes([]byte{255})); err != nil {
 		t.Error(err)
 	}
 

@@ -32,7 +32,6 @@ import (
 	"github.com/arcology-network/eu/common"
 	eucommon "github.com/arcology-network/eu/common"
 	eth "github.com/arcology-network/eu/eth"
-	"github.com/arcology-network/eu/gas"
 	intf "github.com/arcology-network/eu/interface"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
@@ -153,7 +152,7 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 }
 
 func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 
 	addr := codec.Bytes20(caller).Hex()
 	connected, pathStr := this.pathBuilder.New(
@@ -176,7 +175,7 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 
 // Only works for uing256 commutative container
 func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	gasMeter.Use(0, 0, eucommon.GAS_NEW_CONTAINER) // Gas for creating a new container
 
 	path := this.pathBuilder.Key(caller)
@@ -252,7 +251,7 @@ func (this *BaseHandlers) fullLength(caller evmcommon.Address, _ []byte) ([]byte
 
 // getByIndex the number of elements in the container
 func (this *BaseHandlers) length(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	gasMeter.Use(0, 0, eucommon.GAS_CONTAINER_META) // Gas for getting the container meta.
 
 	path := this.pathBuilder.Key(caller)
@@ -268,7 +267,7 @@ func (this *BaseHandlers) length(caller evmcommon.Address, _ []byte) ([]byte, bo
 
 // committedLength the initial length of the container, which would remain the same in the same block.
 func (this *BaseHandlers) committedLength(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
 	typedv, dataSize := this.api.WriteCache().(*cache.WriteCache).PeekCommitted(path, new(commutative.Path))
@@ -285,7 +284,7 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, _ []byte) ([
 }
 
 func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
 	gasMeter.Use(0, 0, eucommon.GAS_CONTAINER_META)
 
@@ -333,7 +332,7 @@ func (this *BaseHandlers) getByKey(caller evmcommon.Address, input []byte) ([]by
 }
 
 func (this *BaseHandlers) getByIndex(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Container path
 	gasMeter.Use(0, 0, eucommon.GAS_GET_CONTAINER_META)
 	// if len(path) == 0 {
@@ -352,7 +351,7 @@ func (this *BaseHandlers) getByIndex(caller evmcommon.Address, input []byte) ([]
 
 // Push a new element into the container. If the key does not exist, it will be created and the value will be set.
 func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Container path
 	// if len(path) == 0 {
 	// 	return []byte{}, false, 0
@@ -403,7 +402,7 @@ func (this *BaseHandlers) setByKey(caller evmcommon.Address, input []byte) ([]by
 }
 
 func (this *BaseHandlers) delByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
 
 	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
@@ -418,7 +417,7 @@ func (this *BaseHandlers) delByKey(caller evmcommon.Address, input []byte) ([]by
 }
 
 func (this *BaseHandlers) keyToInd(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
 	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the key
@@ -435,7 +434,7 @@ func (this *BaseHandlers) keyToInd(caller evmcommon.Address, input []byte) ([]by
 }
 
 func (this *BaseHandlers) indToKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
 	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the index
@@ -456,7 +455,7 @@ func (this *BaseHandlers) indToKey(caller evmcommon.Address, input []byte) ([]by
 // Get the last element in the container and remove it from the container.
 // The size will remain the same, but the last element will be nil.
 func (this *BaseHandlers) delLast(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
 	length, successful, readGas := this.NonNilLength(path)
@@ -481,7 +480,7 @@ func (this *BaseHandlers) delLast(caller evmcommon.Address, _ []byte) ([]byte, b
 
 // Delete all elements in the container.
 func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
 
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
@@ -493,7 +492,7 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, boo
 
 // Set all elements in the container to their default value.
 func (this *BaseHandlers) resetByKey(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
 
 	// Get the key of the element
@@ -510,7 +509,7 @@ func (this *BaseHandlers) resetByKey(caller evmcommon.Address, input []byte) ([]
 }
 
 func (this *BaseHandlers) resetByInd(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
-	gasMeter := gas.NewGasMeter()
+	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
 	index, err := abi.DecodeTo(input, 0, uint64(0), 1, 32)
