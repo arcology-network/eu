@@ -46,7 +46,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	apihandler "github.com/arcology-network/eu/apihandler"
-	adaptorcommon "github.com/arcology-network/eu/common"
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/compiler"
 	ethimpl "github.com/arcology-network/eu/eth"
@@ -62,9 +61,9 @@ var (
 	decoder = ethstg.Rlp{}.Decode
 )
 
-func MainTestConfig() *adaptorcommon.Config {
+func MainTestConfig() *eucommon.Config {
 	vmConfig := vm.Config{}
-	cfg := &adaptorcommon.Config{
+	cfg := &eucommon.Config{
 		ChainConfig: params.MainnetChainConfig,
 		VMConfig:    &vmConfig,
 		BlockNumber: big.NewInt(0),
@@ -74,7 +73,7 @@ func MainTestConfig() *adaptorcommon.Config {
 		GasLimit:    math.MaxUint64, // Should come from the message
 		Difficulty:  big.NewInt(0),
 	}
-	cfg.Chain = new(adaptorcommon.DummyChain)
+	cfg.Chain = new(eucommon.DummyChain)
 	return cfg
 }
 
@@ -213,7 +212,7 @@ func AliceDeploy(targetPath, contractFile, compilerVersion, contract string) (*e
 		StdMsg: StdMsg,
 	}
 
-	receipt, execResult, err := testEu.eu.Run(job, adaptorcommon.NewEVMBlockContext(testEu.config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err := testEu.eu.Run(job, eucommon.NewEVMBlockContext(testEu.config), eucommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	_, transitions := cache.NewWriteCacheFilter(testEu.eu.Api().WriteCache()).ByType()
 
 	// fmt.Print(v)
@@ -262,7 +261,7 @@ func AliceCall(executor *eucommon.EU, contractAddress evmcommon.Address, funcNam
 		StdMsg: StdMsg,
 	}
 
-	receipt, execResult, err := executor.Run(job, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err := executor.Run(job, eucommon.NewEVMBlockContext(config), eucommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	if err != nil {
 		return execResult, err
 	}
@@ -277,7 +276,7 @@ func AliceCall(executor *eucommon.EU, contractAddress evmcommon.Address, funcNam
 	return execResult, nil
 }
 
-func DepolyContract(eu *eucommon.EU, committer *stgcomm.StateCommitter, config *adaptorcommon.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *adaptorcommon.Config, *eucommon.EU, *evmcoretypes.Receipt) {
+func DepolyContract(eu *eucommon.EU, committer *stgcomm.StateCommitter, config *eucommon.Config, code string, funcName string, inputData []byte, nonce uint64, checkNonce bool) (error, *eucommon.Config, *eucommon.EU, *evmcoretypes.Receipt) {
 	msg := core.NewMessage(Alice, nil, nonce, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	StdMsg := &commontype.StandardMessage{
 		ID:     1,
@@ -290,7 +289,7 @@ func DepolyContract(eu *eucommon.EU, committer *stgcomm.StateCommitter, config *
 		StdMsg: StdMsg,
 	}
 
-	receipt, _, err := eu.Run(job, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, _, err := eu.Run(job, eucommon.NewEVMBlockContext(config), eucommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 
 	if err != nil || receipt.Status != 1 {
 		errmsg := ""
@@ -327,11 +326,11 @@ func CallContract(eu *eucommon.EU, contractAddress common.Address, inputData []b
 
 	var execResult *evmcore.ExecutionResult
 
-	receipt, execResult, err := eu.Run(&eucommon.Job{StdMsg: StdMsg}, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
+	receipt, execResult, err := eu.Run(&eucommon.Job{StdMsg: StdMsg}, eucommon.NewEVMBlockContext(config), eucommon.NewEVMTxContext(*StdMsg.Native)) // Execute it
 	// _, transitions := eu.Api().WriteCacheFilter().ByType()
 
 	// msg = core.NewMessage(Alice, &contractAddress, 1, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), data, nil, false)
-	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, adaptorcommon.NewEVMBlockContext(config), adaptorcommon.NewEVMTxContext(msg))
+	// receipt, execResult, _ := eu.Run(evmcommon.BytesToHash([]byte{1, 1, 1}), 1, &msg, eucommon.NewEVMBlockContext(config), eucommon.NewEVMTxContext(msg))
 	// _, transitions = eu.Api().WriteCacheFilter().ByType()
 
 	if err != nil {

@@ -26,7 +26,7 @@ import (
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	// adaptorcommon ""github.com/arcology-network/storage-committer/storage/cache""
+	// eucommon ""github.com/arcology-network/storage-committer/storage/cache""
 	intf "github.com/arcology-network/eu/interface"
 )
 

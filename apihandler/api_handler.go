@@ -31,12 +31,13 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/gas"
-	"github.com/arcology-network/storage-committer/type/noncommutative"
+
 	"github.com/holiman/uint256"
 
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 
@@ -254,7 +255,7 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) (uint64
 	}
 
 	// Check if the prepaid gas amount is enough to pay for the deferred execution of the job.
-	PrepaidGas := uint64(prepaidGasAmount.(int64)) // Set
+	PrepaidGas := uint64(prepaidGasAmount.(uint64)) // Set
 	if PrepaidGas > *gasRemaining {
 		return 0, false // Not enough gas remaining to pay for the deferred execution.
 	}
@@ -307,10 +308,10 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 			*gasLeft += this.payer.PrepayedAmount // Parallel Execution failed, refund the prepaid gas directly.
 			return true
 		}
+		this.payer.Successful = job.Successful()
 
 		txID, cache := this.GetTxContext()
 		path := stgcommon.PrepayersPath() + job.StdMsg.AddrAndSignature() + "/" + hex.EncodeToString(job.StdMsg.TxHash[:])
-		this.payer.Successful = job.Successful()
 		_, err := cache.Write(txID, path, noncommutative.NewBytes(this.payer.Encode())) // Write the prepayer info to the prepayer register.
 		return err == nil
 	}
@@ -380,6 +381,6 @@ func (this *APIHandler) GetTxContext() (uint64, *cache.WriteCache) {
 func (this *APIHandler) GetPrepayment(addr [20]byte, funcSign [4]byte) any {
 	txID, cache := this.GetTxContext()
 	payerAmountPath := stgcommon.RequiredPrepaymentPath(addr, funcSign)
-	prepaidGasAmount, _, _ := cache.Read(txID, payerAmountPath, new(commutative.Int64))
+	prepaidGasAmount, _, _ := cache.Read(txID, payerAmountPath, new(commutative.Uint64))
 	return prepaidGasAmount
 }

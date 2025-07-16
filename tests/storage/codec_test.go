@@ -84,7 +84,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 // 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 // 	writeCache := sstore.WriteCache
 // 	// committer.NewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
-// 	adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"), writeCache)
+// 	eucommon.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"), writeCache)
 
 // 	transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 // 	transitions = append(transitions, transVec...)
@@ -111,7 +111,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 // 		writeCache := sstore.WriteCache
 // 		// committer.NewAccount(stgcommcommon.SYSTEM, acct)
 
-// 		adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache)
+// 		eucommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache)
 
 // 		transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 // 		transitions = append(transitions, transVec...)
