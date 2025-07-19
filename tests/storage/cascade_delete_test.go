@@ -1,0 +1,194 @@
+/*
+ *   Copyright (c) 2025 Arcology Network
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package stgtest
+
+import (
+	"testing"
+
+	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/eu/eth"
+	statestore "github.com/arcology-network/storage-committer"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	"github.com/arcology-network/storage-committer/type/commutative"
+	"github.com/arcology-network/storage-committer/type/noncommutative"
+	"github.com/arcology-network/storage-committer/type/univalue"
+)
+
+func TestCascadeDeletesSingleAccount(t *testing.T) {
+	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	alice := AliceAccount()
+	bob := BobAccount()
+	eth.CreateNewAccount(1, alice, writeCache)
+	eth.CreateNewAccount(1, bob, writeCache)
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", noncommutative.NewString("ele-00"))
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", commutative.NewBoundedUint64(0, 100))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", commutative.NewBoundedUint64(0, 100))
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/", commutative.NewPath())
+
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+	committer.Commit(1)
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v.(uint64) != 0 {
+		t.Errorf("Expected 0, got %d", v.(uint64))
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v.(uint64) != 0 {
+		t.Errorf("Expected 0, got %d", v.(uint64))
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path)); v == nil {
+		t.Errorf("Expected 0, got %d", v.(uint64))
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", new(noncommutative.String)); v.(string) != "ele-00" {
+		t.Errorf("Expected 'ele-00', got %d", v)
+	}
+
+	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", nil)
+	// writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", nil)
+	// acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+
+	// Use the wildcard path to delete all elements in the container
+	wildcards := []*univalue.Univalue{univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", 0, 1, 0, nil, nil)}
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(wildcards)
+	committer.Precommit([]uint64{1})
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v != nil {
+		t.Errorf("Expected nil, got %d", v)
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v != nil {
+		t.Errorf("Expected nil, got %d", v)
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", new(noncommutative.String)); v != nil {
+		t.Errorf("Expected 'ele-00', got %d", v)
+	}
+
+}
+
+func TestCascadeDeletes(t *testing.T) {
+	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	alice := AliceAccount()
+	bob := BobAccount()
+	eth.CreateNewAccount(1, alice, writeCache)
+	eth.CreateNewAccount(1, bob, writeCache)
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/", commutative.NewPath())
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", noncommutative.NewString("ele-00"))
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", commutative.NewBoundedUint64(0, 100))
+
+	// writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ele0", commutative.NewUint64Delta(11))
+	// writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ele1", commutative.NewUint64Delta(22))
+	// writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/ele2", commutative.NewUint64Delta(60))
+
+	// if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v.(uint64) != 0 {
+	// 	t.Errorf("Expected 0, got %d", v.(uint64))
+	// }
+
+	// if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v.(uint64) != 0 {
+	// 	t.Errorf("Expected 0, got %d", v.(uint64))
+	// }
+
+	// if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", new(commutative.Uint64)); v.(uint64) != 0 {
+	// 	t.Errorf("Expected 0, got %d", v.(uint64))
+	// }
+
+	// if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/ele0", new(commutative.Uint64)); v.(uint64) != 11 {
+	// 	t.Errorf("Expected 0, got %d", v.(uint64))
+	// }
+
+	// if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/ele1", new(commutative.Uint64)); v.(uint64) != 22 {
+	// 	t.Errorf("Expected 0, got %d", v.(uint64))
+	// }
+
+	// if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/ele2", new(commutative.Uint64)); v.(uint64) != 60 {
+	// 	t.Errorf("Expected 0, got %d", v.(uint64))
+	// }
+
+	// if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/subctrn1/", commutative.NewPath()); err != nil {
+	// 	t.Error(err)
+	// }
+
+	// if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/subctrn1/ele0", commutative.NewUint64Delta(55)); err != nil {
+	// 	t.Error(err)
+	// }
+
+	// v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+bob+"/storage/container/subctrn1/", new(commutative.Path))
+	// if len(v.(*deltaset.DeltaSet[string]).Elements()) != 1 {
+	// 	t.Errorf("Expected 1 element, got %d", len(v.(*deltaset.DeltaSet[string]).Elements()))
+	// }
+
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+	committer.Commit(1)
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v.(uint64) != 0 {
+		t.Errorf("Expected 0, got %d", v.(uint64))
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v.(uint64) != 0 {
+		t.Errorf("Expected 0, got %d", v.(uint64))
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path)); v == nil {
+		t.Errorf("Expected 0, got %d", v.(uint64))
+	}
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", nil)
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", nil)
+
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+
+	// Use the wildcard path to delete all elements in the container
+	// wildcards := univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", 0, 1, 0, nil, nil)
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v != nil {
+		t.Errorf("Expected nil, got %d", v)
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v != nil {
+		t.Errorf("Expected nil, got %d", v)
+	}
+
+}

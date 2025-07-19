@@ -51,14 +51,17 @@ func NewRuntimeHandlers(ethApiRouter intf.EthApiRouter) *RuntimeHandlers {
 	}
 }
 
-func (this *RuntimeHandlers) Address() [20]byte {
-	return eucommon.RUNTIME_HANDLER
+// To register the runtime handler to the API router.
+func (this *RuntimeHandlers) Address() [20]byte { return eucommon.RUNTIME_HANDLER }
+
+func (this *RuntimeHandlers) writeCache(path string, val stgcommon.Type, gasMeter *eucommon.GasMeter) error {
+	txID, cache := this.api.GetTxContext()
+	writeDataSize, err := cache.Write(txID, path, val)
+	gasMeter.Use(0, writeDataSize, 0)
+	return err // Return the error if any.
 }
 
 func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isReadOnly bool) ([]byte, bool, int64) {
-	// signature := [4]byte{}
-	// copy(signature[:], input)
-
 	signature := codec.Bytes4{}.FromBytes(input[:])
 
 	switch signature {
@@ -165,7 +168,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	// Check if the property path exists, if not create it.
 	funcPath := stgcommon.FuncPath(caller, funcSign)
 	if _, cache := this.api.GetTxContext(); !cache.IfExists(funcPath) {
-		if err := this.WriteCache(funcPath, commutative.NewPath(), gasMeter); err != nil {
+		if err := this.writeCache(funcPath, commutative.NewPath(), gasMeter); err != nil {
 			return []byte{}, false, gasMeter.TotalGasUsed // If the property path write fails, return an error.
 		}
 	}
@@ -177,7 +180,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 		globalMethod = stgcommon.SEQUENTIAL_EXECUTION
 	}
 
-	if err := this.WriteCache(stgcommon.ExecutionParallelism(caller, funcSign), noncommutative.NewBytes([]byte{globalMethod}), gasMeter); err != nil {
+	if err := this.writeCache(stgcommon.ExecutionParallelism(caller, funcSign), noncommutative.NewBytes([]byte{globalMethod}), gasMeter); err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
@@ -186,7 +189,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 		return hex.EncodeToString(schtype.Compact(targetAddr[:], signature[:]))
 	})
 
-	err = this.WriteCache(stgcommon.ExceptPaths(caller, funcSign), commutative.NewPath(callees...), gasMeter)
+	err = this.writeCache(stgcommon.ExceptPaths(caller, funcSign), commutative.NewPath(callees...), gasMeter)
 	return []byte{}, err == nil, gasMeter.TotalGasUsed
 }
 
@@ -218,14 +221,14 @@ func (this *RuntimeHandlers) deferCall(caller, callee evmcommon.Address, input [
 	// level in the constructor as well.
 	funSign := new(codec.Bytes4).FromBytes(funSignBytes)
 	if _, cache := this.api.GetTxContext(); !cache.IfExists(stgcommon.FuncPath(caller, funSign)) {
-		if err := this.WriteCache(stgcommon.FuncPath(caller, funSign), commutative.NewPath(), gasMeter); err != nil {
+		if err := this.writeCache(stgcommon.FuncPath(caller, funSign), commutative.NewPath(), gasMeter); err != nil {
 			return []byte{}, false, gasMeter.TotalGasUsed
 		}
 	}
 
 	// Write the required prepaid amount to storage
 	RequiredPrepaymentPath := stgcommon.RequiredPrepaymentPath(caller, funSign) // Generate the sub path for the prepaid gas amount.
-	if err := this.WriteCache(RequiredPrepaymentPath, noncommutative.NewUint64(prepaidGas.(uint64)), gasMeter); err != nil {
+	if err := this.writeCache(RequiredPrepaymentPath, noncommutative.NewUint64(prepaidGas.(uint64)), gasMeter); err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
@@ -233,15 +236,8 @@ func (this *RuntimeHandlers) deferCall(caller, callee evmcommon.Address, input [
 	// This in the contract constructor, we can't get the address and signature from the job.
 	// We get them instead from the input.
 	prepayerPath := stgcommon.PrepayersPath() + new(gas.PrepayerInfo).GenUID(caller, codec.Bytes4{}.FromBytes(funSign[:])) + "/"
-	err = this.WriteCache(prepayerPath, commutative.NewPath(), gasMeter) // Create the full function path.
+	err = this.writeCache(prepayerPath, commutative.NewPath(), gasMeter) // Create the full function path.
 	return []byte{}, err == nil, gasMeter.TotalGasUsed                   // Failed to write the prepayer info, cannot prepay gas.
-}
-
-func (this *RuntimeHandlers) WriteCache(path string, val stgcommon.Type, gasMeter *eucommon.GasMeter) error {
-	txID, cache := this.api.GetTxContext()
-	writeDataSize, err := cache.Write(txID, path, val)
-	gasMeter.Use(0, writeDataSize, 0)
-	return err // Return the error if any.
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
