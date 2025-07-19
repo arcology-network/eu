@@ -89,3 +89,52 @@ func TestCascadeDeletesSingleAccount(t *testing.T) {
 		t.Errorf("Expected 'ele-00', got %d", v)
 	}
 }
+
+func TestWildcardDeletes(t *testing.T) {
+	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	alice := AliceAccount()
+	bob := BobAccount()
+	eth.CreateNewAccount(1, alice, writeCache)
+	eth.CreateNewAccount(1, bob, writeCache)
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", noncommutative.NewString("ele-00"))
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", commutative.NewBoundedUint64(0, 100))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", commutative.NewBoundedUint64(0, 100))
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/", commutative.NewPath())
+
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+	committer.Commit(1)
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
+
+	wildcards := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	if len(wildcards) != 1 {
+		t.Errorf("Expected 1 wildcard, got %d", len(wildcards))
+	}
+
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(wildcards)
+	committer.Precommit([]uint64{1})
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v != nil {
+		t.Errorf("Expected nil, got %d", v)
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v != nil {
+		t.Errorf("Expected nil, got %d", v)
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", new(noncommutative.String)); v != nil {
+		t.Errorf("Expected 'ele-00', got %d", v)
+	}
+}
