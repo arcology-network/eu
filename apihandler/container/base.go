@@ -484,6 +484,9 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, boo
 	path := this.pathBuilder.Key(caller) // Build container path
 
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
+
+	// use the wildcard path to delete all elements in the container
+
 	_, dataSize, err := this.api.WriteCache().(*cache.WriteCache).EraseAll(tx, path, nil)
 	gasMeter.Use(0, dataSize, 0) // Gas for erasing the container
 
