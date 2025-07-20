@@ -184,7 +184,7 @@ func (this *U256CumHandler) min(caller evmcommon.Address, input []byte) ([]byte,
 	// Min and Max are read only variable
 	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	keyPath := path + string(this.key) // Element ID
-	if value, _, _ := this.api.WriteCache().(*cache.WriteCache).Find(txIndex, keyPath, new(commutative.U256)); value != nil {
+	if value, _, _ := this.api.WriteCache().(*cache.WriteCache).Find(txIndex, keyPath, new(commutative.U256), nil); value != nil {
 		rawmin, _ := value.(*commutative.U256).Limits()
 		minv := rawmin.(uint256.Int)
 		if encoded, err := abi.Encode((*uint256.Int)(&minv)); err == nil { // Encode the result
@@ -202,7 +202,7 @@ func (this *U256CumHandler) max(caller evmcommon.Address, input []byte) ([]byte,
 
 	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	keyPath := path + string(this.key) // Element ID
-	if value, _, _ := this.api.WriteCache().(*cache.WriteCache).Find(txIndex, keyPath, new(commutative.U256)); value != nil {
+	if value, _, _ := this.api.WriteCache().(*cache.WriteCache).Find(txIndex, keyPath, new(commutative.U256), nil); value != nil {
 		_, rawmax := value.(*commutative.U256).Limits()
 		maxv := rawmax.(uint256.Int)
 		if encoded, err := abi.Encode((*uint256.Int)(&maxv)); err == nil { // Encode the result
