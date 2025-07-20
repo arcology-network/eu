@@ -29,7 +29,6 @@ import (
 	// "github.com/arcology-network/common-lib/exp/deltaset"
 
 	abi "github.com/arcology-network/eu/abi"
-	"github.com/arcology-network/eu/common"
 	eucommon "github.com/arcology-network/eu/common"
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
@@ -57,7 +56,7 @@ func NewBaseHandlers(api intf.EthApiRouter, args ...any) *BaseHandlers {
 	}
 }
 
-func (this *BaseHandlers) Address() [20]byte           { return common.BYTES_HANDLER }
+func (this *BaseHandlers) Address() [20]byte           { return eucommon.BYTES_HANDLER }
 func (this *BaseHandlers) Connector() *eth.PathBuilder { return this.pathBuilder }
 
 func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isFromStaticCall bool) ([]byte, bool, int64) {
@@ -479,6 +478,20 @@ func (this *BaseHandlers) delLast(caller evmcommon.Address, _ []byte) ([]byte, b
 }
 
 // Delete all elements in the container.
+// func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
+// 	gasMeter := eucommon.NewGasMeter()
+// 	path := this.pathBuilder.Key(caller) // Build container path
+// 	if !common.IsPath(path) {            // Check if the path is valid
+// 		return []byte{}, false, gasMeter.TotalGasUsed
+// 	}
+
+// 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
+// 	dataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(tx, path+"*", nil)
+// 	gasMeter.Use(0, dataSize, 0) // Gas for erasing the container
+
+// 	return []byte{}, err == nil, gasMeter.TotalGasUsed
+// }
+
 func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // Build container path
