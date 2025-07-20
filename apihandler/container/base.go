@@ -160,7 +160,7 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 	)
 
 	// Add the type info to the container here.
-	path, readDataSize := this.api.WriteCache().(*cache.WriteCache).PeekRaw(pathStr, commutative.Path{})
+	_, path, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(pathStr, commutative.Path{})
 	gasMeter.Use(readDataSize, 0, 0)
 
 	if typeID, err := abi.Decode(input, 0, uint8(0), 1, 32); err == nil {
@@ -190,7 +190,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 	}
 
 	//Get the type info here
-	pathData, readDataSize := this.api.WriteCache().(*cache.WriteCache).PeekRaw(path, commutative.Path{})
+	_, pathData, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(path, commutative.Path{})
 	gasMeter.Use(readDataSize, 0, eucommon.GAS_READ)
 
 	if pathData == nil {

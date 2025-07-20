@@ -93,7 +93,7 @@ func (this *ImplStateDB) PeekBalance(addr evmcommon.Address) *uint256.Int {
 		return uint256.NewInt(0)
 	}
 
-	value, _ := this.api.WriteCache().(*cache.WriteCache).Peek(getBalancePath(this.api.WriteCache().(*cache.WriteCache), addr), new(commutative.U256))
+	value, _, _ := this.api.WriteCache().(*cache.WriteCache).Peek(getBalancePath(this.api.WriteCache().(*cache.WriteCache), addr), new(commutative.U256))
 	v := value.(uint256.Int)
 	return &v
 }
@@ -110,7 +110,7 @@ func (this *ImplStateDB) GetNonce(addr evmcommon.Address) uint64 {
 		return 0
 	}
 
-	nonce, _ := this.api.WriteCache().(*cache.WriteCache).Peek(getNoncePath(this.api.WriteCache().(*cache.WriteCache), addr), new(commutative.Uint64))
+	nonce, _, _ := this.api.WriteCache().(*cache.WriteCache).Peek(getNoncePath(this.api.WriteCache().(*cache.WriteCache), addr), new(commutative.Uint64))
 	return nonce.(uint64) + this.CalculateNonceOffset(addr, nonce.(uint64)) // Add the nonce offset
 }
 

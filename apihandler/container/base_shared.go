@@ -130,7 +130,7 @@ func (this *BaseHandlers) ResetByKey(path string, key string) ([]byte, bool, int
 	var v any
 	switch typeID {
 	case commutative.UINT256: // Commutative container
-		v, readDataSize = this.api.WriteCache().(*cache.WriteCache).PeekRaw(path+key, new(commutative.U256))
+		_, v, readDataSize = this.api.WriteCache().(*cache.WriteCache).Peek(path+key, new(commutative.U256))
 		if v == nil {
 			return []byte{}, false, int64(readDataSize) // Not found
 		}
