@@ -32,6 +32,10 @@ func CreateNewAccount(tx uint64, acct string, store interface {
 	IfExists(string) bool
 	Write(uint64, string, interface{}, ...any) (int64, error)
 }) ([]*univalue.Univalue, error) {
+
+	// accountRoot := common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(acct), "/")
+	// if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(accountRoot)
+
 	paths, typeids := stgcommcom.NewPlatform().GetBuiltins(acct)
 
 	transitions := []*univalue.Univalue{}

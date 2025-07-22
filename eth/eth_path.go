@@ -88,6 +88,7 @@ func accountExist(writeCache *cache.WriteCache, account evmcommon.Address, tid u
 	return writeCache.IfExists(getAccountRootPath(writeCache, account))
 }
 
+// Create a new account in the write cache
 func createAccount(writeCache *cache.WriteCache, account evmcommon.Address, tid uint64) {
 	if _, err := CreateNewAccount(tid, hexutil.Encode(account[:]), writeCache); err != nil {
 		panic(err)

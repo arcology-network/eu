@@ -46,31 +46,13 @@ func NewPathBuilder(subDir string, api intf.EthApiRouter) *PathBuilder {
 }
 
 // Make Arcology paths under the current account
-func (this *PathBuilder) New(txIndex uint64, deploymentAddr types.Address) (bool, string) {
-	if !this.newStorageRoot(deploymentAddr, txIndex) { // Create the root path if has been created yet.
-		return false, ""
-	}
-	return this.newContainerRoot(deploymentAddr, txIndex) //
-}
-
-func (this *PathBuilder) newStorageRoot(account types.Address, txIndex uint64) bool {
+func (this *PathBuilder) CreateNewAccount(txIndex uint64, account types.Address, typeid uint8, isTransient bool) (bool, string) {
 	accountRoot := common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(account), "/")
 	if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(accountRoot) {
 		_, err := CreateNewAccount(txIndex, string(account), this.apiRouter.WriteCache().(*cache.WriteCache))
-		return err == nil
-		// return common.FilterFirst(this.apiRouter.WriteCache().(*cache.WriteCache).CreateNewAccount() != nil // Create a new account
+		return err == nil, this.key(account)
 	}
-	return true // ALready exists
-}
-
-func (this *PathBuilder) newContainerRoot(account types.Address, txIndex uint64) (bool, string) {
-	containerRoot := this.key(account)
-
-	if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(containerRoot) {
-		_, err := this.apiRouter.WriteCache().(*cache.WriteCache).Write(txIndex, containerRoot, commutative.NewPath()) // Create a new container
-		return err == nil, ""
-	}
-	return true, containerRoot // Already exists
+	return true, this.key(account) // ALready exists
 }
 
 func (this *PathBuilder) Key(caller [20]byte) string { // container ID
@@ -90,10 +72,10 @@ func (this *PathBuilder) GetPathType(caller evmcommon.Address) uint8 {
 	if len(pathStr) == 0 {
 		return 0
 	}
-	return this.PathTypeIDs(pathStr) // Get the path type
+	return this.PathElemTypeIDs(pathStr) // Get the path type
 }
 
-func (this *PathBuilder) PathTypeIDs(pathStr string) uint8 {
+func (this *PathBuilder) PathElemTypeIDs(pathStr string) uint8 {
 	_, path, _ := this.apiRouter.WriteCache().(*cache.WriteCache).Peek(pathStr, commutative.Path{})
-	return path.(*commutative.Path).Type
+	return path.(*commutative.Path).ElemType
 }

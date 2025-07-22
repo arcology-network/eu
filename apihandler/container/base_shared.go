@@ -71,10 +71,10 @@ func (this *BaseHandlers) GetByKey(path string, T any) (any, bool, int64) {
 // Get the index of the element by its key
 func (this *BaseHandlers) GetByIndex(path string, idx uint64) ([]byte, bool, int64) {
 	keyidx := strings.LastIndex(path, "/")
-	typeID := this.pathBuilder.PathTypeIDs(path[:keyidx] + "/") // Get the type of the container
+	elemTypeID := this.pathBuilder.PathElemTypeIDs(path[:keyidx] + "/") // Get the type of the container
 
 	var typedV any
-	switch typeID {
+	switch elemTypeID {
 	case commutative.UINT256: // Commutative container
 		typedV = new(commutative.U256)
 	case noncommutative.BYTES: // Noncommutative container
@@ -125,10 +125,10 @@ func (this *BaseHandlers) IndexOf(path string, key string) (uint64, int64) {
 
 func (this *BaseHandlers) ResetByKey(path string, key string) ([]byte, bool, int64) {
 	var typedV any
-	typeID := this.pathBuilder.PathTypeIDs(path) // Get the type of the container
+	elemTypeID := this.pathBuilder.PathElemTypeIDs(path) // Get the type of the container
 	readDataSize := uint64(0)
 	var v any
-	switch typeID {
+	switch elemTypeID {
 	case commutative.UINT256: // Commutative container
 		_, v, readDataSize = this.api.WriteCache().(*cache.WriteCache).Peek(path+key, new(commutative.U256))
 		if v == nil {

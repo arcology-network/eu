@@ -99,7 +99,7 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 		return this.fullLength(caller, input[4:]) // Get the total number of elements in the container, including nil elements.
 
 	case [4]byte{0x1f, 0x7b, 0x6d, 0x32}:
-		return this.length(caller, input[4:]) // Get the number of non-nil elements in the container.
+		return this.nonNilLength(caller, input[4:]) // Get the number of non-nil elements in the container.
 
 	case [4]byte{0x91, 0x1f, 0x6f, 0xe0}:
 		return this.keyToInd(caller, input[4:]) // Get the index of the element by its key.
@@ -118,9 +118,6 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 
 	case [4]byte{0x6a, 0xc5, 0xdb, 0x19}:
 		return this.max(caller, input[4:]) // Delete the element by its key.
-
-	case [4]byte{0x66, 0x54, 0x85, 0x21}:
-		return this.new(caller, input[4:]) // Create a new container
 
 	case [4]byte{0xe5, 0xe2, 0x14, 0xb5}:
 		return this.init(caller, input[4:]) // Set the bounds of the elements in the container.
@@ -153,19 +150,23 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	gasMeter := eucommon.NewGasMeter()
 
+	elemTypeID, err := abi.Decode(input, 0, uint8(0), 1, 32)
+	// Create a new container path if it does not exist.
 	addr := codec.Bytes20(caller).Hex()
-	connected, pathStr := this.pathBuilder.New(
+	connected, pathStr := this.pathBuilder.CreateNewAccount(
 		this.api.GetEU().(interface{ ID() uint64 }).ID(), // Tx ID for conflict detection
 		types.Address(addr), // Main contract address
+		elemTypeID.(uint8),  // Type of the container
+		false,               // Is transient
 	)
 
-	// Add the type info to the container here.
-	_, path, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(pathStr, commutative.Path{})
+	// Get the container meta and add the type info to the container.
+	_, path, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(pathStr, new(commutative.Path))
 	gasMeter.Use(readDataSize, 0, 0)
 
-	if typeID, err := abi.Decode(input, 0, uint8(0), 1, 32); err == nil {
-		path.(*commutative.Path).Type = typeID.(uint8) // Set the path type Info
-		gasMeter.Use(0, 0, eucommon.GAS_DECODE)        // Gas for decoding
+	if err == nil {
+		path.(*commutative.Path).ElemType = elemTypeID.(uint8) // Set the path type Info
+		gasMeter.Use(0, 0, eucommon.GAS_DECODE)                // Gas for decoding
 	}
 
 	this.api.SetDeployer(caller)                       // Store the MP address to the API
@@ -199,7 +200,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 
 	// Check if it is a cumulative container. Only cumulative elements can be initialized.
 	// If it is, decode the lower and upper bounds
-	if pathData.(*commutative.Path).Type == commutative.UINT256 {
+	if pathData.(*commutative.Path).ElemType == commutative.UINT256 {
 		abiDef := `[{
 			"name": "init",
 			"inputs": [
@@ -249,7 +250,7 @@ func (this *BaseHandlers) fullLength(caller evmcommon.Address, _ []byte) ([]byte
 }
 
 // getByIndex the number of elements in the container
-func (this *BaseHandlers) length(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
+func (this *BaseHandlers) nonNilLength(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	gasMeter := eucommon.NewGasMeter()
 	gasMeter.Use(0, 0, eucommon.GAS_CONTAINER_META) // Gas for getting the container meta.
 
@@ -499,10 +500,8 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, boo
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
 
 	// use the wildcard path to delete all elements in the container
-
 	_, dataSize, err := this.api.WriteCache().(*cache.WriteCache).EraseAll(tx, path, nil)
 	gasMeter.Use(0, dataSize, 0) // Gas for erasing the container
-
 	return []byte{}, err == nil, gasMeter.TotalGasUsed
 }
 
