@@ -64,7 +64,7 @@ func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20
 	signature := codec.Bytes4{}.FromBytes(input)
 
 	switch signature {
-	case [4]byte{0x66, 0x54, 0x85, 0x21}:
+	case [4]byte{0xb6, 0x13, 0x00, 0x2b}: // b6 13 00 2b
 		return this.new(caller, input[4:]) // Create a new container
 
 	case [4]byte{0xc7, 0x67, 0xf3, 0x6f}:
@@ -151,26 +151,34 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 	gasMeter := eucommon.NewGasMeter()
 
 	elemTypeID, err := abi.Decode(input, 0, uint8(0), 1, 32)
-	// Create a new container path if it does not exist.
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the transient flag
+	if err != nil {
+		return []byte{}, false, gasMeter.TotalGasUsed
+	}
+
+	transientBuff, err := abi.DecodeTo(input, 1, []byte{}, 1, math.MaxInt)
+	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the transient flag
+	if err != nil || len(transientBuff) < 32 {
+		return []byte{}, false, gasMeter.TotalGasUsed
+	}
+	isTransient := transientBuff[len(transientBuff)-1] == 1 // Transient flag
+
 	addr := codec.Bytes20(caller).Hex()
-	connected, pathStr := this.pathBuilder.CreateNewAccount(
+	created, pathStr := this.pathBuilder.CreateNewAccount(
 		this.api.GetEU().(interface{ ID() uint64 }).ID(), // Tx ID for conflict detection
 		types.Address(addr), // Main contract address
-		elemTypeID.(uint8),  // Type of the container
-		false,               // Is transient
 	)
 
 	// Get the container meta and add the type info to the container.
 	_, path, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(pathStr, new(commutative.Path))
 	gasMeter.Use(readDataSize, 0, 0)
-
 	if err == nil {
 		path.(*commutative.Path).ElemType = elemTypeID.(uint8) // Set the path type Info
-		gasMeter.Use(0, 0, eucommon.GAS_DECODE)                // Gas for decoding
+		path.(*commutative.Path).IsTransient = isTransient     // Set the transient flag
 	}
 
-	this.api.SetDeployer(caller)                       // Store the MP address to the API
-	return caller[:], connected, gasMeter.TotalGasUsed // Create a new container
+	this.api.SetDeployer(caller)                     // Store the MP address to the API
+	return caller[:], created, gasMeter.TotalGasUsed // Create a new container
 }
 
 // Only works for uing256 commutative container

@@ -46,7 +46,7 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	for i := 0; i < 1000; i++ {
-		if _, err := eth.CreateNewAccount(0, fmt.Sprint(rand.Float64()), writeCache); err != nil { // Preload account structure {
+		if _, err := eth.CreateDefaultPaths(0, fmt.Sprint(rand.Float64()), writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -63,7 +63,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	alice := AliceAccount()
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -94,7 +94,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	alice := AliceAccount()
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -110,7 +110,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 		acct := hexutil.Encode(buf[:20])
 
 		// writeCache := committer.WriteCache()
-		if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
@@ -187,7 +187,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	committer.Commit(10)
 
 	alice := AliceAccount()
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -232,7 +232,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 	committer.Commit(10)
 
 	alice := AliceAccount()
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -338,7 +338,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
+	eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache)
 	// acctTrans := univalue.Univalues(slice.Clone(writeCache.Export())).To(univalue.ITAccess{})
 
 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITAccess{})
@@ -404,7 +404,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	writeCache := sstore.WriteCache
 	for i := 0; i < 10; i++ {
 		acct := RandomAccount()
-		if _, err := eth.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
+		if _, err := eth.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -629,7 +629,7 @@ func (s String) Less(b btree.Item) bool {
 // 	// writeCache := committer.WriteCache()
 // 	for i := 0; i < 150000; i++ {
 // 		acct := RandomAccount()
-// 		if _, err := eth.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
+// 		if _, err := eth.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
 // 	}
@@ -660,7 +660,7 @@ func (s String) Less(b btree.Item) bool {
 // writeCache := committer.WriteCache()
 // 	for i := 0; i < 90000; i++ {
 // 		acct := RandomAccount()
-// 		if _, err := eth.CreateNewAccount(0, acct);err != nil { // Preload account structure {
+// 		if _, err := eth.CreateDefaultPaths(0, acct);err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
 // 	}
@@ -692,7 +692,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	// writeCache := sstore.WriteCache
 	// for i := 0; i < 100000; i++ {
 	// 	acct := RandomAccount()
-	// 	if _, err := eth.CreateNewAccount(0, acct, writeCache); err != nil { // Preload account structure {
+	// 	if _, err := eth.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
 	// 		// b.Error(err)
 	// 	}
 	// }

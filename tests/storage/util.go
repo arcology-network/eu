@@ -113,7 +113,7 @@ func WriteNewAcountsToCache(writeCache *cache.WriteCache, accounts ...string) {
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	// writeCache := sstore.WriteCache
 	for i := range accounts {
-		if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}
@@ -123,7 +123,7 @@ func NewWriteCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	for i := range accounts {
-		if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}

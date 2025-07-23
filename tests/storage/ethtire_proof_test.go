@@ -45,12 +45,12 @@ func TestEthWorldTrieProof(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateNewAccount(common.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := eth.CreateNewAccount(common.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(common.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	FlushToStore(sstore)
@@ -127,7 +127,7 @@ func TestGetProofAPI(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	bob := BobAccount()
-	eth.CreateNewAccount(common.SYSTEM, bob, writeCache)
+	eth.CreateDefaultPaths(common.SYSTEM, bob, writeCache)
 	FlushToStore(sstore)
 
 	/* Bob updates */
@@ -190,7 +190,7 @@ func TestProofCacheBigInt(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	eth.CreateNewAccount(common.SYSTEM, alice, writeCache)
+	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
 
 	/* Alice updates */
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -249,7 +249,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	eth.CreateNewAccount(common.SYSTEM, alice, writeCache)
+	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
 	FlushToStore(sstore)
 
 	buf := slice.New[byte](32, 0)
@@ -317,10 +317,10 @@ func TestProofCache(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	eth.CreateNewAccount(common.SYSTEM, alice, writeCache)
+	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
 
 	bob := BobAccount()
-	eth.CreateNewAccount(common.SYSTEM, bob, writeCache)
+	eth.CreateDefaultPaths(common.SYSTEM, bob, writeCache)
 
 	FlushToStore(sstore)
 
@@ -462,7 +462,7 @@ func TestHistoryProofs(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	eth.CreateNewAccount(common.SYSTEM, alice, writeCache)
+	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
 	FlushToStore(sstore)
 
 	/* Bob updates */

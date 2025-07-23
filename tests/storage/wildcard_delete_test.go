@@ -37,8 +37,8 @@ func TestCascadeDeletesSingleAccount(t *testing.T) {
 
 	alice := AliceAccount()
 	bob := BobAccount()
-	eth.CreateNewAccount(1, alice, writeCache)
-	eth.CreateNewAccount(1, bob, writeCache)
+	eth.CreateDefaultPaths(1, alice, writeCache)
+	eth.CreateDefaultPaths(1, bob, writeCache)
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/", commutative.NewPath())
@@ -97,8 +97,8 @@ func TestCascadeDeletesSingleAccount(t *testing.T) {
 
 // 	alice := AliceAccount()
 // 	bob := BobAccount()
-// 	eth.CreateNewAccount(1, alice, writeCache)
-// 	eth.CreateNewAccount(1, bob, writeCache)
+// 	eth.CreateDefaultPaths(1, alice, writeCache)
+// 	eth.CreateDefaultPaths(1, bob, writeCache)
 
 // 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 // 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/", commutative.NewPath())

@@ -46,13 +46,14 @@ func NewPathBuilder(subDir string, api intf.EthApiRouter) *PathBuilder {
 }
 
 // Make Arcology paths under the current account
-func (this *PathBuilder) CreateNewAccount(txIndex uint64, account types.Address, typeid uint8, isTransient bool) (bool, string) {
+func (this *PathBuilder) CreateNewAccount(txIndex uint64, account types.Address) (bool, string) {
 	accountRoot := common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(account), "/")
 	if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(accountRoot) {
-		_, err := CreateNewAccount(txIndex, string(account), this.apiRouter.WriteCache().(*cache.WriteCache))
-		return err == nil, this.key(account)
+		return true, this.key(account) // ALready exists
 	}
-	return true, this.key(account) // ALready exists
+
+	_, err := CreateDefaultPaths(txIndex, string(account), this.apiRouter.WriteCache().(*cache.WriteCache))
+	return err == nil, this.key(account)
 }
 
 func (this *PathBuilder) Key(caller [20]byte) string { // container ID

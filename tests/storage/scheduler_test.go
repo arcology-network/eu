@@ -40,12 +40,12 @@ func TestSchedulerDeclaration(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
 
 	alice := AliceAccount()
-	if _, err := eth.CreateNewAccount(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := eth.CreateNewAccount(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

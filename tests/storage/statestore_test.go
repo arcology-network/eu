@@ -41,7 +41,7 @@ func TestRandomOrderImport(t *testing.T) {
 	sstore := statestore.NewStateStore(store)
 	WriteCache := sstore.WriteCache
 
-	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
@@ -121,7 +121,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	alice := AliceAccount()
 	// sstore:= statestore.NewStateStore(store)
 
-	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
@@ -223,7 +223,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	sstore := statestore.NewStateStore(store)
 	WriteCache := sstore.WriteCache
 
-	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})

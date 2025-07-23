@@ -46,10 +46,10 @@ func TestTransitionFilters(t *testing.T) {
 
 	// writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
 
-	eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
+	eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache)
 	// committer.NewAccount(stgcommcommon.SYSTEM, bob)
 
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -142,8 +142,8 @@ func TestAccessFilters(t *testing.T) {
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
-	eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache)
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache)
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

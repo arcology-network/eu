@@ -45,7 +45,7 @@ func GenerateDB(addr [20]uint8) (string, *cache.WriteCache, stgcommcommon.ReadOn
 	writeCache := sstore.WriteCache
 
 	acct := CreateAccount(addr)
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
 		return acct, nil, nil, errors.New("Failed to create new account: " + err.Error())
 	}
 
