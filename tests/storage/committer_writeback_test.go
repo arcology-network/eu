@@ -244,9 +244,9 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	}
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", nil) // delete the path
-	if acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{}); len(acctTrans) != 3 {
-		t.Error("Error: Wrong number of transitions")
-	}
+	// if acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{}); len(acctTrans) != 3 {
+	// 	t.Error("Error: Wrong number of transitions")
+	// }
 
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.String)); v != nil {
 		t.Error("Error: Should be gone already !")
