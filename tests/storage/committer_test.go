@@ -25,8 +25,8 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/codec"
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -451,7 +451,7 @@ func TestBasic(t *testing.T) {
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		target := value.(*deltaset.DeltaSet[string])
+		target := value.(*softdeltaset.DeltaSet[string])
 		k0, _ := target.GetByIndex(0)
 		k1, _ := target.GetByIndex(1)
 		if !reflect.DeepEqual([]string{*k0, *k1}, []string{"elem-000", "elem-111"}) {
@@ -463,8 +463,8 @@ func TestBasic(t *testing.T) {
 	transitions := univalue.Univalues(trans).To(univalue.ITTransition{})
 
 	deltav, _ := transitions[0].Value().(stgcommon.Type).Delta()
-	if !reflect.DeepEqual(deltav.(*deltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000", "elem-111"}) {
-		t.Error("Error: keys are missing from the Updated buffer!", deltav.(*deltaset.DeltaSet[string]).Added())
+	if !reflect.DeepEqual(deltav.(*softdeltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000", "elem-111"}) {
+		t.Error("Error: keys are missing from the Updated buffer!", deltav.(*softdeltaset.DeltaSet[string]).Added())
 	}
 
 	value := transitions[1].Value()
@@ -585,7 +585,7 @@ func TestCommitter(t *testing.T) {
 	// }
 
 	deltav, _ := transitions[2].Value().(stgcommon.Type).Delta()
-	addedkeys := codec.Strings(deltav.(*deltaset.DeltaSet[string]).Added().Elements()).Sort()
+	addedkeys := codec.Strings(deltav.(*softdeltaset.DeltaSet[string]).Added().Elements()).Sort()
 	if !reflect.DeepEqual([]string(addedkeys), []string{"elem-0", "elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match", addedkeys)
 	}
@@ -663,14 +663,14 @@ func TestCommitter2(t *testing.T) {
 
 	// Update then return path meta info
 	meta0, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
-	keys := meta0.(*deltaset.DeltaSet[string]).Elements()
+	keys := meta0.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
 
 	// Do again
 	meta1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
-	keys = meta1.(*deltaset.DeltaSet[string]).Elements()
+	keys = meta1.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: Keys don't match")
 	}
@@ -682,7 +682,7 @@ func TestCommitter2(t *testing.T) {
 
 	// The elem-00 has been deleted, only "elem-001", "elem-002" left
 	meta0, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
-	if !reflect.DeepEqual(meta0.(*deltaset.DeltaSet[string]).Elements(), []string{"elem-001", "elem-002"}) {
+	if !reflect.DeepEqual(meta0.(*softdeltaset.DeltaSet[string]).Elements(), []string{"elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match")
 	}
 
@@ -698,7 +698,7 @@ func TestCommitter2(t *testing.T) {
 
 	// Update then read the path info again
 	meta, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
-	keys = meta.(*deltaset.DeltaSet[string]).Elements()
+	keys = meta.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match", keys, "Expecting", []string{"elem-000", "elem-001", "elem-002"})
 	}
@@ -727,13 +727,13 @@ func TestCommitter2(t *testing.T) {
 
 	/*  Read the storage path to see what is left*/
 	v, _, _ = writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", new(commutative.Path))
-	keys = v.(*deltaset.DeltaSet[string]).Elements()
+	keys = v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{}) {
 		t.Error("Error: Should be empty!!")
 	}
 
 	v, _, _ = writeCache.Read(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/", new(commutative.Path))
-	keys = v.(*deltaset.DeltaSet[string]).Elements()
+	keys = v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{}) {
 		t.Error("Error: Should be empty!!")
 	}
@@ -1142,8 +1142,8 @@ func TestPathReadAndWritesPath(b *testing.T) {
 	}
 
 	typedv, _, _ = writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
-	if typedv == nil || typedv.(*deltaset.DeltaSet[string]).Length() != 3 {
-		b.Error("Error: Failed to read the key !", typedv.(*deltaset.DeltaSet[string]).Length())
+	if typedv == nil || typedv.(*softdeltaset.DeltaSet[string]).Length() != 3 {
+		b.Error("Error: Failed to read the key !", typedv.(*softdeltaset.DeltaSet[string]).Length())
 	}
 
 	//
@@ -1191,7 +1191,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	}
 
 	meta, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
-	keys := meta.(*deltaset.DeltaSet[string]).Elements()
+	keys := meta.(*softdeltaset.DeltaSet[string]).Elements()
 	if meta == nil || len(keys) != 2 ||
 		keys[0] != "elem-000" ||
 		keys[1] != "elem-001" {
@@ -1239,7 +1239,7 @@ func TestPathMultiBatch(b *testing.T) {
 	}
 
 	v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
-	if v == nil || (v.(*deltaset.DeltaSet[string]).Length()) != uint64(len(keys)) {
+	if v == nil || (v.(*softdeltaset.DeltaSet[string]).Length()) != uint64(len(keys)) {
 		b.Error(err)
 	}
 
@@ -1272,8 +1272,8 @@ func TestPathMultiBatch(b *testing.T) {
 	}
 
 	v, _, err = writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
-	if v == nil || (v.(*deltaset.DeltaSet[string]).Length()) != 7 {
-		b.Error(err, v.(*deltaset.DeltaSet[string]).Length())
+	if v == nil || (v.(*softdeltaset.DeltaSet[string]).Length()) != 7 {
+		b.Error(err, v.(*softdeltaset.DeltaSet[string]).Length())
 	}
 	//
 

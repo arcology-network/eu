@@ -28,8 +28,8 @@ import (
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/common-lib/merkle"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
@@ -318,7 +318,7 @@ func TestBasicAddRead(t *testing.T) {
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		target := value.(*deltaset.DeltaSet[string]).Elements()
+		target := value.(*softdeltaset.DeltaSet[string]).Elements()
 		if !reflect.DeepEqual(target, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}

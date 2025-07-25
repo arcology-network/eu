@@ -22,9 +22,9 @@ import (
 	"strings"
 	"testing"
 
-	deltaset "github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	softdeltaset "github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -70,11 +70,11 @@ func TestTransitionFilters(t *testing.T) {
 	acctTrans[1].Value().(*commutative.U256).SetLimits(*uint256.NewInt(1), *uint256.NewInt(2222222))
 
 	deltav, _ := raw[0].Value().(*commutative.Path).Delta()
-	if v := deltav.(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Added().Elements(), []string{}) {
+	if v := deltav.(*softdeltaset.DeltaSet[string]); !reflect.DeepEqual(v.Added().Elements(), []string{}) {
 		t.Error("Error: Value altered")
 	}
 
-	if v := deltav.(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Removed().Elements(), []string{}) {
+	if v := deltav.(*softdeltaset.DeltaSet[string]); !reflect.DeepEqual(v.Removed().Elements(), []string{}) {
 		t.Error("Error: Delta altered")
 	}
 
@@ -105,11 +105,11 @@ func TestTransitionFilters(t *testing.T) {
 	}
 
 	deltav, _ = copied[0].Value().(*commutative.Path).Delta() // Delta
-	if v := deltav.(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Added().Elements(), []string{"123", "456"}) {
+	if v := deltav.(*softdeltaset.DeltaSet[string]); !reflect.DeepEqual(v.Added().Elements(), []string{"123", "456"}) {
 		t.Error("Error: Delta altered")
 	}
 
-	if v := deltav.(*deltaset.DeltaSet[string]); !reflect.DeepEqual(v.Removed().Elements(), []string{"789", "116"}) {
+	if v := deltav.(*softdeltaset.DeltaSet[string]); !reflect.DeepEqual(v.Removed().Elements(), []string{"789", "116"}) {
 		t.Error("Error: Delta altered")
 	}
 

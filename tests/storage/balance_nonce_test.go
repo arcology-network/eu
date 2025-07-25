@@ -68,6 +68,7 @@ func TestSimpleBalance(t *testing.T) {
 
 	buffer := univalue.Univalues(in).Encode()
 	out := univalue.Univalues{}.Decode(buffer).(univalue.Univalues)
+
 	for i := range in {
 		if !in[i].Equal(out[i]) {
 			t.Error("Accesses don't match")

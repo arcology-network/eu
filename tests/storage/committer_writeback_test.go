@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -238,7 +238,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/2", noncommutative.NewString("4"))
 
 	outpath, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", &commutative.Path{})
-	keys := outpath.(*deltaset.DeltaSet[string]).Elements()
+	keys := outpath.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"1", "2", "3", "4"}) {
 		t.Error("Error: Not match")
 	}
@@ -309,7 +309,7 @@ func TestStateUpdate(t *testing.T) {
 	// }
 
 	v, _, _ = writeCache.Read(9, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{})
-	keys := v.(*deltaset.DeltaSet[string]).Elements()
+	keys := v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		t.Error("Error: Keys don't match !")
 	}

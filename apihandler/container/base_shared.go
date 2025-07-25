@@ -20,8 +20,8 @@ package api
 import (
 	"strings"
 
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	abi "github.com/arcology-network/eu/abi"
 	eucommon "github.com/arcology-network/eu/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
@@ -33,7 +33,7 @@ import (
 // Get the number of elements in the container, EXCLUDING the nil elements.
 func (this *BaseHandlers) NonNilLength(path string) (uint64, bool, int64) {
 	if path, _, dataSize := this.api.WriteCache().(*cache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(commutative.Path)); path != nil {
-		return path.(*deltaset.DeltaSet[string]).NonNilCount(), true, int64(dataSize)
+		return path.(*softdeltaset.DeltaSet[string]).NonNilCount(), true, int64(dataSize)
 	}
 	return 0, false, int64(eucommon.DATA_MIN_READ_SIZE)
 }
@@ -41,7 +41,7 @@ func (this *BaseHandlers) NonNilLength(path string) (uint64, bool, int64) {
 // Get the number of elements in the container, INCLUDING the nil elements.
 func (this *BaseHandlers) FullLength(path string) (uint64, bool, int64) {
 	if path, _, dataSize := this.api.WriteCache().(*cache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), path, new(commutative.Path)); path != nil {
-		return path.(*deltaset.DeltaSet[string]).Length(), true, int64(dataSize)
+		return path.(*softdeltaset.DeltaSet[string]).Length(), true, int64(dataSize)
 	}
 	return 0, false, int64(eucommon.DATA_MIN_READ_SIZE) // Return 0 if the path does not exist, but return a data size of 32 bytes to avoid errors in the client code.
 }

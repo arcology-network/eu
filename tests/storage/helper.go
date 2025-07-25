@@ -21,8 +21,8 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	eth "github.com/arcology-network/eu/eth"
 	"github.com/arcology-network/eu/gas"
 	statestore "github.com/arcology-network/storage-committer"
@@ -145,20 +145,20 @@ func CheckPaths(account string, writeCache *cache.WriteCache) error {
 
 	//Read the path
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
-	keys := v.(*deltaset.DeltaSet[string]).Elements()
+	keys := v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	// Read the path again
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
-	keys = v.(*deltaset.DeltaSet[string]).Elements()
+	keys = v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", new(commutative.Path))
-	keys = v.(*deltaset.DeltaSet[string]).Elements()
+	keys = v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}

@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
@@ -94,7 +94,7 @@ func TestAuxTrans(t *testing.T) {
 	if value, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", new(commutative.Path)); value == nil {
 		t.Error(value)
 	} else {
-		keys := value.(*deltaset.DeltaSet[string]).Elements()
+		keys := value.(*softdeltaset.DeltaSet[string]).Elements()
 		if !reflect.DeepEqual(keys, []string{"elem-000"}) {
 			t.Error("Wrong value ")
 		}
@@ -102,7 +102,7 @@ func TestAuxTrans(t *testing.T) {
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
 	delv, _ := transitions[0].Value().(stgcommon.Type).Delta()
-	if len(transitions) == 0 || !reflect.DeepEqual(delv.(*deltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000"}) {
+	if len(transitions) == 0 || !reflect.DeepEqual(delv.(*softdeltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
 
@@ -177,7 +177,7 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to read blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}
 
-	keys := v1.(*deltaset.DeltaSet[string]).Elements()
+	keys := v1.(*softdeltaset.DeltaSet[string]).Elements()
 	if len(keys) != 3 {
 		t.Error("Error: There should be 3 elements only!!! actual = ", len(keys)) // create a path
 	}
