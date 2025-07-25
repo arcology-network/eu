@@ -43,11 +43,11 @@ func (this *TxAccessRecords) Size() uint64 {
 
 func (this *TxAccessRecords) Encode() []byte {
 	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
+	this.EncodeTo(buffer)
 	return buffer
 }
 
-func (this *TxAccessRecords) EncodeToBuffer(buffer []byte) int {
+func (this *TxAccessRecords) EncodeTo(buffer []byte) int {
 	if this == nil {
 		return 0
 	}
@@ -62,9 +62,9 @@ func (this *TxAccessRecords) EncodeToBuffer(buffer []byte) int {
 		},
 	)
 
-	offset += codec.String(this.Hash).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.ID).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bytes(univalue.Univalues(this.Accesses).Encode()).EncodeToBuffer(buffer[offset:])
+	offset += codec.String(this.Hash).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.ID).EncodeTo(buffer[offset:])
+	offset += codec.Bytes(univalue.Univalues(this.Accesses).Encode()).EncodeTo(buffer[offset:])
 	return offset
 }
 
@@ -93,9 +93,9 @@ func (this *TxAccessRecordSet) Size() uint64 {
 // Fill in the header info
 func (this *TxAccessRecordSet) FillHeader(buffer []byte) {
 	offset := uint64(0)
-	codec.Uint64(len(*this)).EncodeToBuffer(buffer)
+	codec.Uint64(len(*this)).EncodeTo(buffer)
 	for i := 0; i < len(*this); i++ {
-		codec.Uint64(offset).EncodeToBuffer(buffer[uint64(i+1)*codec.UINT64_LEN:])
+		codec.Uint64(offset).EncodeTo(buffer[uint64(i+1)*codec.UINT64_LEN:])
 		offset += (*this)[i].Size()
 	}
 }
@@ -112,7 +112,7 @@ func (this *TxAccessRecordSet) Encode() []byte {
 	}
 
 	slice.ParallelForeach(*this, 4, func(i int, _ **TxAccessRecords) {
-		(*this)[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
+		(*this)[i].EncodeTo(buffer[headerLen+offsets[i]:])
 	})
 	return buffer
 }

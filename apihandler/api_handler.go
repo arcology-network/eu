@@ -367,7 +367,7 @@ func (this *APIHandler) PrepayerRegister() *gas.GasPrepayerLookup {
 	prepayers := make([]*gas.PrepayerInfo, addrFuncPayers.(*deltaset.DeltaSet[string]).Length())
 	for i := 0; i < len(prepayers); i++ { // Iterate through the prepayer register to find the prepayer info.
 		payerKey, _ := addrFuncPayers.(*commutative.Path).GetByIndex(uint64(i))
-		buffer, _, _ := cache.Read(txID, payerRegister+payerKey, new(noncommutative.Bytes))
+		buffer, _, _ := cache.Read(txID, payerRegister+*payerKey, new(noncommutative.Bytes))
 		prepayers[i] = new(gas.PrepayerInfo).Decode(buffer.(*noncommutative.Bytes).Value().([]byte)).(*gas.PrepayerInfo) // Decode the prepayer info.
 	}
 	return gas.NewGasPrepayerLookup(prepayers)

@@ -342,20 +342,28 @@ func TestAddThenDeletePath2(t *testing.T) {
 		t.Error(err)
 	}
 
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0", noncommutative.NewString("ctrn-0")); err != nil {
+		t.Error(err)
+	}
+
 	// if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000011", noncommutative.NewString("124")); err != nil {
 	// 	t.Error(err)
 	// }
+
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", nil); err != nil {
+		t.Error(err)
+	}
 
 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
 	newTrans := (&univalue.Univalues{}).Decode(univalue.Univalues(transitions).Encode()).(univalue.Univalues)
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(newTrans)
 
-	// committer.Precommit([]uint64{1})
-	// committer.Commit(10)
-	// writeCache.Clear()
+	committer.Precommit([]uint64{1})
+	committer.Commit(10)
+	writeCache.Clear()
 
-	// v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
+	// v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0", new(noncommutative.String))
 	// if v == nil {
 	// 	t.Error("Error: The path should exist")
 	// }
@@ -446,7 +454,7 @@ func TestBasic(t *testing.T) {
 		target := value.(*deltaset.DeltaSet[string])
 		k0, _ := target.GetByIndex(0)
 		k1, _ := target.GetByIndex(1)
-		if !reflect.DeepEqual([]string{k0, k1}, []string{"elem-000", "elem-111"}) {
+		if !reflect.DeepEqual([]string{*k0, *k1}, []string{"elem-000", "elem-111"}) {
 			t.Error("Error: Wrong value !!!!")
 		}
 	}

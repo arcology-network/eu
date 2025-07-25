@@ -113,11 +113,11 @@ func (this *PrepayerInfo) HeaderSize() uint64 {
 
 func (this *PrepayerInfo) Encode() []byte {
 	buffer := make([]byte, this.FullSize())
-	this.EncodeToBuffer(buffer)
+	this.EncodeTo(buffer)
 	return buffer
 }
 
-func (this *PrepayerInfo) EncodeToBuffer(buffer []byte) int {
+func (this *PrepayerInfo) EncodeTo(buffer []byte) int {
 	offset := codec.Encoder{}.FillHeader(buffer,
 		[]uint64{
 			32,
@@ -134,16 +134,16 @@ func (this *PrepayerInfo) EncodeToBuffer(buffer []byte) int {
 		},
 	)
 
-	offset += codec.Bytes32(this.Hash).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.TX).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bytes20(this.From[:]).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bytes20(this.To[:]).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bytes(this.Signature[:]).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.PrepayedAmount).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.InitialGas).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.GasUsed).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.GasRemaining).EncodeToBuffer(buffer[offset:])
-	codec.Bool(this.Successful).EncodeToBuffer(buffer[offset:])
+	offset += codec.Bytes32(this.Hash).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.TX).EncodeTo(buffer[offset:])
+	offset += codec.Bytes20(this.From[:]).EncodeTo(buffer[offset:])
+	offset += codec.Bytes20(this.To[:]).EncodeTo(buffer[offset:])
+	offset += codec.Bytes(this.Signature[:]).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.PrepayedAmount).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.InitialGas).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.GasUsed).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.GasRemaining).EncodeTo(buffer[offset:])
+	codec.Bool(this.Successful).EncodeTo(buffer[offset:])
 	return int(this.FullSize())
 }
 
@@ -177,7 +177,7 @@ func (this PrepayerInfoArr) Encode() []byte {
 	offset := 0
 	buffer := make([]byte, len(this)*int((&PrepayerInfo{}).FullSize()))
 	for i := 0; i < len(this); i++ {
-		offset += (this)[i].EncodeToBuffer(buffer[offset:])
+		offset += (this)[i].EncodeTo(buffer[offset:])
 	}
 	return buffer
 }
