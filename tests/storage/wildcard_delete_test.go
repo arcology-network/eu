@@ -104,10 +104,11 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 		t.Error(err)
 	}
 
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/", commutative.NewPath())
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/elem:2", noncommutative.NewInt64(99))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem-0-0", noncommutative.NewInt64(33))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/elem-0-0:2", noncommutative.NewInt64(99))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem:0", noncommutative.NewInt64(33))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem:1", noncommutative.NewInt64(11))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem:2", noncommutative.NewInt64(22))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-1/", commutative.NewPath())
@@ -116,7 +117,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	/*
 		├── ctrn-0/
 		│   ├── ctrn-0-0/
-		│   │   └── elem:2 = 88
+		│   │   └── elem-0-0:2 = 88
 		│   ├── elem-0-0 = 33
 		│   ├── elem:1    = 11
 		│   └── elem:2    = 22
@@ -132,7 +133,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
 	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
-	if v == nil || !reflect.DeepEqual(elems, []string{"ctrn-0-0/", "elem-0-0", "elem:1", "elem:2"}) {
+	if v == nil || !reflect.DeepEqual(elems, []string{"ctrn-0-0/", "elem:0", "elem:1", "elem:2"}) {
 		fmt.Println(elems)
 	}
 
@@ -142,12 +143,36 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	}
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/", commutative.NewPath())
-	if v == nil || !reflect.DeepEqual(v.(*softdeltaset.DeltaSet[string]).Elements(), []string{"elem:2"}) {
+	if v == nil || !reflect.DeepEqual(v.(*softdeltaset.DeltaSet[string]).Elements(), []string{"elem-0-0:2"}) {
 		t.Errorf("Expected nil, got %d", v)
 	}
 
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/", nil); err != nil { // create a path
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
+	elems = v.(*softdeltaset.DeltaSet[string]).Elements()
+	if v == nil || !reflect.DeepEqual(elems, []string{"ctrn-0-0/", "elem:0", "elem:1", "elem:2"}) {
+		fmt.Println(elems)
+	}
+
+	_, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/", nil)
+	if err != nil {
 		t.Error(err)
 	}
 
+	// Check the deleted the path
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/elem-0-0:2", new(noncommutative.Int64))
+	if v != nil {
+		t.Errorf("The element should have been deleted, got %v", v)
+	}
+
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
+	elems = v.(*softdeltaset.DeltaSet[string]).Elements()
+	if v == nil || !reflect.DeepEqual(elems, []string{"elem:0", "elem:1", "elem:2"}) {
+		t.Errorf("Wrong elements after delete: %v", elems)
+	}
+
+	// Delete the path
+	// v, univ, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/elem-0-0:2", new(noncommutative.Int64))
+	// if univ != nil {
+	// 	t.Errorf("The element should have been deleted, got %v", v)
+	// }
 }
