@@ -18,11 +18,15 @@
 package stgtest
 
 import (
+	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/type/commutative"
@@ -90,51 +94,60 @@ func TestCascadeDeletesSingleAccount(t *testing.T) {
 	}
 }
 
-// func TestWildcardDeletes(t *testing.T) {
-// 	store := chooseDataStore()
-// 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
-// 	writeCache := sstore.WriteCache
+func TestAddThenDeletePathAfterCommit(t *testing.T) {
+	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
+	sstore := statestore.NewStateStore(store)
+	writeCache := sstore.WriteCache
 
-// 	alice := AliceAccount()
-// 	bob := BobAccount()
-// 	eth.CreateDefaultPaths(1, alice, writeCache)
-// 	eth.CreateDefaultPaths(1, bob, writeCache)
+	alice := AliceAccount()
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
 
-// 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
-// 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/", commutative.NewPath())
-// 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", noncommutative.NewString("ele-00"))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/elem:2", noncommutative.NewInt64(99))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem-0-0", noncommutative.NewInt64(33))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem:1", noncommutative.NewInt64(11))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem:2", noncommutative.NewInt64(22))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-1/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-1/ctrn-1-0/", commutative.NewPath())
 
-// 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", commutative.NewBoundedUint64(0, 100))
-// 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", commutative.NewBoundedUint64(0, 100))
+	/*
+		├── ctrn-0/
+		│   ├── ctrn-0-0/
+		│   │   └── elem:2 = 88
+		│   ├── elem-0-0 = 33
+		│   ├── elem:1    = 11
+		│   └── elem:2    = 22
+		└── ctrn-1/
+		    └── ctrn-1-0/
+	*/
 
-// 	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/", commutative.NewPath())
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+	committer.Commit(1)
 
-// 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-// 	committer.Import(acctTrans)
-// 	committer.Precommit([]uint64{1})
-// 	committer.Commit(1)
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
+	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
+	if v == nil || !reflect.DeepEqual(elems, []string{"ctrn-0-0/", "elem-0-0", "elem:1", "elem:2"}) {
+		fmt.Println(elems)
+	}
 
-// 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-1/", commutative.NewPath())
+	if v == nil || !reflect.DeepEqual(v.(*softdeltaset.DeltaSet[string]).Elements(), []string{"ctrn-1-0/"}) {
+		t.Errorf("Expected nil, got %d", v)
+	}
 
-// 	wildcards := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-// 	if len(wildcards) != 1 {
-// 		t.Errorf("Expected 1 wildcard, got %d", len(wildcards))
-// 	}
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/", commutative.NewPath())
+	if v == nil || !reflect.DeepEqual(v.(*softdeltaset.DeltaSet[string]).Elements(), []string{"elem:2"}) {
+		t.Errorf("Expected nil, got %d", v)
+	}
 
-// 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-// 	committer.Import(wildcards)
-// 	committer.Precommit([]uint64{1})
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/", nil); err != nil { // create a path
+		t.Error(err)
+	}
 
-// 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v != nil {
-// 		t.Errorf("Expected nil, got %d", v)
-// 	}
-
-// 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v != nil {
-// 		t.Errorf("Expected nil, got %d", v)
-// 	}
-
-// 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", new(noncommutative.String)); v != nil {
-// 		t.Errorf("Expected 'ele-00', got %d", v)
-// 	}
-// }
+}

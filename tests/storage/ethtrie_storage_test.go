@@ -157,7 +157,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele-0", commutative.NewPath()); err != nil {
+	if _, err := writeCache.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ele-0", new(noncommutative.Bytes)); err != nil {
 		t.Error(err)
 	}
 
