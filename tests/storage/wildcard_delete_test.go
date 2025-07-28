@@ -175,4 +175,75 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	if v != nil {
 		t.Errorf("The element should have been deleted, got %v", v)
 	}
+
+	_, err = writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
+	if v != nil {
+		t.Errorf("Wrong elements after delete: %v", elems)
+	}
+
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+	committer.Commit(1)
+
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	elems = v.(*softdeltaset.DeltaSet[string]).Elements()
+	if !reflect.DeepEqual(elems, []string{"ctrn-1/"}) {
+		t.Errorf("Wrong elements after delete: %v", elems)
+	}
+}
+
+func TestAllUnderGrantParentPathWildcard(t *testing.T) {
+	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
+	sstore := statestore.NewStateStore(store)
+	writeCache := sstore.WriteCache
+	alice := AliceAccount()
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/elem-0-0:2", noncommutative.NewInt64(99))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem:0", noncommutative.NewInt64(33))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem:1", noncommutative.NewInt64(11))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/elem:2", noncommutative.NewInt64(22))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-1/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-1/ctrn-1-0/", commutative.NewPath())
+
+	/*
+		├── ctrn-0/
+		│   ├── ctrn-0-0/
+		│   │   └── elem-0-0:2 = 88
+		│   ├── elem-0-0 = 33
+		│   ├── elem:1    = 11
+		│   └── elem:2    = 22
+		└── ctrn-1/
+		    └── ctrn-1-0/
+	*/
+
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+	committer.Commit(1)
+
+	// _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
+	// if err != nil {
+	// 	t.Error(err)
+	// }
+
+	// v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	// elems := v.(*softdeltaset.DeltaSet[string]).Elements()
+	// if !reflect.DeepEqual(elems, []string{}) {
+	// 	t.Errorf("Wrong elements after delete: %v", elems)
+	// }
+
 }
