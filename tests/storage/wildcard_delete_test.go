@@ -222,7 +222,7 @@ func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 		├── ctrn-0/
 		│   ├── ctrn-0-0/
 		│   │   └── elem-0-0:2 = 88
-		│   ├── elem-0-0 = 33
+		│   ├── elem:0    = 33
 		│   ├── elem:1    = 11
 		│   └── elem:2    = 22
 		└── ctrn-1/
@@ -235,15 +235,30 @@ func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 	committer.Precommit([]uint64{1})
 	committer.Commit(1)
 
-	// _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
-	// if err != nil {
-	// 	t.Error(err)
-	// }
+	_, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
+	if err != nil {
+		t.Error(err)
+	}
 
-	// v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
-	// elems := v.(*softdeltaset.DeltaSet[string]).Elements()
-	// if !reflect.DeepEqual(elems, []string{}) {
-	// 	t.Errorf("Wrong elements after delete: %v", elems)
-	// }
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
+	if !reflect.DeepEqual(elems, []string{}) {
+		t.Errorf("Wrong elements after delete: %v", elems)
+	}
+
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", new(noncommutative.Int64))
+	if v != nil {
+		t.Errorf("Wrong elements after delete: %v", elems)
+	}
+
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", new(noncommutative.Int64))
+	if v != nil {
+		t.Errorf("Wrong elements after delete: %v", elems)
+	}
+
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", new(noncommutative.Int64))
+	if v != nil {
+		t.Errorf("Wrong elements after delete: %v", elems)
+	}
 
 }
