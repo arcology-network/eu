@@ -109,11 +109,11 @@ func RandomKeys[T constraints.Integer](s0, s1 T) []string {
 }
 
 // Initiate the input new accounts in the cache
-func WriteNewAcountsToCache(writeCache *cache.WriteCache, accounts ...string) {
+func WriteNewAcountsToCache(writeCache *cache.WriteCache, tx uint64, accounts ...string) {
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	// writeCache := sstore.WriteCache
 	for i := range accounts {
-		if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateDefaultPaths(tx, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}

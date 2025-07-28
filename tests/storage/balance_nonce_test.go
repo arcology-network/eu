@@ -244,7 +244,7 @@ func TestMultipleNonces(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
-	WriteNewAcountsToCache(writeCache, AliceAccount(), BobAccount())
+	WriteNewAcountsToCache(writeCache, stgcommcommon.SYSTEM, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
 	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {

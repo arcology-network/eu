@@ -171,8 +171,8 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	}
 
 	// Delete the path
-	// v, univ, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/elem-0-0:2", new(noncommutative.Int64))
-	// if univ != nil {
-	// 	t.Errorf("The element should have been deleted, got %v", v)
-	// }
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/ctrn-0-0/elem-0-0:2", new(noncommutative.Int64))
+	if v != nil {
+		t.Errorf("The element should have been deleted, got %v", v)
+	}
 }
