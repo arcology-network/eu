@@ -31,6 +31,11 @@ func TestAddressContainer(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+
+	_, err, _, _ = DeployThenInvoke(targetPath, "array/address_test.sol", "0.8.19", "AddressTestTransient", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestBoolContainer(t *testing.T) {
@@ -73,6 +78,11 @@ func TestContractU256Cum(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 	_, err, _, _ := DeployThenInvoke(targetPath, "array/U256Cum_test.sol", "0.8.19", "U256CumArrayTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err, _, _ = DeployThenInvoke(targetPath, "array/U256Cum_test.sol", "0.8.19", "U256CumArrayTestTransient", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

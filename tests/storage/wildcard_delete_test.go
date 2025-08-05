@@ -229,17 +229,17 @@ func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(elems, []string{}) {
-		t.Errorf("Wrong elements after delete: %v", elems)
+		t.Errorf("The path should be empty: %v", elems)
 	}
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", new(noncommutative.Int64))
 	if v != nil {
-		t.Errorf("Wrong elements after delete: %v", v)
+		t.Errorf("The element should have been deleted already: %v", v)
 	}
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", new(noncommutative.Int64))
 	if v != nil {
-		t.Errorf("Wrong elements after delete: %v", v)
+		t.Errorf("The element should have been deleted already: %v", v)
 	}
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", new(noncommutative.Int64))

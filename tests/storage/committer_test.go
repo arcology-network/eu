@@ -1300,7 +1300,8 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
-	// committer.Commit(111110)
+	committer.Commit(111110)
+	writeCache.Clear()
 
 	// First generation modify ele0 and ele1
 	v = commutative.NewUint64Delta(11)
@@ -1308,9 +1309,17 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 		t.Error(err)
 	}
 
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v == nil || v.(uint64) != 11 {
+		t.Error("Error: The path should exist")
+	}
+
 	v = commutative.NewUint64Delta(22)
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", v); err != nil {
 		t.Error(err)
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v == nil || v.(uint64) != 22 {
+		t.Error("Error: The path should exist")
 	}
 
 	// second generation modify ele1and ele2
@@ -1319,16 +1328,14 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(acctTrans)
-	committer.Precommit([]uint64{1})
-	// committer.Commit(111110)
-	// writeCache.Clear()
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v == nil || v.(uint64) != 82 {
+		t.Error("Error: The path should exist", v)
+	}
 
-	v = commutative.NewUint64Delta(90)
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", v); err != nil {
-		t.Error(err)
+	pathV, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
+	elem := pathV.(*softdeltaset.DeltaSet[string]).Elements()
+	if pathV == nil || len(elem) != 3 {
+		t.Error("Error: The path should exist", elem)
 	}
 
 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
@@ -1336,6 +1343,29 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(111110)
+	writeCache.Clear()
+
+	pathV, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
+	elem = pathV.(*softdeltaset.DeltaSet[string]).Elements()
+	if pathV == nil || len(elem) != 3 {
+		t.Error("Error: The path should exist", elem)
+	}
+
+	v = commutative.NewUint64Delta(90)
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", v); err != nil {
+		t.Error(err)
+	}
+
+	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v == nil || v.(uint64) != 82 {
+		t.Error("Error: The path should exist", v)
+	}
+
+	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+	committer.Commit(111110)
+	writeCache.Clear()
 
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v == nil || v.(uint64) != 11 {
 		t.Error("Error: The path should exist")
@@ -1348,6 +1378,12 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele2", new(commutative.Uint64)); v == nil || v.(uint64) != 90 {
 		t.Error("Error: The path should exist")
 	}
+
+	// pathV, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
+	// elem = pathV.(*softdeltaset.DeltaSet[string]).Elements()
+	// if pathV == nil || len(elem) != 3 {
+	// 	t.Error("Error: The path should exist", elem)
+	// }
 }
 
 func TestAddAndDelete(t *testing.T) {
