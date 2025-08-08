@@ -20,6 +20,7 @@ package stgtest
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,6 +36,7 @@ import (
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
@@ -82,9 +84,6 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 		accesses1.Print()
 		accesses2.Print()
 	}
-
-	// accesses1.Print()
-	// accesses2.Print()
 }
 
 func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
@@ -265,13 +264,49 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	if v == nil || v.(string) != "committer-1-by-tx-3" {
 		t.Error("Error: Wrong value, expecting:", "committer-1-by-tx-3 ", "actual:", v)
 	}
+}
 
-	// have to mark balance and nonce persistent first !!!!!
+func TestArbiWildcardConflict(t *testing.T) {
+	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	writeCache := sstore.WriteCache
+	alice := AliceAccount()
+	eth.CreateDefaultPaths(1, alice, writeCache)
 
-	// v, _ = committer.Read(3, "blcc://eth1.0/account/"+alice+"/nonce", new(commutative.Uint64))
-	// if v == nil || v.(uint64) != 2 {
-	// 	t.Error("Error: Wrong value, expecting:", "2", "actual:", v)
-	// }
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", commutative.NewBoundedUint64(0, 100))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", commutative.NewBoundedUint64(0, 100))
+
+	accesses1 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(accesses1)
+	committer.Precommit([]uint64{1})
+	committer.Commit(1)
+	writeCache.Clear()
+
+	writeCache.Write(2, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
+	raws := writeCache.Export(univalue.Sorter)
+	accesses2 := univalue.Univalues(slice.Clone(raws)).To(univalue.IPTransition{})
+
+	acctTrans1 := []*univalue.Univalue(accesses1)
+	slice.RemoveIf(&acctTrans1, func(_ int, v *univalue.Univalue) bool {
+		return !strings.Contains(*v.GetPath(), "/container/")
+	})
+
+	acctTrans2 := []*univalue.Univalue(accesses2)
+	slice.RemoveIf(&acctTrans2, func(_ int, v *univalue.Univalue) bool {
+		return !strings.Contains(*v.GetPath(), "/container/")
+	})
+
+	arib := arbitrator.NewArbitrator()
+	IDVec := append(slice.Fill(make([]uint64, len(acctTrans1)), 0), slice.Fill(make([]uint64, len(acctTrans2)), 1)...)
+	ids := arib.InsertAndDetect(IDVec, append(acctTrans1, acctTrans2...))
+	conflictdict, _, _ := arbitrator.Conflicts(ids).ToDict()
+	if len(conflictdict) != 1 {
+		t.Error("Error: There should be one conflict, actual:", len(conflictdict))
+		univalue.Univalues(acctTrans1).Print()
+		univalue.Univalues(acctTrans2).Print()
+	}
 }
 
 func BenchmarkSimpleArbitrator(b *testing.B) {

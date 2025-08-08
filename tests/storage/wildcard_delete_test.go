@@ -27,72 +27,13 @@ import (
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
-
-func TestCascadeDeletesSingleAccount(t *testing.T) {
-	store := chooseDataStore()
-	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
-	writeCache := sstore.WriteCache
-
-	alice := AliceAccount()
-	bob := BobAccount()
-	eth.CreateDefaultPaths(1, alice, writeCache)
-	eth.CreateDefaultPaths(1, bob, writeCache)
-
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/", commutative.NewPath())
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", noncommutative.NewString("ele-00"))
-
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", commutative.NewBoundedUint64(0, 100))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", commutative.NewBoundedUint64(0, 100))
-
-	writeCache.Write(1, "blcc://eth1.0/account/"+bob+"/storage/container/", commutative.NewPath())
-
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(acctTrans)
-	committer.Precommit([]uint64{1})
-	committer.Commit(1)
-
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v.(uint64) != 0 {
-		t.Errorf("Expected 0, got %d", v.(uint64))
-	}
-
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v.(uint64) != 0 {
-		t.Errorf("Expected 0, got %d", v.(uint64))
-	}
-
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path)); v == nil {
-		t.Errorf("Expected 0, got %d", v.(uint64))
-	}
-
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", new(noncommutative.String)); v.(string) != "ele-00" {
-		t.Errorf("Expected 'ele-00', got %d", v)
-	}
-
-	// Use the wildcard path to delete all elements in the container
-	wildcards := []*univalue.Univalue{univalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", 0, 1, 0, nil, nil)}
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(wildcards)
-	committer.Precommit([]uint64{1})
-
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", new(commutative.Uint64)); v != nil {
-		t.Errorf("Expected nil, got %d", v)
-	}
-
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", new(commutative.Uint64)); v != nil {
-		t.Errorf("Expected nil, got %d", v)
-	}
-
-	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn/ele-00", new(noncommutative.String)); v != nil {
-		t.Errorf("Expected 'ele-00', got %d", v)
-	}
-}
 
 func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
@@ -199,6 +140,85 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	}
 }
 
+func CommitToDBs(writeCache *cache.WriteCache, store *stgproxy.StorageProxy, sstore *statestore.StateStore, filter any) []*univalue.Univalue {
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(filter)
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(acctTrans)
+	committer.Precommit([]uint64{1})
+	committer.Commit(1)
+	writeCache.Clear()
+	return acctTrans
+}
+
+func TestAllUnderGrantParentPathWildcardSimplest(t *testing.T) {
+	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
+	sstore := statestore.NewStateStore(store)
+	writeCache := sstore.WriteCache
+	alice := AliceAccount()
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", noncommutative.NewInt64(33))
+
+	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+
+	// Delete all elements under the path with wildcard
+	_, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
+	if !reflect.DeepEqual(elems, []string{}) {
+		t.Errorf("The path should be empty: %v", elems)
+	}
+}
+
+func TestAllUnderGrantParentPathWildcardSimple(t *testing.T) {
+	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
+	sstore := statestore.NewStateStore(store)
+	writeCache := sstore.WriteCache
+	alice := AliceAccount()
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+		t.Error(err)
+	}
+
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", noncommutative.NewInt64(33))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", noncommutative.NewInt64(11))
+	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", noncommutative.NewInt64(22))
+
+	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+
+	// Delete all elements under the path with wildcard
+	_, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", new(noncommutative.Int64))
+	if v != nil {
+		t.Errorf("The element should have been deleted already: %v", v)
+	}
+
+	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
+	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
+	if !reflect.DeepEqual(elems, []string{}) {
+		t.Errorf("The path should be empty: %v", elems)
+	}
+
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", new(noncommutative.Int64))
+	if v != nil {
+		t.Errorf("The element should have been deleted already: %v", v)
+	}
+}
+
 func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
 	sstore := statestore.NewStateStore(store)
@@ -213,11 +233,7 @@ func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", noncommutative.NewInt64(11))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", noncommutative.NewInt64(22))
 
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(acctTrans)
-	committer.Precommit([]uint64{1})
-	committer.Commit(1)
+	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
 
 	// Delete all elements under the path with wildcard
 	_, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
@@ -225,51 +241,68 @@ func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 		t.Error(err)
 	}
 
-	// Check the deleted the path
+	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+
+	// Check the elements are back
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(elems, []string{}) {
-		t.Errorf("The path should be empty: %v", elems)
+		t.Errorf("Wrong elements after delete: %v", elems)
+	}
+
+	if v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", new(noncommutative.Int64)); v != nil {
+		t.Errorf("The element should have been deleted: %v", v)
+	}
+
+	if v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", new(noncommutative.Int64)); v != nil {
+		t.Errorf("The element should have been deleted: %v", v)
+	}
+
+	if v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", new(noncommutative.Int64)); v != nil {
+		t.Errorf("The element should have been deleted: %v", v)
+	}
+
+	// Write the elements back.
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", noncommutative.NewInt64(133)); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", noncommutative.NewInt64(111)); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", noncommutative.NewInt64(122)); err != nil {
+		t.Error(err)
 	}
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", new(noncommutative.Int64))
-	if v != nil {
-		t.Errorf("The element should have been deleted already: %v", v)
-	}
-
-	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", new(noncommutative.Int64))
-	if v != nil {
-		t.Errorf("The element should have been deleted already: %v", v)
-	}
-
-	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", new(noncommutative.Int64))
-	if v != nil {
+	if v == nil || v.(int64) != 133 {
 		t.Errorf("Wrong elements after delete: %v", v)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(acctTrans)
-	committer.Precommit([]uint64{1})
-	committer.Commit(1)
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", new(noncommutative.Int64))
+	if v == nil || v.(int64) != 111 {
+		t.Errorf("Wrong elements after delete: %v", v)
+	}
 
-	// Write the elements back.
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", noncommutative.NewInt64(133))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", noncommutative.NewInt64(111))
-	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", noncommutative.NewInt64(122))
+	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", new(noncommutative.Int64))
+	if v == nil || v.(int64) != 122 {
+		t.Errorf("Wrong elements after delete: %v", v)
+	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(acctTrans)
-	committer.Precommit([]uint64{1})
-	committer.Commit(1)
-
-	// Check the elements are back
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	elems = v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(elems, []string{"elem:0", "elem:1", "elem:2"}) {
 		t.Errorf("Wrong elements after delete: %v", elems)
 	}
+
+	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+
+	// 	It is in the execCache, meaning committion was successful.
+	// but the line below cannot load the right meta, containing the elements.
+
+	// 1. Get the value from the execStrong despite the fact it exists in the cache.
+	// 2. The stagedRemoval did not seem to be cleared properly before committing to the storage.
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", new(noncommutative.Int64))
 	if v == nil || v.(int64) != 133 {
