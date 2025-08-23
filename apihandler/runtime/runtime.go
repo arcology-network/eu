@@ -23,11 +23,11 @@ import (
 	"math"
 
 	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 
 	"github.com/arcology-network/eu/abi"
 	eucommon "github.com/arcology-network/eu/common"
-	"github.com/arcology-network/eu/gas"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 
@@ -235,9 +235,16 @@ func (this *RuntimeHandlers) deferCall(caller, callee evmcommon.Address, input [
 	// Create a sub path under the prepayer info path for the contract + function.
 	// This in the contract constructor, we can't get the address and signature from the job.
 	// We get them instead from the input.
-	prepayerPath := stgcommon.PrepayersPath() + new(gas.PrepayerInfo).GenUID(caller, codec.Bytes4{}.FromBytes(funSign[:])) + "/"
-	err = this.writeCache(prepayerPath, commutative.NewPath(), gasMeter) // Create the full function path.
-	return []byte{}, err == nil, gasMeter.TotalGasUsed                   // Failed to write the prepayer info, cannot prepay gas.
+	job := this.api.GetEU().(interface{ Job() *eucommon.Job }).Job()
+	prepayerPath := common.GetParentPath(common.GetParentPath(stgcommon.PrepayersPath(caller, funSign, job.StdMsg.Native.From)))
+
+	// Check if the prepayer path exists.
+	txID, cache := this.api.GetTxContext()
+	if v, _, _ := cache.Read(txID, prepayerPath, new(commutative.Path)); v == nil {
+		err := this.writeCache(prepayerPath, commutative.NewPath(), gasMeter) // Create the full function path.
+		return []byte{}, err == nil, gasMeter.TotalGasUsed
+	}
+	return []byte{}, true, gasMeter.TotalGasUsed
 }
 
 func (this *RuntimeHandlers) print(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
