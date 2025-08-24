@@ -20,12 +20,12 @@ package apihandler
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"sync/atomic"
 
 	"github.com/arcology-network/common-lib/codec"
 	common "github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/mempool"
 	"github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
@@ -36,8 +36,9 @@ import (
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	"github.com/arcology-network/storage-committer/type/noncommutative"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	apicontainer "github.com/arcology-network/eu/apihandler/container"
@@ -269,7 +270,13 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) (uint64
 
 	// Write the sender address, so it can be used later.
 	txID, cache := this.GetTxContext()
-	cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign, job.StdMsg.Native.From), noncommutative.NewBytes(job.StdMsg.Native.From.Bytes()))
+	targetPath := stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]) + ":" + strconv.FormatUint(txID, 10)
+
+	// Store the prepaid gas price.
+	price := noncommutative.Bigint(*job.StdMsg.Native.GasPrice)
+	if _, err := cache.Write(txID, targetPath, &price); err != nil {
+		return 0, false
+	}
 
 	// Decrement the gas remaining and initial gas by the prepaid gas amount.
 	*initGas -= PrepaidGas      // Subtract the prepaid gas from the initial gas.
@@ -289,7 +296,7 @@ func (this *APIHandler) UsePrepaidGas(gasRemaining *uint64) bool {
 	// _, totalPrepaid := lookup.SumPrepaidGas(info.UID()) // Sum the prepaid gas for the job.
 	txID, cache := this.GetTxContext()
 	callee, funcSign := *job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data)
-	payers, _, _ := cache.Read(txID, stgcommon.PrepayersPath(callee, funcSign, job.StdMsg.Native.From), commutative.Path{})
+	payers, _, _ := cache.Read(txID, stgcommon.PrepayersPath(callee, funcSign)+hexutil.Encode(job.StdMsg.Native.From[:]), commutative.Path{})
 
 	prepaidGasAmount := this.GetRequiredAmount(callee, funcSign)
 	if prepaidGasAmount == nil {
@@ -299,9 +306,9 @@ func (this *APIHandler) UsePrepaidGas(gasRemaining *uint64) bool {
 	totalPayer := payers.(*softdeltaset.DeltaSet[string]).Length()
 	*gasRemaining += totalPayer * prepaidGasAmount.(uint64) // Add the prepaid gas to the gas remaining for execution.
 
-	// Remove the payer.
-	cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign, job.StdMsg.Native.From), nil)
-	return true
+	// Remove the payer info.
+	_, err := cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign)+hexutil.Encode(job.StdMsg.Native.From[:]), nil)
+	return err != nil
 }
 
 // This function refunds the prepaid gas when the prepaid gas is more than the gas used by the job.
@@ -328,7 +335,10 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 		if job.Err != nil { // Parallel Execution failed, refund the prepaid gas directly.
 			prepaidGasAmount := this.GetRequiredAmount(*job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data))
 			*gasLeft += prepaidGasAmount.(uint64)
-			cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign, job.StdMsg.Native.From), nil) // Remove the payer info because the job failed.
+
+			// Remove the payer info because the job failed. No need to get the gas price from the storage anymore.
+			targetPath := stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]) + ":" + strconv.FormatUint(txID, 10)
+			cache.Write(txID, targetPath, nil)
 		}
 		return true
 	}
@@ -336,19 +346,11 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 	// In the deferred TX, refund the gas back to the prepayers based on the precentage of gas left, regardless of the job's success.
 	txID, cache := this.GetTxContext()
 
-	payerPath := common.GetParentPath(stgcommon.PrepayersPath(callee, funcSign, job.StdMsg.Native.From))
+	payerPath := common.GetParentPath(stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]))
 	v, _, _ := cache.Read(txID, payerPath, new(commutative.Path)) // Just to ensure the path exists.
-	payers := v.(*deltaset.DeltaSet[string]).Elements()
+	payers := v.(*softdeltaset.DeltaSet[string]).Elements()
 
-	//
-	// addrFuncPayers, _, _ := cache.Read(txID, payerRegister, new(commutative.Path))
-	// prepayers := make([]*gas.PrepayerInfo, addrFuncPayers.(*deltaset.DeltaSet[string]).Length())
-
-	// lookup := this.GetPrepayerLookup()
-	// info := (&gas.PrepayerInfo{}).FromJob(job)
-	// successfulPayers, totalPrepaid := lookup.SumPrepaidGas(info.UID())
-
-	// // Calculate the gas left after the job execution.
+	// Calculate the gas left after the job execution.
 	prepaidGasAmount := this.GetRequiredAmount(*job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data))
 	totalPrepaid := uint64(len(payers)) * prepaidGasAmount.(uint64)
 	originalGasRemaining := float64(job.GasRemaining) * float64(*gasLeft) / float64(job.GasRemaining+totalPrepaid)
@@ -356,17 +358,20 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 	// Calculate the refund per payer based on the gas left and the number of payers.
 	refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(len(payers)))
 
-	// 	// Minus the prepaid portion from the gas left.
+	// Minus the prepaid portion from the gas left.
 	(*gasLeft) -= (*gasLeft) - uint64(math.Round(originalGasRemaining))
 
 	// 	// Refund the prepaid gas portion back to each prepayer.
 	for _, payer := range payers {
+		v, _, _ := cache.Read(txID, payerPath+payer, new(noncommutative.Bigint)) // Just to ensure the path exists.
+		gasPrice := v.(big.Int)
+
 		remaining := uint256.NewInt(refundPerPayer)
-		remaining = remaining.Mul(remaining, uint256.MustFromBig(job.StdMsg.Native.GasPrice))
+		remaining = remaining.Mul(remaining, uint256.MustFromBig(&gasPrice))
 
 		// Credit the gas back to the payer's account.
-		payerAddr := ethcommon.HexToAddress(payer)
-		this.eu.(interface{ StateDB() vm.StateDB }).StateDB().AddBalance(payerAddr, remaining)
+		payerAddr := ethcommon.HexToAddress(payer) // Not need to remove the suffix. The function does it internally.
+		this.eu.(interface{ Statedb() vm.StateDB }).Statedb().AddBalance(payerAddr, remaining)
 	}
 	return false
 }
@@ -383,28 +388,8 @@ func (this *APIHandler) SetExecutionErr(err error) {
 func (this *APIHandler) IsDeferrable() bool {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
 	requiredAmount := this.GetRequiredAmount(*job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data[:]))
-	return requiredAmount == nil
+	return requiredAmount != nil
 }
-
-// The prepayer register keeps track of all the prepayer info, we can use it to
-// refund the gas back to the prepayers if deferred job is failed or
-// there is some leftover gas after the deferred execution.
-// func (this *APIHandler) GetPrepayerLookup() *gas.GasPrepayerLookup {
-// 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-// 	info := (&gas.PrepayerInfo{}).FromJob(job) // Get the prepayer info from the job.
-
-// 	payerRegister := stgcommon.PrepayersPath() + info.UID() + "/" //+ hex.EncodeToString(job.StdMsg.TxHash[:])
-// 	txID, cache := this.GetTxContext()
-
-// 	addrFuncPayers, _, _ := cache.Read(txID, payerRegister, new(commutative.Path))
-// 	prepayers := make([]*gas.PrepayerInfo, addrFuncPayers.(*deltaset.DeltaSet[string]).Length())
-// 	for i := 0; i < len(prepayers); i++ { // Iterate through the prepayer register to find the prepayer info.
-// 		payerKey, _ := addrFuncPayers.(*commutative.Path).GetByIndex(uint64(i))
-// 		buffer, _, _ := cache.Read(txID, payerRegister+*payerKey, new(noncommutative.Bytes))
-// 		prepayers[i] = new(gas.PrepayerInfo).Decode(buffer.(*noncommutative.Bytes).Value().([]byte)).(*gas.PrepayerInfo) // Decode the prepayer info.
-// 	}
-// 	return gas.NewGasPrepayerLookup(prepayers)
-// }
 
 func (this *APIHandler) GetTxContext() (uint64, *cache.WriteCache) {
 	return this.GetEU().(interface{ ID() uint64 }).ID(),

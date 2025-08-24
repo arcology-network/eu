@@ -210,39 +210,39 @@ func (this *RuntimeHandlers) deferCall(caller, callee evmcommon.Address, input [
 	}
 
 	// Decode the amount of prepaid gas from the input.
-	prepaidGas, err := abi.Decode(input, 1, uint64(0), 1, 8)
+	requiredPrepayment, err := abi.Decode(input, 1, uint64(0), 1, 8)
 	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
-	if err != nil || prepaidGas.(uint64) < eucommon.GAS_MIN_PREPAYMENT {
+	if err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
+	// No less than GAS_MIN_PREPAYMENT.
+	requiredPrepayment = common.Max(requiredPrepayment.(uint64), eucommon.GAS_MIN_PREPAYMENT)
 
 	// Check if the function path exists, if not create it.
 	// It may be created by the developer in setting the parallelism
 	// level in the constructor as well.
 	funSign := new(codec.Bytes4).FromBytes(funSignBytes)
-	if _, cache := this.api.GetTxContext(); !cache.IfExists(stgcommon.FuncPath(caller, funSign)) {
-		if err := this.writeCache(stgcommon.FuncPath(caller, funSign), commutative.NewPath(), gasMeter); err != nil {
+	propertyPath := stgcommon.FuncPath(caller, funSign)
+	if _, cache := this.api.GetTxContext(); !cache.IfExists(propertyPath) {
+		if err := this.writeCache(propertyPath, commutative.NewPath(), gasMeter); err != nil {
+			return []byte{}, false, gasMeter.TotalGasUsed
+		}
+	}
+
+	// Create the prepayer path if not existent.
+	txID, cache := this.api.GetTxContext()
+	prepayerPath := stgcommon.PrepayersPath(caller, funSign)
+	if v, _, _ := cache.Read(txID, prepayerPath, new(commutative.Path)); v == nil {
+		// Create the full function path.
+		if err := this.writeCache(prepayerPath, commutative.NewPath(), gasMeter); err != nil {
 			return []byte{}, false, gasMeter.TotalGasUsed
 		}
 	}
 
 	// Write the required prepaid amount to storage
 	RequiredPrepaymentPath := stgcommon.RequiredPrepaymentPath(caller, funSign) // Generate the sub path for the prepaid gas amount.
-	if err := this.writeCache(RequiredPrepaymentPath, noncommutative.NewUint64(prepaidGas.(uint64)), gasMeter); err != nil {
+	if err := this.writeCache(RequiredPrepaymentPath, noncommutative.NewUint64(requiredPrepayment.(uint64)), gasMeter); err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
-	}
-
-	// Create a sub path under the prepayer info path for the contract + function.
-	// This in the contract constructor, we can't get the address and signature from the job.
-	// We get them instead from the input.
-	job := this.api.GetEU().(interface{ Job() *eucommon.Job }).Job()
-	prepayerPath := common.GetParentPath(common.GetParentPath(stgcommon.PrepayersPath(caller, funSign, job.StdMsg.Native.From)))
-
-	// Check if the prepayer path exists.
-	txID, cache := this.api.GetTxContext()
-	if v, _, _ := cache.Read(txID, prepayerPath, new(commutative.Path)); v == nil {
-		err := this.writeCache(prepayerPath, commutative.NewPath(), gasMeter) // Create the full function path.
-		return []byte{}, err == nil, gasMeter.TotalGasUsed
 	}
 	return []byte{}, true, gasMeter.TotalGasUsed
 }
