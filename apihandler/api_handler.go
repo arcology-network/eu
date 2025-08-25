@@ -262,12 +262,6 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) (uint64
 		return 0, false // Not enough gas remaining to pay for the deferred execution.
 	}
 
-	// Log the gas info before prepaying the gas.
-	// payerInfo := &gas.PrepayerInfo{}
-	// payerInfo.GasRemaining = *gasRemaining // Set the gas remaining for the job from the EVM
-	// payerInfo.InitialGas = *initGas        // Set the initial gas for the job from the EVM
-	// payerInfo.PrepayedAmount = PrepaidGas  // Set the gas amount that is already prepaid for the job.
-
 	// Write the sender address, so it can be used later.
 	txID, cache := this.GetTxContext()
 	targetPath := stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]) + ":" + strconv.FormatUint(txID, 10)
