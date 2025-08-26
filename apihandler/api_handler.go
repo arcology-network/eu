@@ -245,7 +245,7 @@ func (this *APIHandler) Job() any {
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
 func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) (uint64, bool) {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !this.IsDeferrable() {
+	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !this.HasDeferred() {
 		return 0, true // Deployment / simple transfer TX, no need to prepay gas.
 	}
 
@@ -275,13 +275,18 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) (uint64
 	// Decrement the gas remaining and initial gas by the prepaid gas amount.
 	*initGas -= PrepaidGas      // Subtract the prepaid gas from the initial gas.
 	*gasRemaining -= PrepaidGas // Subtract the prepaid gas from the gas remaining.
+
+	// For quick access later.
+	job.GasRemaining = gasRemaining
+	job.InitialGas = initGas
+	job.PrepaidGas = PrepaidGas
 	return 0, true
 }
 
 // Add the prepaid gas to top up job's remaining gas for the deferred execution.
 func (this *APIHandler) UsePrepaidGas(gasRemaining *uint64) bool {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !this.IsDeferrable() || !job.StdMsg.IsDeferred {
+	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !this.HasDeferred() || !job.StdMsg.IsDeferred {
 		return false // Only available for deferred execution jobs.
 	}
 
@@ -290,17 +295,18 @@ func (this *APIHandler) UsePrepaidGas(gasRemaining *uint64) bool {
 	// _, totalPrepaid := lookup.SumPrepaidGas(info.UID()) // Sum the prepaid gas for the job.
 	txID, cache := this.GetTxContext()
 	callee, funcSign := *job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data)
-	payers, _, _ := cache.Read(txID, stgcommon.PrepayersPath(callee, funcSign)+hexutil.Encode(job.StdMsg.Native.From[:]), commutative.Path{})
+	payers, _, _ := cache.Read(txID, stgcommon.PrepayersPath(callee, funcSign), commutative.Path{})
 
-	prepaidGasAmount := this.GetRequiredAmount(callee, funcSign)
-	if prepaidGasAmount == nil {
-		return false // No prepaid gas found info found, nothing to do.
-	}
-
-	totalPayer := payers.(*softdeltaset.DeltaSet[string]).Length()
-	*gasRemaining += totalPayer * prepaidGasAmount.(uint64) // Add the prepaid gas to the gas remaining for execution.
+	totalPayer := payers.(*softdeltaset.DeltaSet[string]).Length() // Total payers
+	*gasRemaining += totalPayer * job.PrepaidGas                   //  All the jobs share the same PrepaidGas amount, so we can use it directly.
 
 	// Remove the payer info.
+	for _, k := range payers.(*softdeltaset.DeltaSet[string]).Elements() {
+		if _, err := cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign)+k, nil); err != nil {
+			return false
+		}
+	}
+
 	_, err := cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign)+hexutil.Encode(job.StdMsg.Native.From[:]), nil)
 	return err != nil
 }
@@ -308,12 +314,36 @@ func (this *APIHandler) UsePrepaidGas(gasRemaining *uint64) bool {
 // This function refunds the prepaid gas when the prepaid gas is more than the gas used by the job.
 func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !this.IsDeferrable() { //
+	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !this.HasDeferred() { //
 		return false
 	}
 
+	// A parallel TX and it is failed.
+	if !job.StdMsg.IsDeferred && job.Err != nil {
+		txID, cache := this.GetTxContext()
+		callee, funcSign := *job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data)
+
+		key := stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]) + ":" + strconv.FormatUint(txID, 10)
+		if _, err := cache.Write(txID, key, nil); err != nil {
+			return false
+		}
+
+		payer := hexutil.Encode(job.StdMsg.Native.From[:]) + ":" + strconv.FormatUint(txID, 10)
+		payerPath := common.GetParentPath(stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]))
+		v, _, _ := cache.Read(txID, payerPath+payer, new(noncommutative.Bigint)) // Get the gas price
+		gasPrice := v.(big.Int)
+
+		refundPerPayer := job.PrepaidGas * uint64(gasPrice.Uint64()) // All the job shares the same PrepaidGas amount, so we can use it directly.
+		remaining := uint256.NewInt(refundPerPayer)
+		remaining = remaining.Mul(remaining, uint256.MustFromBig(&gasPrice))
+
+		// // Credit the gas back to the payer's account.
+		payerAddr := ethcommon.HexToAddress(payer) // Not need to remove the suffix. The function does it internally.
+		this.eu.(interface{ Statedb() vm.StateDB }).Statedb().AddBalance(payerAddr, remaining)
+	}
+
 	// Not the same as IsDeferred.
-	// if ok := this.IsDeferrable(); !ok {
+	// if ok := this.HasDeferred(); !ok {
 	// 	return false // The job is a deferred TX, no need to refund the prepaid gas.
 	// }
 
@@ -327,12 +357,13 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 	if !job.StdMsg.IsDeferred {
 		txID, cache := this.GetTxContext()
 		if job.Err != nil { // Parallel Execution failed, refund the prepaid gas directly.
-			prepaidGasAmount := this.GetRequiredAmount(*job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data))
-			*gasLeft += prepaidGasAmount.(uint64)
+			*gasLeft += job.PrepaidGas
 
 			// Remove the payer info because the job failed. No need to get the gas price from the storage anymore.
 			targetPath := stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]) + ":" + strconv.FormatUint(txID, 10)
-			cache.Write(txID, targetPath, nil)
+			if _, err := cache.Write(txID, targetPath, nil); err != nil {
+				return false
+			}
 		}
 		return true
 	}
@@ -345,9 +376,8 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 	payers := v.(*softdeltaset.DeltaSet[string]).Elements()
 
 	// Calculate the gas left after the job execution.
-	prepaidGasAmount := this.GetRequiredAmount(*job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data))
-	totalPrepaid := uint64(len(payers)) * prepaidGasAmount.(uint64)
-	originalGasRemaining := float64(job.GasRemaining) * float64(*gasLeft) / float64(job.GasRemaining+totalPrepaid)
+	totalPrepaid := uint64(len(payers)) * job.PrepaidGas // All the job shared the same prepaid gas amount
+	originalGasRemaining := float64(*job.GasRemaining) * float64(*gasLeft) / float64(*job.GasRemaining+totalPrepaid)
 
 	// Calculate the refund per payer based on the gas left and the number of payers.
 	refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(len(payers)))
@@ -379,10 +409,8 @@ func (this *APIHandler) SetExecutionErr(err error) {
 }
 
 // If the the address and the function signature of the job is deferrable, then it returns true and the required prepaid gas amount.
-func (this *APIHandler) IsDeferrable() bool {
-	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	requiredAmount := this.GetRequiredAmount(*job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data[:]))
-	return requiredAmount != nil
+func (this *APIHandler) HasDeferred() bool {
+	return this.eu.(interface{ Job() *eucommon.Job }).Job().PrepaidGas > 0
 }
 
 func (this *APIHandler) GetTxContext() (uint64, *cache.WriteCache) {

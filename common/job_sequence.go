@@ -42,10 +42,10 @@ type Job struct {
 	MsgID        uint64 // message id
 	StdMsg       *commontype.StandardMessage
 	Results      *Result
-	Err          error  // Execution error directly from the EVM, not from the receipt.
-	InitialGas   uint64 // Initial gas amount for the contract, used to determine if the contract has enough gas to execute
-	GasRemaining uint64 // Remaining gas for the contract, used to determine if the contract has enough gas to execute
-	// PrepaidGas   uint64 // Gas paid for the deferred execution, negative is paying for the others, positive is paied by others.
+	Err          error   // Execution error directly from the EVM, not from the receipt.
+	InitialGas   *uint64 // Initial gas amount for the contract, used to determine if the contract has enough gas to execute
+	GasRemaining *uint64 // Remaining gas for the contract, used to determine if the contract has enough gas to execute
+	PrepaidGas   uint64  // Gas paid for the deferred execution, negative is paying for the others, positive is paied by others.
 }
 
 // Execute executes the job.
