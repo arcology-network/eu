@@ -181,7 +181,8 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 	return caller[:], created, gasMeter.TotalGasUsed // Create a new container
 }
 
-// Only works for uing256 commutative container
+// Only works for uing256 commutative container, becuase its elements need some extra
+// initialization steps, like setting the lower and upper bounds.
 func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	gasMeter := eucommon.NewGasMeter()
 	gasMeter.Use(0, 0, eucommon.GAS_NEW_CONTAINER) // Gas for creating a new container
@@ -199,16 +200,16 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 	}
 
 	//Get the type info here
-	_, pathData, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(path, commutative.Path{})
+	_, typeInfo, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(path, commutative.Path{})
 	gasMeter.Use(readDataSize, 0, eucommon.GAS_READ)
 
-	if pathData == nil {
+	if typeInfo == nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Check if it is a cumulative container. Only cumulative elements can be initialized.
 	// If it is, decode the lower and upper bounds
-	if pathData.(*commutative.Path).ElemType == commutative.UINT256 {
+	if typeInfo.(*commutative.Path).ElemType == commutative.UINT256 {
 		abiDef := `[{
 			"name": "init",
 			"inputs": [

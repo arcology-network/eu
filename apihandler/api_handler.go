@@ -408,9 +408,12 @@ func (this *APIHandler) SetExecutionErr(err error) {
 	}
 }
 
-// If the the address and the function signature of the job is deferrable, then it returns true and the required prepaid gas amount.
+// If the the address and the function signature of the job is deferrable, then it
+// returns true and the required prepaid gas amount.
 func (this *APIHandler) HasDeferred() bool {
-	return this.eu.(interface{ Job() *eucommon.Job }).Job().PrepaidGas > 0
+	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
+	requiredAmount := this.GetRequiredAmount(*job.StdMsg.Native.To, codec.Bytes4{}.FromBytes(job.StdMsg.Native.Data[:]))
+	return requiredAmount != nil
 }
 
 func (this *APIHandler) GetTxContext() (uint64, *cache.WriteCache) {
