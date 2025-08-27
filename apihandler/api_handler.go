@@ -299,16 +299,7 @@ func (this *APIHandler) UsePrepaidGas(gasRemaining *uint64) bool {
 
 	totalPayer := payers.(*softdeltaset.DeltaSet[string]).Length() // Total payers
 	*gasRemaining += totalPayer * job.PrepaidGas                   //  All the jobs share the same PrepaidGas amount, so we can use it directly.
-
-	// Remove the payer info.
-	for _, k := range payers.(*softdeltaset.DeltaSet[string]).Elements() {
-		if _, err := cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign)+k, nil); err != nil {
-			return false
-		}
-	}
-
-	_, err := cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign)+hexutil.Encode(job.StdMsg.Native.From[:]), nil)
-	return err != nil
+	return true
 }
 
 // This function refunds the prepaid gas when the prepaid gas is more than the gas used by the job.
@@ -396,6 +387,11 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 		// Credit the gas back to the payer's account.
 		payerAddr := ethcommon.HexToAddress(payer) // Not need to remove the suffix. The function does it internally.
 		this.eu.(interface{ Statedb() vm.StateDB }).Statedb().AddBalance(payerAddr, remaining)
+
+		// Remove the payer info.
+		if _, err := cache.Write(txID, stgcommon.PrepayersPath(callee, funcSign)+payer, nil); err != nil {
+			return false
+		}
 	}
 	return false
 }
