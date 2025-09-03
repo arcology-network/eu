@@ -24,6 +24,7 @@ import (
 	"math/big"
 
 	"github.com/arcology-network/common-lib/codec"
+	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/types"
 
 	// "github.com/arcology-network/common-lib/exp/deltaset"
@@ -142,6 +143,9 @@ func (this *BaseHandlers) eval(caller, callee [20]byte, input []byte, origin [20
 
 	case [4]byte{0x52, 0xef, 0xea, 0x6e}:
 		return this.clear(caller, input[4:]) // Clear the container.
+
+	case [4]byte{0xbd, 0xad, 0xcf, 0x6f}:
+		return this.clearCommitted(caller, input[4:]) // Clear the container.
 	}
 
 	return []byte{}, false, eucommon.GAS_CALL_UNKNOW // unknown
@@ -174,7 +178,7 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 	gasMeter.Use(readDataSize, 0, 0)
 	if err == nil {
 		path.(*commutative.Path).ElemType = elemTypeID.(uint8) // Set the path type Info
-		path.(*commutative.Path).IsTransient = isTransient     // Set the transient flag
+		path.(*commutative.Path).SetBlockBound(isTransient)    // Set the transient flag
 	}
 
 	this.api.SetDeployer(caller)                     // Store the MP address to the API
@@ -487,20 +491,20 @@ func (this *BaseHandlers) delLast(caller evmcommon.Address, _ []byte) ([]byte, b
 	return values, successful, gasMeter.TotalGasUsed
 }
 
-// Delete all elements in the container.
-// func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
-// 	gasMeter := eucommon.NewGasMeter()
-// 	path := this.pathBuilder.Key(caller) // Build container path
-// 	if !common.IsPath(path) {            // Check if the path is valid
-// 		return []byte{}, false, gasMeter.TotalGasUsed
-// 	}
+// Delete all committed elements in the container.
+func (this *BaseHandlers) clearCommitted(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
+	gasMeter := eucommon.NewGasMeter()
+	path := this.pathBuilder.Key(caller) // Build container path
+	if !common.IsPath(path) {            // Check if the path is valid
+		return []byte{}, false, gasMeter.TotalGasUsed
+	}
 
-// 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
-// 	dataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(tx, path+"*", nil)
-// 	gasMeter.Use(0, dataSize, 0) // Gas for erasing the container
+	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
+	dataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(tx, path+"[:]", nil)
+	gasMeter.Use(0, dataSize, 0) // Gas for erasing the container
 
-// 	return []byte{}, err == nil, gasMeter.TotalGasUsed
-// }
+	return []byte{}, err == nil, gasMeter.TotalGasUsed
+}
 
 func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	gasMeter := eucommon.NewGasMeter()
