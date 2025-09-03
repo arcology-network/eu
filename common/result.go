@@ -105,6 +105,14 @@ func (this *Result) Postprocess() *Result {
 		(*senderNonce).Property.SkipConflictCheck(true)   // Won't be affect by conflicts either
 		this.Immuned = append(this.Immuned, *senderNonce) // Add the nonce transition to the immune list even if the execution is unsuccessful.
 	}
+
+	for i := range this.RawStateAccesses {
+		if strings.Contains(*this.RawStateAccesses[i].GetPath(), "/prepayers/") {
+			this.RawStateAccesses[i].Property.SkipConflictCheck(true)
+			this.Immuned = append(this.Immuned, this.RawStateAccesses[i])
+		}
+	}
+
 	this.RawStateAccesses = this.Transitions() // Return all the successful transitions
 	return this
 }
