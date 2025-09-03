@@ -24,6 +24,15 @@ import (
 	"testing"
 )
 
+func TestClearCommitted(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "array/clear_committed_test.sol", "0.8.19", "ClearCommittedTest", "clear()", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestAddressContainer(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")

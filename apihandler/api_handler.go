@@ -245,7 +245,7 @@ func (this *APIHandler) Job() any {
 // Either prepay the gas for the deferred execution of the job, or use the prepaid gas to pay for the deferred execution of the job.
 func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) (uint64, bool) {
 	job := this.eu.(interface{ Job() *eucommon.Job }).Job()
-	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil || !this.HasDeferred() {
+	if job.StdMsg.Native.To == nil || job.StdMsg.Native.Data == nil {
 		return 0, true // Deployment / simple transfer TX, no need to prepay gas.
 	}
 
@@ -273,7 +273,7 @@ func (this *APIHandler) PrepayGas(initGas *uint64, gasRemaining *uint64) (uint64
 	}
 
 	// Decrement the gas remaining and initial gas by the prepaid gas amount.
-	*initGas -= PrepaidGas      // Subtract the prepaid gas from the initial gas.
+	*initGas -= PrepaidGas      // The initial gas after prepayment deduction.
 	*gasRemaining -= PrepaidGas // Subtract the prepaid gas from the gas remaining.
 
 	// For quick access later.
@@ -320,7 +320,7 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 		}
 
 		payer := hexutil.Encode(job.StdMsg.Native.From[:]) + ":" + strconv.FormatUint(txID, 10)
-		payerPath := common.GetParentPath(stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]))
+		payerPath, _ := common.GetParentPath(stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]))
 		v, _, _ := cache.Read(txID, payerPath+payer, new(noncommutative.Bigint)) // Get the gas price
 		gasPrice := v.(big.Int)
 
@@ -362,7 +362,7 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 	// In the deferred TX, refund the gas back to the prepayers based on the precentage of gas left, regardless of the job's success.
 	txID, cache := this.GetTxContext()
 
-	payerPath := common.GetParentPath(stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]))
+	payerPath, _ := common.GetParentPath(stgcommon.PrepayersPath(callee, funcSign) + hexutil.Encode(job.StdMsg.Native.From[:]))
 	v, _, _ := cache.Read(txID, payerPath, new(commutative.Path)) // Just to ensure the path exists.
 	payers := v.(*softdeltaset.DeltaSet[string]).Elements()
 
