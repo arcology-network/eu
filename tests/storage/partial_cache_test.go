@@ -37,7 +37,7 @@ package stgtest
 // 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+// 	if _, err := eucommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
@@ -100,7 +100,7 @@ package stgtest
 // 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.WriteCache()
 // 	alice := AliceAccount()
-// 	if _, err := adaptorcommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+// 	if _, err := eucommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 

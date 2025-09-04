@@ -22,17 +22,17 @@ import (
 	intf "github.com/arcology-network/eu/interface"
 
 	stgcommon "github.com/arcology-network/storage-committer/common"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type EthPathBuilder struct {
-	// ccurl tempcache.WriteCache
+	// ccurl cache.WriteCache
 }
 
-func (this *EthPathBuilder) AccountExist(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint64) bool {
+func (this *EthPathBuilder) AccountExist(writeCache *cache.WriteCache, account evmcommon.Address, tid uint64) bool {
 	return writeCache.IfExists(this.AccountRootPath(account))
 }
 
@@ -56,11 +56,11 @@ func (this *EthPathBuilder) CodePath(account evmcommon.Address) string {
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/code")
 }
 
-func getAccountRootPath(writeCache *tempcache.WriteCache, account evmcommon.Address) string {
+func getAccountRootPath(writeCache *cache.WriteCache, account evmcommon.Address) string {
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/")
 }
 
-func getStorageRootPath(writeCache *tempcache.WriteCache, account evmcommon.Address) string {
+func getStorageRootPath(writeCache *cache.WriteCache, account evmcommon.Address) string {
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/")
 }
 
@@ -72,24 +72,25 @@ func getStorageKeyPath(api intf.EthApiRouter, account evmcommon.Address, key evm
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/", key.Hex())
 }
 
-func getBalancePath(writeCache *tempcache.WriteCache, account evmcommon.Address) string {
+func getBalancePath(writeCache *cache.WriteCache, account evmcommon.Address) string {
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/balance")
 }
 
-func getNoncePath(writeCache *tempcache.WriteCache, account evmcommon.Address) string {
+func getNoncePath(writeCache *cache.WriteCache, account evmcommon.Address) string {
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/nonce")
 }
 
-func getCodePath(writeCache *tempcache.WriteCache, account evmcommon.Address) string {
+func getCodePath(writeCache *cache.WriteCache, account evmcommon.Address) string {
 	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/code")
 }
 
-func accountExist(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint64) bool {
+func accountExist(writeCache *cache.WriteCache, account evmcommon.Address, tid uint64) bool {
 	return writeCache.IfExists(getAccountRootPath(writeCache, account))
 }
 
-func createAccount(writeCache *tempcache.WriteCache, account evmcommon.Address, tid uint64) {
-	if _, err := CreateNewAccount(tid, hexutil.Encode(account[:]), writeCache); err != nil {
+// Create a new account in the write cache
+func createAccount(writeCache *cache.WriteCache, account evmcommon.Address, tid uint64) {
+	if _, err := CreateDefaultPaths(tid, hexutil.Encode(account[:]), writeCache); err != nil {
 		panic(err)
 	}
 

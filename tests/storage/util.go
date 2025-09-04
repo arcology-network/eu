@@ -31,11 +31,11 @@ import (
 	interfaces "github.com/arcology-network/storage-committer/common"
 	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	opadapter "github.com/arcology-network/storage-committer/op"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
 	"github.com/arcology-network/storage-committer/type/univalue"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -43,6 +43,10 @@ import (
 	"golang.org/x/crypto/sha3"
 	"golang.org/x/exp/constraints"
 )
+
+func CreateAccount(b [20]byte) string {
+	return hexutil.Encode(b[:])
+}
 
 func RandomAccount() string {
 	var letters = []byte("abcdef0123456789")
@@ -104,22 +108,22 @@ func RandomKeys[T constraints.Integer](s0, s1 T) []string {
 	return keys
 }
 
-// Initiate the input new accounts in the tempcache
-func NewAcountsInCache(writeCache *tempcache.WriteCache, accounts ...string) {
+// Initiate the input new accounts in the cache
+func WriteNewAcountsToCache(writeCache *cache.WriteCache, tx uint64, accounts ...string) {
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	// writeCache := sstore.WriteCache
 	for i := range accounts {
-		if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateDefaultPaths(tx, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}
 }
 
-func NewWriteCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string) *tempcache.WriteCache {
+func NewWriteCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string) *cache.WriteCache {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	for i := range accounts {
-		if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}
@@ -129,7 +133,7 @@ func NewWriteCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string
 func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.ReadOnlyStore, t *testing.T) {
 	// roothash := store.(*stgproxy.StorageProxy).EthStore().Root()                               // Get the proof provider by a root hash.
 	ethdb := store.(*stgproxy.StorageProxy).EthStore().EthDB()                       // Get the proof provider by a root hash.
-	provider, err := ethstg.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof tempcache, maximum 2 blocks
+	provider, err := ethstg.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
 	if err != nil {
 		t.Fatal(err)
 	}

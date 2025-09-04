@@ -21,6 +21,7 @@ package interfaces
 import (
 	"github.com/ethereum/go-ethereum/common"
 
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -44,30 +45,33 @@ type ChainContext interface {
 type EthApiRouter interface {
 	// Used in EVM to call the kernel API
 	Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, blockhash evmcommon.Hash, isReadOnly bool) (bool, []byte, bool, int64)
-	GetExecutionSubsidy() uint64 // Get the execution subsidy for the current call
-	SetExecutionSubsidy(uint64)  // Set the execution subsidy for the current call
+	Job() any                                  // Get the job information for the current call
+	PrepayGas(*uint64, *uint64) (uint64, bool) // Prepay gas for deferred execution.
+	UsePrepaidGas(*uint64) bool                // Use the prepaid gas pay for the deferred TX.
+	RefundPrepaidGas(*uint64) bool             // Refund sponsored gas
+	SetExecutionErr(error)                     // Export the execution error from EVM for the current call
 
 	// Arcology specific APIs
 	GetDeployer() evmcommon.Address
 	SetDeployer(evmcommon.Address)
 
-	GetEU() interface{}
-	SetEU(interface{})
+	GetEU() any
+	SetEU(any)
 
-	GetSchedule() interface{}
-	SetSchedule(interface{})
+	GetSchedule() any
+	SetSchedule(any)
 
-	AuxDict() map[string]interface{}
-	WriteCachePool() interface{}
-	WriteCache() interface{}
-	SetWriteCache(interface{}) EthApiRouter
-	New(interface{}, interface{}, evmcommon.Address, interface{}) EthApiRouter
+	AuxDict() map[string]any
+	WriteCachePool() any
+	WriteCache() any
+	SetWriteCache(any) EthApiRouter
+	New(any, any, evmcommon.Address, any) EthApiRouter
 	Cascade() EthApiRouter
 
 	Origin() evmcommon.Address
 	Coinbase() evmcommon.Address
 
-	VM() interface{} //*vm.EVM
+	VM() any //*vm.EVM
 
 	CheckRuntimeConstrains() bool
 
@@ -79,4 +83,6 @@ type EthApiRouter interface {
 	Pid() [32]byte
 	UUID() []byte
 	ElementUID() []byte
+
+	GetTxContext() (uint64, *cache.WriteCache)
 }

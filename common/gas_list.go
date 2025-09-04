@@ -17,25 +17,31 @@
 
 package common
 
-import "github.com/ethereum/go-ethereum/params"
+import (
+	"github.com/ethereum/go-ethereum/params"
+)
 
 const (
-	CONTAINER_GAS_READ    = int64(params.SloadGasEIP2200 * 2) // 800 * 2 = 1600, default gas for reading a container.
-	GAS_READ              = int64(params.SloadGasEIP2200 / 2) // 800 / 2 = 400
-	GAS_WRITE             = int64(params.SstoreSetGas / 2)    // 20,000 / 2 = 10,000
-	GAS_DELTA_WRITE       = int64(params.SstoreSetGas / 2)    // 20,000 / 2 = 10,000
-	GAS_UNCOMMITTED_RESET = int64(params.SstoreSetGas / 4)    // 20,000 / 4 = 5,000
-	GAS_COMMITTED_SET     = int64(params.SstoreSetGas / 8)    // 20,000 / 8 = 2,500
+	GAS_GET_CONTAINER_META = int64(params.SloadGasEIP2200 * 2) // 800 * 2 = 1600, default gas for reading a container.
+	GAS_READ               = int64(params.SloadGasEIP2200 / 2) // 800 / 2 = 400
+	GAS_WRITE              = int64(params.SstoreSetGas / 2)    // 20,000 / 2 = 10,000
+	GAS_DELTA_WRITE        = int64(params.SstoreSetGas / 2)    // 20,000 / 2 = 10,000
+	GAS_UNCOMMITTED_RESET  = int64(params.SstoreSetGas / 4)    // 20,000 / 4 = 5,000
+	GAS_COMMITTED_SET      = int64(params.SstoreSetGas / 8)    // 20,000 / 8 = 2,500
 
-	GAS_TOPUP_GAS   = int64(20000)
-	GAS_CALL_UNKNOW = int64(1000)
-	GAS_PID         = int64(1000)
-	GAS_UUID        = int64(1000)
-	GAS_SET_EXEC    = int64(1000)
-	GAS_DECODE      = int64(1000)
+	GAS_CALL_UNKNOW      = int64(1000) // Call an unknown function, which is not defined in the contract, but the gas is still charged.
+	GAS_CALL_API         = int64(1000) // The gas to pay for calling an API function, regardless if the result is successful or not.
+	GAS_ENCODE           = int64(2000)
+	GAS_DECODE           = int64(1000) // Decode the minimum 32 bytes of data, which is the size of a single data unit in the container.
+	GAS_GET_RUNTIME_INFO = int64(1000) // Get the information of the current  transaction, such as the gas, the pid, the uuid, etc.
+	GAS_SET_RUNTIME_INFO = int64(2000)
+	GAS_DEFER            = int64(10000)   // The gas to pay for deferring the call. Regardless of the result, the gas is charged.
+	GAS_MIN_PREPAYMENT   = uint64(500000) // The minimum amount of gas that must be prepaid for the deferred execution.
 
-	GAS_DEBUG_PRINT = int64(1000)
-	GAS_DEFER       = int64(10000)
+	GAS_NEW_CONTAINER  = int64(10000)
+	GAS_CONTAINER_META = int64(1000)
 
-	GAS_NEW_CONTAINER = int64(10000)
+	DATA_UNIT_SIZE      = uint64(32)
+	DATA_MIN_READ_SIZE  = DATA_UNIT_SIZE
+	DATA_MIN_WRITE_SIZE = DATA_UNIT_SIZE
 )

@@ -28,11 +28,11 @@ import (
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
 func TestSchedulerDeclaration(t *testing.T) {
+
 	store := stgproxy.NewMemDBStoreProxy()
 	sstore := statestore.NewStateStore(store)
 	writeCache := sstore.WriteCache
@@ -40,12 +40,12 @@ func TestSchedulerDeclaration(t *testing.T) {
 	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
 
 	alice := AliceAccount()
-	if _, err := eth.CreateNewAccount(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := eth.CreateNewAccount(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -54,11 +54,7 @@ func TestSchedulerDeclaration(t *testing.T) {
 	committer.Import(acctTrans).Precommit([]uint64{stgcommon.SYSTEM})
 	committer.Commit(10)
 
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/"+stgcommon.PROPERTY_PATH+"1234/", commutative.NewPath()); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/"+stgcommon.PROPERTY_PATH+"1234/"+stgcommon.DEFERRED_FUNC, noncommutative.NewBytes([]byte{255})); err != nil {
+	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+stgcommon.FULL_PARA_PROP_PATH+"1234/", commutative.NewPath()); err != nil {
 		t.Error(err)
 	}
 

@@ -39,8 +39,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -50,17 +49,16 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 	balanceDeltas := slice.CopyIf(transV, func(_ int, v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	// v := *uint256.NewInt(0)
-	balanceDeltas[0].Value().(*commutative.U256).SetMin(*uint256.NewInt(0))
-	balanceDeltas[0].Value().(*commutative.U256).SetMax(*uint256.NewInt(100))
-	balanceDeltas[0].Value().(*commutative.U256).SetDelta(*uint256.NewInt(11))
+	balanceDeltas[0].Value().(*commutative.U256).SetLimits(*uint256.NewInt(0), *uint256.NewInt(100))
+	balanceDeltas[0].Value().(*commutative.U256).SetDelta(*uint256.NewInt(11), true)
 
 	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
 	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
 	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
 
-	balanceDeltas[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(21))
-	balanceDeltas[2].Value().(*commutative.U256).SetDelta(*uint256.NewInt(5))
-	balanceDeltas[3].Value().(*commutative.U256).SetDelta(*uint256.NewInt(63))
+	balanceDeltas[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(21), true)
+	balanceDeltas[2].Value().(*commutative.U256).SetDelta(*uint256.NewInt(5), true)
+	balanceDeltas[3].Value().(*commutative.U256).SetDelta(*uint256.NewInt(63), true)
 
 	// dict := make(map[string]*[]*univalue.Univalue)
 	// dict[*(balanceDeltas[0]).GetPath()] = &balanceDeltas
@@ -70,7 +68,7 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 		t.Error("Error: There is no conflict")
 	}
 
-	balanceDeltas[3].Value().(*commutative.U256).SetDelta(*uint256.NewInt(64))
+	balanceDeltas[3].Value().(*commutative.U256).SetDelta(*uint256.NewInt(64), true)
 	conflicts = (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
 	if (conflicts) == nil {
 		t.Error("Error: There should be a of-limit-error")
@@ -83,7 +81,7 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 	writeCache := sstore.WriteCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -92,29 +90,28 @@ func TestAccumulatorLowerLimit(t *testing.T) {
 	balanceDeltas := slice.CopyIf(transV, func(_ int, v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	balanceDeltas[0].SetTx(0)
-	balanceDeltas[0].Value().(*commutative.U256).SetMin((*uint256.NewInt(0)))
-	balanceDeltas[0].Value().(*commutative.U256).SetMax((*uint256.NewInt(100)))
-	balanceDeltas[0].Value().(*commutative.U256).SetDelta((*uint256.NewInt(11)))
+	balanceDeltas[0].Value().(*commutative.U256).SetLimits((*uint256.NewInt(0)), (*uint256.NewInt(100)))
+	balanceDeltas[0].Value().(*commutative.U256).SetDelta((*uint256.NewInt(11)), true)
 
 	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
 	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
 	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
 
 	balanceDeltas[1].SetTx(1)
-	balanceDeltas[1].Value().(*commutative.U256).SetDelta((*uint256.NewInt(21)))
+	balanceDeltas[1].Value().(*commutative.U256).SetDelta((*uint256.NewInt(21)), true)
 
 	balanceDeltas[2].SetTx(2)
-	balanceDeltas[2].Value().(*commutative.U256).SetDelta((*uint256.NewInt(5)))
+	balanceDeltas[2].Value().(*commutative.U256).SetDelta((*uint256.NewInt(5)), true)
 
 	balanceDeltas[3].SetTx(3)
-	balanceDeltas[3].Value().(*commutative.U256).SetDelta((*uint256.NewInt(63)))
+	balanceDeltas[3].Value().(*commutative.U256).SetDelta((*uint256.NewInt(63)), true)
 
 	conflicts := (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
 	if (conflicts) != nil {
 		t.Error("Error: There is no conflict")
 	}
 
-	balanceDeltas[3].Value().(*commutative.U256).SetDelta((*uint256.NewInt(64)))
+	balanceDeltas[3].Value().(*commutative.U256).SetDelta((*uint256.NewInt(64)), true)
 	conflicts = (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
 	if (conflicts) == nil {
 		t.Error("Error: There should be a of-limit-error")

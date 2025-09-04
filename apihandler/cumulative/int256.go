@@ -28,7 +28,7 @@ package api
 // 	evmcommon "github.com/ethereum/go-ethereum/common"
 // 	abi "github.com/arcology-network/eu/abi"
 // 	"github.com/arcology-network/eu/common"
-// 	adaptorcommon "github.com/arcology-network/eu/common"
+// 	eucommon "github.com/arcology-network/eu/common"
 
 //
 // )

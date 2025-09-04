@@ -22,8 +22,8 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 
 	statestore "github.com/arcology-network/storage-committer"
@@ -41,7 +41,7 @@ func TestRandomOrderImport(t *testing.T) {
 	sstore := statestore.NewStateStore(store)
 	WriteCache := sstore.WriteCache
 
-	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
@@ -90,7 +90,7 @@ func TestRandomOrderImport(t *testing.T) {
 	}
 
 	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
-	if outV == nil || len(outV.(*deltaset.DeltaSet[string]).Elements()) != 3 {
+	if outV == nil || len(outV.(*softdeltaset.DeltaSet[string]).Elements()) != 3 {
 		t.Error("Error: The path should exist", outV)
 	}
 
@@ -112,7 +112,7 @@ func TestRandomOrderImport(t *testing.T) {
 	committer.Commit(2)
 
 	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
-	if outV == nil || len(outV.(*deltaset.DeltaSet[string]).Elements()) != 5 {
+	if outV == nil || len(outV.(*softdeltaset.DeltaSet[string]).Elements()) != 5 {
 		t.Error("Error: The path should exist", outV)
 	}
 }
@@ -121,7 +121,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	alice := AliceAccount()
 	// sstore:= statestore.NewStateStore(store)
 
-	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
@@ -203,7 +203,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	}
 
 	outV, _, _ = sstore.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", new(commutative.Path))
-	if outV == nil || len(outV.(*deltaset.DeltaSet[string]).Elements()) != 1 {
+	if outV == nil || len(outV.(*softdeltaset.DeltaSet[string]).Elements()) != 1 {
 		t.Error("Error: The path should exist", outV)
 	}
 
@@ -223,7 +223,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	sstore := statestore.NewStateStore(store)
 	WriteCache := sstore.WriteCache
 
-	if _, err := eth.CreateNewAccount(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})

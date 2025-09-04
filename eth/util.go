@@ -26,17 +26,20 @@ import (
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
-// CreateNewAccount creates a new account in the write cache.
-// It returns the transitions and an error, if any.
-func CreateNewAccount(tx uint64, acct string, store interface {
+// CreateDefaultPaths creates default paths for an account in the storage committer.
+func CreateDefaultPaths(tx uint64, acct string, store interface {
 	IfExists(string) bool
-	Write(uint64, string, interface{}) (int64, error)
+	Write(uint64, string, interface{}, ...any) (int64, error)
 }) ([]*univalue.Univalue, error) {
+
+	// accountRoot := common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(acct), "/")
+	// if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(accountRoot)
+
 	paths, typeids := stgcommcom.NewPlatform().GetBuiltins(acct)
 
 	transitions := []*univalue.Univalue{}
 	for i, path := range paths {
-		var v interface{}
+		var v any
 		switch typeids[i] {
 		case commutative.PATH: // Path
 			v = commutative.NewPath()
@@ -62,6 +65,7 @@ func CreateNewAccount(tx uint64, acct string, store interface {
 			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
 
 			if _, err := store.Write(tx, path, v); err != nil { // root path
+				store.Write(tx, path, v)
 				return nil, err
 			}
 

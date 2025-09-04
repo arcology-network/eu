@@ -52,11 +52,11 @@ func (this *EuResult) Size() uint64 {
 
 func (this *EuResult) Encode() []byte {
 	buffer := make([]byte, this.Size())
-	this.EncodeToBuffer(buffer)
+	this.EncodeTo(buffer)
 	return buffer
 }
 
-func (this *EuResult) EncodeToBuffer(buffer []byte) int {
+func (this *EuResult) EncodeTo(buffer []byte) int {
 	if this == nil {
 		return 0
 	}
@@ -75,13 +75,13 @@ func (this *EuResult) EncodeToBuffer(buffer []byte) int {
 		},
 	)
 
-	offset += codec.String(this.H).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.ID).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bytes(univalue.Univalues(this.Trans).Encode()).EncodeToBuffer(buffer[offset:])
-	offset += codec.Bytes(this.TransitTypes).EncodeToBuffer(buffer[offset:])
-	// offset += this.DC.EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.Status).EncodeToBuffer(buffer[offset:])
-	offset += codec.Uint64(this.GasUsed).EncodeToBuffer(buffer[offset:])
+	offset += codec.String(this.H).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.ID).EncodeTo(buffer[offset:])
+	offset += codec.Bytes(univalue.Univalues(this.Trans).Encode()).EncodeTo(buffer[offset:])
+	offset += codec.Bytes(this.TransitTypes).EncodeTo(buffer[offset:])
+	// offset += this.DC.EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.Status).EncodeTo(buffer[offset:])
+	offset += codec.Uint64(this.GasUsed).EncodeTo(buffer[offset:])
 
 	return offset
 }
@@ -137,11 +137,11 @@ func (this *Euresults) Size() uint64 {
 
 // Fill in the header info
 func (this *Euresults) FillHeader(buffer []byte) {
-	codec.Uint64(len(*this)).EncodeToBuffer(buffer)
+	codec.Uint64(len(*this)).EncodeTo(buffer)
 
 	offset := uint64(0)
 	for i := 0; i < len(*this); i++ {
-		codec.Uint64(offset).EncodeToBuffer(buffer[codec.UINT64_LEN*uint64(i+1):])
+		codec.Uint64(offset).EncodeTo(buffer[codec.UINT64_LEN*uint64(i+1):])
 		offset += (*this)[i].Size()
 	}
 }
@@ -159,7 +159,7 @@ func (this Euresults) GobEncode() ([]byte, error) {
 	headerLen := this.HeaderSize()
 	worker := func(start, end, index int, args ...interface{}) {
 		for i := start; i < end; i++ {
-			this[i].EncodeToBuffer(buffer[headerLen+offsets[i]:])
+			this[i].EncodeTo(buffer[headerLen+offsets[i]:])
 		}
 	}
 	common.ParallelWorker(len(this), 4, worker)

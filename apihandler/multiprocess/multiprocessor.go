@@ -26,7 +26,7 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
 
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -111,7 +111,7 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	// Unify tx IDs
 	mainTxID := uint64(this.Api().GetEU().(interface{ ID() uint64 }).ID())
 	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) { (*v).SetTx(mainTxID) })
-	this.Api().WriteCache().(*tempcache.WriteCache).Insert(transitions) // Merge the write tempcache to the main tempcache
+	this.Api().WriteCache().(*cache.WriteCache).Insert(transitions) // Merge the write cache to the main cache
 
 	// Prepare the return values to return to the caller.
 	returnValues := make([][]byte, length)
@@ -120,21 +120,21 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	totalSubExecGasUsed := uint64(0) // The total gas used by the sub processes
 	for i, seq := range newGen.JobSeqs() {
 		// only one job per sequence for multiprocessing
-		successes[i] = seq.Results[0].Receipt.Status == 1 // Check if the transaction was successful
-		inConflict[i] = seq.Results[0].Err != nil
-		returnValues[i] = seq.Results[0].EvmResult.Return()
-		totalSubExecGasUsed += uint64(seq.Results[0].Receipt.GasUsed) // Get the gas used by the transaction
+		successes[i] = seq.Jobs[0].Results.Receipt.Status == 1 // Check if the transaction was successful
+		inConflict[i] = seq.Jobs[0].Results.Err != nil
+		returnValues[i] = seq.Jobs[0].Results.EvmResult.Return()
+		totalSubExecGasUsed += uint64(seq.Jobs[0].Results.Receipt.GasUsed) // Get the gas used by the transaction
 
 		// Append the sub logs to the main thread
-		for _, log := range seq.Results[0].Receipt.Logs {
+		for _, log := range seq.Jobs[0].Results.Receipt.Logs {
 			this.Api().VM().(*vm.EVM).StateDB.AddLog(log)
 		}
 	}
 
 	// Add the gas used by the sub processes to the main thread, the state is updated by transitions.
 	// The receipt has to be processed separately.
-	// this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas -= totalSubExecGasUsed
-	// fmt.Println(this.Api().VM().(*vm.EVM).ArcologyNetworkAPIs.CallContext.Contract.Gas, totalSubExecGasUsed)
+	// this.Api().VM().(*vm.EVM).ArcologyAPIs.CallContext.Contract.Gas -= totalSubExecGasUsed
+	// fmt.Println(this.Api().VM().(*vm.EVM).ArcologyAPIs.CallContext.Contract.Gas, totalSubExecGasUsed)
 
 	// Sub processes may have been spawned during the execution, recheck it.
 	if !this.Api().CheckRuntimeConstrains() {

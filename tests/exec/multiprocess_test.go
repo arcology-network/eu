@@ -54,7 +54,6 @@ func TestU256ParallelInitTestExceed(t *testing.T) {
 	}
 }
 
-// //434343
 func TestU256ParallelPop(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")

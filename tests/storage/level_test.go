@@ -41,7 +41,7 @@ package stgtest
 // 	alice := AliceAccount()
 // 	// sstore:= statestore.NewStateStore(store)
 
-// 	if _, err := adaptorcommon.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
+// 	if _, err := eucommon.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 // 	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})

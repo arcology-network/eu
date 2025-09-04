@@ -21,18 +21,43 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/arcology-network/common-lib/exp/deltaset"
 	"github.com/arcology-network/common-lib/exp/slice"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
+	eth "github.com/arcology-network/eu/eth"
+
+	// "github.com/arcology-network/eu/gas"
 	statestore "github.com/arcology-network/storage-committer"
+	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	"github.com/arcology-network/storage-committer/type/univalue"
 
 	// "github.com/arcology-network/storage-committer/interfaces"
 	interfaces "github.com/arcology-network/storage-committer/common"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
+	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
-	tempcache "github.com/arcology-network/storage-committer/storage/tempcache"
+	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 )
+
+func GenerateDB(addr [20]uint8) (string, *cache.WriteCache, stgcommcommon.ReadOnlyStore, error) {
+	store := chooseDataStore()
+	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	writeCache := sstore.WriteCache
+
+	acct := CreateAccount(addr)
+	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
+		return acct, nil, nil, errors.New("Failed to create new account: " + err.Error())
+	}
+
+	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
+	committer.Commit(10)
+
+	return acct, writeCache, store, nil
+}
 
 func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*univalue.Univalue, error) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
@@ -56,29 +81,27 @@ func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*u
 	return univalue.Univalues(transitions).Encode(), transitions, nil
 }
 
-func ParallelInsert_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, error) {
+// func ParallelInsert_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, error) {
+// 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
+// 	writeCache := sstore.WriteCache
+// 	path := commutative.NewPath() // create a path
+// 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
+// 		return []byte{}, err
+// 	}
 
-	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
-	path := commutative.NewPath() // create a path
-	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
-		return []byte{}, err
-	}
+// 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", noncommutative.NewString("tx0-elem-00")); err != nil { /* The first Element */
+// 		return []byte{}, err
+// 	}
 
-	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", noncommutative.NewString("tx0-elem-00")); err != nil { /* The first Element */
-		return []byte{}, err
-	}
+// 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.NewString("tx0-elem-01")); err != nil { /* The second Element */
+// 		return []byte{}, err
+// 	}
 
-	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-01", noncommutative.NewString("tx0-elem-01")); err != nil { /* The second Element */
-		return []byte{}, err
-	}
-
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	return univalue.Univalues(transitions).Encode(), nil
-}
+// 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+// 	return univalue.Univalues(transitions).Encode(), nil
+// }
 
 func Create_Ctrn_1(account string, store interfaces.ReadOnlyStore) ([]byte, error) {
-
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.WriteCache
 	path := commutative.NewPath() // create a path
@@ -98,7 +121,7 @@ func Create_Ctrn_1(account string, store interfaces.ReadOnlyStore) ([]byte, erro
 	return univalue.Univalues(transitions).Encode(), nil
 }
 
-func CheckPaths(account string, writeCache *tempcache.WriteCache) error {
+func CheckPaths(account string, writeCache *cache.WriteCache) error {
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
 	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")
@@ -121,20 +144,20 @@ func CheckPaths(account string, writeCache *tempcache.WriteCache) error {
 
 	//Read the path
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
-	keys := v.(*deltaset.DeltaSet[string]).Elements()
+	keys := v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	// Read the path again
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", new(commutative.Path))
-	keys = v.(*deltaset.DeltaSet[string]).Elements()
+	keys = v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", new(commutative.Path))
-	keys = v.(*deltaset.DeltaSet[string]).Elements()
+	keys = v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(keys, []string{"elem-00", "elem-01"}) {
 		return errors.New("Error: Path don't match !")
 	}

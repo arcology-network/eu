@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	commontype "github.com/arcology-network/common-lib/types"
-	intf "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
@@ -39,7 +39,7 @@ func TestResultPostprocessor(t *testing.T) {
 	results := Result{
 		From:     sender,
 		Coinbase: coinbase,
-		immuned:  []*univalue.Univalue{},
+		Immuned:  []*univalue.Univalue{},
 		RawStateAccesses: []*univalue.Univalue{
 			// sender transfer -> coinbase 50
 			// sender gas fee -> Coinbase 100
@@ -65,26 +65,30 @@ func TestResultPostprocessor(t *testing.T) {
 	}
 	results.Postprocess()
 
-	if len(results.RawStateAccesses)+len(results.immuned) != 8 {
-		t.Errorf("Postprocess failed, expecting 7, got %d", len(results.RawStateAccesses)+len(results.immuned))
+	if len(results.RawStateAccesses)+len(results.Immuned) != 8 {
+		t.Errorf("Postprocess failed, expecting 7, got %d", len(results.RawStateAccesses)+len(results.Immuned))
 	}
 
-	if v := results.RawStateAccesses[2].Value().(intf.Type).Delta().(uint256.Int); (&v).Uint64() != 200 && results.RawStateAccesses[2].Value().(intf.Type).DeltaSign() {
+	delta, DeltaSign := results.RawStateAccesses[2].Value().(stgcommon.Type).Delta()
+	if v := delta.(uint256.Int); (&v).Uint64() != 200 && DeltaSign {
 		t.Errorf("Postprocess failed, expecting 100, got %d", v)
 	}
 
 	// Sender pay gas fee -100.
-	if v := results.immuned[0].Value().(intf.Type).Delta().(uint256.Int); (&v).Uint64() != 100 && !results.immuned[1].Value().(intf.Type).DeltaSign() {
+	delta, DeltaSign = results.Immuned[0].Value().(stgcommon.Type).Delta()
+	if v := delta.(uint256.Int); (&v).Uint64() != 100 && !DeltaSign {
 		t.Errorf("Postprocess failed, expecting 50, got %d", v)
 	}
 
 	// Coinbase gas fee + 100.
-	if v := results.immuned[1].Value().(intf.Type).Delta().(uint256.Int); (&v).Uint64() != 100 && results.immuned[1].Value().(intf.Type).DeltaSign() {
+	delta, DeltaSign = results.Immuned[1].Value().(stgcommon.Type).Delta()
+	if v := delta.(uint256.Int); (&v).Uint64() != 100 && DeltaSign {
 		t.Errorf("Postprocess failed, expecting 50, got %d", v)
 	}
 
 	// Sender transfers -50.
-	if v := results.RawStateAccesses[1].Value().(intf.Type).Delta().(uint256.Int); (&v).Uint64() != 50 && !results.immuned[1].Value().(intf.Type).DeltaSign() {
+	delta, _ = results.RawStateAccesses[1].Value().(stgcommon.Type).Delta()
+	if v := delta.(uint256.Int); (&v).Uint64() != 50 && !DeltaSign {
 		t.Errorf("Postprocess failed, expecting 50, got %d", v)
 	}
 }

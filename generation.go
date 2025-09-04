@@ -35,22 +35,22 @@ import (
 type Generation struct {
 	ID          uint64
 	numThreads  uint8
-	jobSeqs     []*JobSequence // para jobSeqs
+	jobSeqs     []*eucommon.JobSequence // para jobSeqs
 	occurrences *map[string]int
 }
 
-func (*Generation) OccurrenceDict(jobSeqs []*JobSequence) *map[string]int {
+func (*Generation) OccurrenceDict(jobSeqs []*eucommon.JobSequence) *map[string]int {
 	occurrences := map[string]int{}
 	for _, seq := range jobSeqs {
-		for _, msg := range seq.StdMsgs {
-			occurrences[scheduler.ToKey(msg)]++ // Only count the first one if found
+		for _, job := range seq.Jobs {
+			occurrences[scheduler.ToKey(job.StdMsg)]++ // Only count the first one if found
 			break
 		}
 	}
 	return &occurrences
 }
 
-func NewGeneration(id uint64, numThreads uint8, jobSeqs []*JobSequence) *Generation {
+func NewGeneration(id uint64, numThreads uint8, jobSeqs []*eucommon.JobSequence) *Generation {
 	gen := &Generation{
 		ID:         id,
 		numThreads: numThreads,
@@ -64,30 +64,30 @@ func NewGeneration(id uint64, numThreads uint8, jobSeqs []*JobSequence) *Generat
 // This function converts a list of raw calls to a list of parallel job sequences. One job sequence is created for each caller.
 // If there are N callers, there will be N job sequences. There sequences will be later added to a generation and executed in parallel.
 func NewGenerationFromMsgs(id uint64, numThreads uint8, evmMsgs []*evmcore.Message, api intf.EthApiRouter) *Generation {
-	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{})
+	gen := NewGeneration(id, uint8(len(evmMsgs)), []*eucommon.JobSequence{})
 	slice.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
-		gen.Add(new(JobSequence).NewFromCall(*msg, api.GetEU().(interface{ TxHash() [32]byte }).TxHash(), api))
+		gen.Add(new(eucommon.JobSequence).NewFromCall(*msg, api.GetEU().(interface{ TxHash() [32]byte }).TxHash(), api))
 	})
 	gen.occurrences = gen.OccurrenceDict(gen.jobSeqs)
 	api.SetSchedule(gen.occurrences)
 	return gen
 }
 
-func (this *Generation) Length() uint64     { return uint64(len(this.jobSeqs)) }
-func (this *Generation) JobT() *JobSequence { return &JobSequence{} }
-func (this *Generation) JobSeqs() []*JobSequence {
-	return slice.To[*JobSequence, *JobSequence](this.jobSeqs)
+func (this *Generation) Length() uint64              { return uint64(len(this.jobSeqs)) }
+func (this *Generation) JobT() *eucommon.JobSequence { return &eucommon.JobSequence{} }
+func (this *Generation) JobSeqs() []*eucommon.JobSequence {
+	return slice.To[*eucommon.JobSequence, *eucommon.JobSequence](this.jobSeqs)
 }
 
-func (this *Generation) At(idx uint64) *JobSequence {
-	return common.IfThenDo1st(idx < uint64(len(this.jobSeqs)), func() *JobSequence { return this.jobSeqs[idx] }, nil)
+func (this *Generation) At(idx uint64) *eucommon.JobSequence {
+	return common.IfThenDo1st(idx < uint64(len(this.jobSeqs)), func() *eucommon.JobSequence { return this.jobSeqs[idx] }, nil)
 }
 
-func (*Generation) New(id uint64, numThreads uint8, jobSeqs []*JobSequence) *Generation {
-	return NewGeneration(id, numThreads, slice.To[*JobSequence, *JobSequence](jobSeqs))
+func (*Generation) New(id uint64, numThreads uint8, jobSeqs []*eucommon.JobSequence) *Generation {
+	return NewGeneration(id, numThreads, slice.To[*eucommon.JobSequence, *eucommon.JobSequence](jobSeqs))
 }
 
-func (this *Generation) Add(job *JobSequence) bool {
+func (this *Generation) Add(job *eucommon.JobSequence) bool {
 	this.jobSeqs = append(this.jobSeqs, job)
 	return true
 }
@@ -116,7 +116,7 @@ func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRo
 
 	// Execute the job sequences in parallel. All the access records from the same sequence share
 	// the same sequence ID. The sequence ID is used to detect the conflicts between different sequences.
-	slice.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **JobSequence) {
+	slice.ParallelForeach(this.jobSeqs, int(this.numThreads), func(i int, _ **eucommon.JobSequence) {
 		seqIDs[i], records[i] = this.jobSeqs[i].Run(config, blockAPI.Cascade(), uint64(i))
 	})
 
@@ -124,7 +124,7 @@ func (this *Generation) Execute(execCoinbase interface{}, blockAPI intf.EthApiRo
 	txDict, seqDict, _ := conflictInfo.ToDict()
 
 	// Mark the conflicts in the job sequences.
-	cleanTrans := slice.Concate(this.jobSeqs, func(seq *JobSequence) []*univalue.Univalue {
+	cleanTrans := slice.Concate(this.jobSeqs, func(seq *eucommon.JobSequence) []*univalue.Univalue {
 		if _, ok := seqDict[(*seq).ID]; ok { // Check if the sequence ID is in the conflict list.
 			(*seq).FlagConflict(txDict, errors.New(stgcommon.WARN_ACCESS_CONFLICT))
 		}
