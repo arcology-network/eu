@@ -11,9 +11,9 @@ replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
 // replace github.com/arcology-network/storage-committer => ../storage-committer/
 
 require (
-	github.com/arcology-network/common-lib v1.9.1-0.20250613001412-0529984b08ff
-	github.com/arcology-network/scheduler v0.0.0-20250613010534-e8a32339f176
-	github.com/arcology-network/storage-committer v1.9.1-0.20250613004728-e65a2bc7058d
+	github.com/arcology-network/common-lib v1.9.1-0.20250904084038-46913d516a25
+	github.com/arcology-network/scheduler v0.0.0-20250904085309-0fef85fb7953
+	github.com/arcology-network/storage-committer v1.9.1-0.20250904084742-3c998d22800e
 	github.com/elliotchance/orderedmap v1.5.1
 	github.com/ethereum/go-ethereum v1.14.8
 	github.com/google/btree v1.1.3
