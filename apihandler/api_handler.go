@@ -368,13 +368,12 @@ func (this *APIHandler) RefundPrepaidGas(gasLeft *uint64) bool {
 
 	// Calculate the gas left after the job execution.
 	totalPrepaid := uint64(len(payers)) * job.PrepaidGas // All the job shared the same prepaid gas amount
-	originalGasRemaining := float64(*job.GasRemaining) * float64(*gasLeft) / float64(*job.GasRemaining+totalPrepaid)
-
-	// Calculate the refund per payer based on the gas left and the number of payers.
-	refundPerPayer := uint64(math.Round(float64(*gasLeft)-originalGasRemaining) / float64(len(payers)))
+	//gasused=parallelgas+defgas
+	gasused := *job.InitialGas + totalPrepaid - *gasLeft
+	refundPerPayer := uint64(math.Round(float64(totalPrepaid-gasused) / float64(len(payers))))
 
 	// Minus the prepaid portion from the gas left.
-	(*gasLeft) -= (*gasLeft) - uint64(math.Round(originalGasRemaining))
+	(*gasLeft) = (*gasLeft) - (totalPrepaid - gasused) //uint64(math.Round(originalGasRemaining))
 
 	// 	// Refund the prepaid gas portion back to each prepayer.
 	for _, payer := range payers {
