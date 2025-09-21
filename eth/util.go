@@ -32,9 +32,6 @@ func CreateDefaultPaths(tx uint64, acct string, store interface {
 	Write(uint64, string, interface{}, ...any) (int64, error)
 }) ([]*univalue.Univalue, error) {
 
-	// accountRoot := common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(acct), "/")
-	// if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(accountRoot)
-
 	paths, typeids := stgcommcom.NewPlatform().GetBuiltins(acct)
 
 	transitions := []*univalue.Univalue{}
@@ -63,15 +60,8 @@ func CreateDefaultPaths(tx uint64, acct string, store interface {
 		// fmt.Println(path)
 		if !store.IfExists(path) {
 			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
-
 			if _, err := store.Write(tx, path, v); err != nil { // root path
-				store.Write(tx, path, v)
 				return nil, err
-			}
-
-			if !store.IfExists(path) {
-				_, err := store.Write(tx, path, v)
-				return transitions, err // root path
 			}
 		}
 	}
