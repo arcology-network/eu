@@ -11,21 +11,19 @@ replace github.com/ethereum/go-ethereum v1.14.8 => github.com/arcology-network/c
 // replace github.com/arcology-network/storage-committer => ../storage-committer/
 
 require (
-	github.com/elliotchance/orderedmap v1.5.1
-	github.com/ethereum/go-ethereum v1.14.8
-	github.com/google/btree v1.1.3
-	github.com/holiman/uint256 v1.2.4
-	golang.org/x/crypto v0.20.0
-	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
-)
-
-require (
 	github.com/arcology-network/common-lib v1.9.1-0.20251112075051-e3046bddd333
 	github.com/arcology-network/scheduler v0.0.0-20251112083325-a533092eabf1
 	github.com/arcology-network/storage-committer v1.9.1-0.20251112080202-1f75b95ce882
 )
 
 require (
+	github.com/elliotchance/orderedmap v1.5.1
+	github.com/ethereum/go-ethereum v1.14.8
+	github.com/google/btree v1.1.3
+	github.com/holiman/uint256 v1.2.4
+	golang.org/x/crypto v0.20.0
+	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb
+
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
