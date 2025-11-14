@@ -27,7 +27,7 @@ import (
 func TestConcurrentGateway(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "shared/concurrentGateway_test.sol", "0.8.19", "ConcurrentGatewayTest", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "core/Gateway_test.sol", "0.8.19", "ConcurrentGatewayTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

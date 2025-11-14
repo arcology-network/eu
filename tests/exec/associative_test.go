@@ -113,7 +113,7 @@ func TestAddressUint256CumMap(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "map/addressU256Cum_test.sol", "0.8.19", "AddressU256CumMapTest", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "map/addressU256Cum_test.sol", "0.8.19", "AddressU256CumTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
