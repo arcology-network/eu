@@ -19,7 +19,6 @@ package shared
 
 import (
 	"github.com/arcology-network/common-lib/codec"
-	slice "github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/storage-committer/type/univalue"
 )
 
@@ -37,7 +36,6 @@ func (this *TxAccessRecords) Size() uint64 {
 	return this.HeaderSize() +
 		codec.String(this.Hash).Size() +
 		codec.UINT64_LEN +
-		// codec.Bytes(this.Accesses).Size()
 		univalue.Univalues(this.Accesses).Size()
 }
 
@@ -57,7 +55,6 @@ func (this *TxAccessRecords) EncodeTo(buffer []byte) int {
 		[]uint64{
 			codec.String(this.Hash).Size(),
 			codec.Uint64(this.ID).Size(),
-			// codec.Bytes(this.Accesses).Size(),
 			univalue.Univalues(this.Accesses).Size(),
 		},
 	)
@@ -72,7 +69,8 @@ func (this *TxAccessRecords) Decode(buffer []byte) *TxAccessRecords {
 	fields := codec.Byteset{}.Decode(buffer).(codec.Byteset)
 	this.Hash = codec.Bytes(fields[0]).ToString()
 	this.ID = uint64(codec.Uint64(0).Decode(fields[1]).(codec.Uint64))
-	this.Accesses = univalue.Univalues(this.Accesses).Decode(fields[2]).([]*univalue.Univalue) //codec.Bytes{}.Decode(fields[2]).(codec.Bytes)
+	uns := univalue.Univalues(this.Accesses).Decode(fields[2])
+	this.Accesses = uns.(univalue.Univalues)
 	return this
 }
 
@@ -83,8 +81,8 @@ func (this *TxAccessRecordSet) HeaderSize() uint64 {
 }
 
 func (this *TxAccessRecordSet) Size() uint64 {
-	total := this.HeaderSize()        // Header length
-	for i := 0; i < len(*this); i++ { // Body  length
+	total := this.HeaderSize()
+	for i := 0; i < len(*this); i++ {
 		total += (*this)[i].Size()
 	}
 	return total
@@ -101,30 +99,21 @@ func (this *TxAccessRecordSet) FillHeader(buffer []byte) {
 }
 
 func (this *TxAccessRecordSet) Encode() []byte {
-	buffer := make([]byte, this.Size())
-	this.FillHeader(buffer)
-
-	headerLen := this.HeaderSize()
-	offsets := make([]uint64, len(*this)+1)
-	offsets[0] = 0
-	for i := 0; i < len(*this); i++ {
-		offsets[i+1] = offsets[i] + (*this)[i].Size()
+	bys := make([][]byte, len(*this))
+	for i := range *this {
+		bys[i] = (*this)[i].Encode()
 	}
-
-	slice.ParallelForeach(*this, 4, func(i int, _ **TxAccessRecords) {
-		(*this)[i].EncodeTo(buffer[headerLen+offsets[i]:])
-	})
-	return buffer
+	return codec.Byteset(bys).Encode()
 }
 
 func (this *TxAccessRecordSet) Decode(data []byte) interface{} {
 	bytesset := codec.Byteset{}.Decode(data).(codec.Byteset)
-	records := slice.ParallelTransform(bytesset, 6, func(i int, _ []byte) *TxAccessRecords {
+	records := make([]*TxAccessRecords, len(bytesset))
+	for i := range bytesset {
 		this := &TxAccessRecords{}
 		this.Decode(bytesset[i])
-		return this
-	})
-
+		records[i] = this
+	}
 	v := (TxAccessRecordSet)(records)
 	return &(v)
 }

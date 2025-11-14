@@ -18,97 +18,61 @@
 package shared
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
+
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	"github.com/arcology-network/storage-committer/type/univalue"
+	punivalue "github.com/arcology-network/storage-committer/type/univalue"
+	"github.com/holiman/uint256"
 )
 
 func TestEuresultEncodingWithDefer(t *testing.T) {
-	// in := &DeferredCall{
-	// 	DeferID:         "7777999",
-	// 	ContractAddress: "45678abc",
-	// 	Signature:       "xxxx%123",
-	// }
+
+	alice := RandomAccount()
+
+	u64 := commutative.NewBoundedUint64(0, 100)
+	in0 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
+
+	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
+	in1 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u256-000", 3, 4, 0, u256, nil)
 
 	eu := &EuResult{
-		H:  "0x1234567",
-		ID: 99,
-		//Transitions:  []byte{byte(1), byte(2)},
+		H:            "0x1234567",
+		ID:           99,
 		TransitTypes: []byte{8, 7},
-		// DC:           in,
-		Status:  12,
-		GasUsed: 34,
+		Trans:        []*univalue.Univalue{in0, in1},
+		Status:       12,
+		GasUsed:      34,
 	}
-
-	// if eu.DC == nil {
-	// 	fmt.Println()
-	// }
 
 	buffer := eu.Encode()
 	out := (&EuResult{}).Decode(buffer)
-	if !reflect.DeepEqual(*eu, *out) {
-		t.Error("Error")
-	}
-}
-
-// func TestDeferEncoding(t *testing.T) {
-// 	// in := &DeferredCall{
-// 	// 	DeferID:         "7777999",
-// 	// 	ContractAddress: "45678abc",
-// 	// 	Signature:       "xxxx%123",
-// 	// }
-
-// 	buffer := in.Encode()
-// 	out := (&DeferredCall{}).Decode(buffer)
-
-// 	if !reflect.DeepEqual(in, out) {
-// 		t.Error("Error")
-// 	}
-// }
-
-func TestEuResultEncodingWithDefer(t *testing.T) {
-	// dc := &DeferredCall{
-	// 	DeferID:         "7777",
-	// 	ContractAddress: "45678",
-	// 	Signature:       "xxxx",
-	// }
-
-	euresult := EuResult{
-		H:  "1234",
-		ID: uint64(99),
-		//Transitions:  []byte{byte(2), byte(8)},
-		TransitTypes: []byte{1, 2},
-		// DC:           dc,
-		Status:  0,
-		GasUsed: 199,
-	}
-
-	buffer := euresult.Encode()
-	out := (&EuResult{}).Decode(buffer)
-
-	if !reflect.DeepEqual(euresult, *out) {
+	aj, _ := json.Marshal(eu)
+	bj, _ := json.Marshal(out)
+	if !bytes.Equal(aj, bj) {
 		t.Error("Error")
 	}
 }
 
 func TestEuResultsEncoding(t *testing.T) {
-	// dc := &DeferredCall{
-	// 	DeferID:         "7777",
-	// 	ContractAddress: "45678",
-	// 	Signature:       "xxxx",
-	// }
-
 	euresults := make([]*EuResult, 10)
 	for i := 0; i < len(euresults); i++ {
+		alice := RandomAccount()
+		val := 1001 + i
+		u64 := commutative.NewBoundedUint64(0, uint64(val))
+		in0 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
+
 		euresults[i] = &EuResult{
-			H:  "0x1234567",
-			ID: uint64(99),
-			//Transitions:  []byte{byte(9), byte(11)},
+			H:            "0x1234567",
+			ID:           uint64(99),
 			TransitTypes: []byte{1, 2},
-			// DC:           dc,
-			Status:  11,
-			GasUsed: 99,
+			Trans:        []*univalue.Univalue{in0},
+			Status:       11,
+			GasUsed:      99,
 		}
 	}
 
@@ -120,29 +84,30 @@ func TestEuResultsEncoding(t *testing.T) {
 	out.GobDecode(buffer)
 	fmt.Println("EuResults GobDecode():", time.Now().Sub(t0))
 
-	for i := 0; i < len(euresults); i++ {
-		if !reflect.DeepEqual(euresults[i], (*out)[i]) {
+	for i := range euresults {
+		aj, _ := json.Marshal(euresults[i])
+		bj, _ := json.Marshal((*out)[i])
+		if !bytes.Equal(aj, bj) {
 			t.Error("Error")
 		}
 	}
 }
 
 func BenchmarkEuResultsEncoding(b *testing.B) {
-	// dc := &DeferredCall{
-	// 	DeferID:         "7777",
-	// 	ContractAddress: "45678",
-	// 	Signature:       "xxxx",
-	// }
 
 	euresults := make([]*EuResult, 1000000)
 	for i := 0; i < len(euresults); i++ {
+		alice := RandomAccount()
+		val := 1001 + i
+		u64 := commutative.NewBoundedUint64(0, uint64(val))
+		in0 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
 		euresults[i] = &EuResult{
-			H:  "0x1234567",
-			ID: uint64(99),
-			//Transitions: []byte{byte(90), byte(110)},
-			// DC:          dc,
-			Status:  11,
-			GasUsed: 99,
+			H:            "0x1234567",
+			ID:           uint64(99),
+			TransitTypes: []byte{1, 2},
+			Trans:        []*univalue.Univalue{in0},
+			Status:       11,
+			GasUsed:      99,
 		}
 	}
 

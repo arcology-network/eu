@@ -18,43 +18,91 @@
 package shared
 
 import (
+	"bytes"
 	"fmt"
-	"reflect"
+	"math/rand"
 	"testing"
 	"time"
+
+	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	punivalue "github.com/arcology-network/storage-committer/type/univalue"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/holiman/uint256"
+
+	"encoding/json"
 )
 
+func RandomAccount() string {
+	var letters = []byte("abcdef0123456789")
+	rand.Seed(time.Now().UnixNano())
+	b := make([]byte, 20)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+
+	addr := hexutil.Encode(b)
+	return addr
+}
+
 func TestAccessRecordEncoding(t *testing.T) {
+
+	alice := RandomAccount()
+
+	u64 := commutative.NewBoundedUint64(0, 100)
+	in0 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
+
+	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
+	in1 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u256-000", 3, 4, 0, u256, nil)
+
 	records := &TxAccessRecords{
 		Hash: "0x1234567",
 		ID:   99,
-		//Accesses: []byte{byte(67), byte(77)},
+		Accesses: []*punivalue.Univalue{
+			in0, in1,
+		},
 	}
 
 	buffer := records.Encode()
 	out := (&TxAccessRecords{}).Decode(buffer)
-	if !reflect.DeepEqual(records, out) {
+	aj, _ := json.Marshal(records)
+	bj, _ := json.Marshal(out)
+	if !bytes.Equal(aj, bj) {
 		t.Error("Error")
 	}
 }
 
 func TestAccessRecordSetEncoding(t *testing.T) {
+	alice := RandomAccount()
+	u64 := commutative.NewBoundedUint64(0, 100)
+	in0 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/u64-000", 3, 4, 0, u64, nil)
 	_1 := &TxAccessRecords{
 		Hash: "0x1234567",
 		ID:   99,
-		//Accesses: []byte{byte(66), byte(33)},
+		Accesses: []*punivalue.Univalue{
+			in0,
+		},
 	}
 
+	bob := RandomAccount()
+	u256 := commutative.NewBoundedU256(uint256.NewInt(0), uint256.NewInt(100))
+	in1 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+bob+"/storage/ctrn-0/u256-000", 3, 4, 0, u256, nil)
 	_2 := &TxAccessRecords{
 		Hash: "0xabcde",
 		ID:   88,
-		//Accesses: []byte{byte(44), byte(55)},
+		Accesses: []*punivalue.Univalue{
+			in1,
+		},
 	}
 
+	comn := RandomAccount()
+	u641 := commutative.NewBoundedUint64(0, 200)
+	in2 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+comn+"/storage/ctrn-0/u64-000", 3, 4, 0, u641, nil)
 	_3 := &TxAccessRecords{
 		Hash: "0x8976542",
 		ID:   77,
-		//Accesses: []byte{byte(66), byte(88)},
+		Accesses: []*punivalue.Univalue{
+			in2,
+		},
 	}
 
 	accessSet := TxAccessRecordSet{_1, _2, _3}
@@ -62,18 +110,27 @@ func TestAccessRecordSetEncoding(t *testing.T) {
 	buffer, _ := accessSet.GobEncode()
 	out := TxAccessRecordSet{}
 	out.GobDecode(buffer)
-	if !reflect.DeepEqual(accessSet, out) {
-		t.Error("Error")
+	for i := range accessSet {
+		aj, _ := json.Marshal(accessSet[i])
+		bj, _ := json.Marshal(out[i])
+		if !bytes.Equal(aj, bj) {
+			t.Error("Error")
+		}
 	}
 }
 
 func BenchmarkAccessRecordSetEncoding(b *testing.B) {
 	recordVec := make([]*TxAccessRecords, 1000000)
 	for i := 0; i < len(recordVec); i++ {
+		comn := RandomAccount()
+		u641 := commutative.NewBoundedUint64(0, uint64(200+i))
+		in2 := punivalue.NewUnivalue(1, "blcc://eth1.0/account/"+comn+"/storage/ctrn-0/u64-000", 3, 4, 0, u641, nil)
 		recordVec[i] = &TxAccessRecords{
 			Hash: "0x1234567",
 			ID:   uint64(i),
-			//Accesses: []byte{byte(99), byte(110)},
+			Accesses: []*punivalue.Univalue{
+				in2,
+			},
 		}
 	}
 

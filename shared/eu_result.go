@@ -35,19 +35,17 @@ type EuResult struct {
 }
 
 func (this *EuResult) HeaderSize() uint64 {
-	return 6 * codec.UINT64_LEN
+	return 7 * codec.UINT64_LEN
 }
 
 func (this *EuResult) Size() uint64 {
 	return this.HeaderSize() +
 		uint64(len(this.H)) +
 		codec.UINT64_LEN +
-		// codec.Bytes(this.Trans).Size() +
 		uint64(univalue.Univalues(this.Trans).Size()) +
 		codec.Bytes(this.TransitTypes).Size() +
-		// this.DC.Size() +
-		codec.UINT64_LEN +
-		codec.UINT64_LEN
+		codec.Uint64(this.Status).Size() +
+		codec.Uint64(this.GasUsed).Size()
 }
 
 func (this *EuResult) Encode() []byte {
@@ -66,12 +64,10 @@ func (this *EuResult) EncodeTo(buffer []byte) int {
 		[]uint64{
 			codec.String(this.H).Size(),
 			codec.Uint64(this.ID).Size(),
-			// codec.Bytes(this.Transitions).Size(),
 			univalue.Univalues(this.Trans).Size(),
 			codec.Bytes(this.TransitTypes).Size(),
-			// this.DC.Size(),
-			codec.UINT64_LEN,
-			codec.UINT64_LEN,
+			codec.Uint64(this.Status).Size(),
+			codec.Uint64(this.GasUsed).Size(),
 		},
 	)
 
@@ -79,7 +75,6 @@ func (this *EuResult) EncodeTo(buffer []byte) int {
 	offset += codec.Uint64(this.ID).EncodeTo(buffer[offset:])
 	offset += codec.Bytes(univalue.Univalues(this.Trans).Encode()).EncodeTo(buffer[offset:])
 	offset += codec.Bytes(this.TransitTypes).EncodeTo(buffer[offset:])
-	// offset += this.DC.EncodeTo(buffer[offset:])
 	offset += codec.Uint64(this.Status).EncodeTo(buffer[offset:])
 	offset += codec.Uint64(this.GasUsed).EncodeTo(buffer[offset:])
 
@@ -91,13 +86,8 @@ func (this *EuResult) Decode(buffer []byte) *EuResult {
 
 	this.H = string(fields[0])
 	this.ID = uint64(codec.Uint64(0).Decode(fields[1]).(codec.Uint64))
-	this.Trans = univalue.Univalues(this.Trans).Decode(fields[2]).([]*univalue.Univalue)
-	// this.Transitions = []byte(codec.Bytes{}.Decode(fields[2]).(codec.Bytes))
+	this.Trans = univalue.Univalues(this.Trans).Decode(fields[2]).(univalue.Univalues)
 	this.TransitTypes = []byte(codec.Bytes{}.Decode(fields[3]).(codec.Bytes))
-
-	// if len(fields[4]) > 0 {
-	// 	this.DC = (&DeferredCall{}).Decode(fields[4])
-	// }
 	this.Status = uint64(codec.Uint64(0).Decode(fields[4]).(codec.Uint64))
 	this.GasUsed = uint64(codec.Uint64(0).Decode(fields[5]).(codec.Uint64))
 	return this
