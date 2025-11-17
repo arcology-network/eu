@@ -152,5 +152,8 @@ func ExecuteJob(job *workload.Job, configInfo *eucommon.Config, api intf.EthApiR
 		Receipt:          receipt,
 		EvmResult:        evmResult,
 		StdMsg:           job.StdMsg,
-	}).Postprocess(*configInfo.Coinbase)
+	})
+
+	normalizer := statecell.NewTransactionNormalizer(job.Result.Receipt.GasUsed, *configInfo.Coinbase, job.StdMsg)
+	job.Result.Immuned = normalizer.Normalize(job.Result.Transitions())
 }
