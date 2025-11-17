@@ -15,16 +15,17 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// KernelAPI provides system level function calls supported by arcology platform.
+// KernelAPI provides system level function calls supported by arcology stgtypecommon
 package exectest
 
 import (
 	"strconv"
 
+	eu "github.com/arcology-network/eu"
 	eucommon "github.com/arcology-network/eu/common"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
@@ -56,9 +57,9 @@ func GenRandomAccounts(num int) []ethcommon.Address {
 }
 
 type TestEu struct {
-	eu          *eucommon.EU
+	eu          *eu.EU
 	config      *eucommon.Config
 	store       stgcommon.ReadOnlyStore
 	committer   *stgcomm.StateCommitter
-	transitions []*univalue.Univalue
+	transitions []*statecell.StateCell
 }

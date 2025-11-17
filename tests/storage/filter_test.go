@@ -27,10 +27,10 @@ import (
 	softdeltaset "github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/type/commutative"
-	univalue "github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 	"github.com/holiman/uint256"
 )
 
@@ -42,20 +42,20 @@ func TestTransitionFilters(t *testing.T) {
 	bob := RandomAccount()
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
-	// writeCache = cache.NewWriteCache(store, 1, 1, platform.NewPlatform())
+	// writeCache = cache.NewStateCache(store, 1, 1, stgtypecommon.NewPlatform())
 
-	eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache)
-	// committer.NewAccount(stgcommcommon.SYSTEM, bob)
+	eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache)
+	// committer.NewAccount(stgcommon.SYSTEM, bob)
 
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	raw := writeCache.Export(univalue.Sorter)
+	raw := writeCache.Export(statecell.Sorter)
 
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.IPTransition{})
+	acctTrans := statecell.StateCells(slice.Clone(raw)).To(statecell.IPTransition{})
 
 	if !acctTrans[1].Value().(*commutative.U256).Equal(raw[1].Value()) {
 		t.Error("Error: Non-path commutative should have the values!!")
@@ -96,7 +96,7 @@ func TestTransitionFilters(t *testing.T) {
 		t.Error("Error: Max altered")
 	}
 
-	copied := univalue.Univalues(slice.Clone(acctTrans)).To(univalue.IPTransition{})
+	copied := statecell.StateCells(slice.Clone(acctTrans)).To(statecell.IPTransition{})
 
 	// Test Path
 	v := copied[0].Value().(*commutative.Path).Value() // Committed
@@ -141,13 +141,13 @@ func TestAccessFilters(t *testing.T) {
 	bob := RandomAccount()
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
-	eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache)
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	writeCache := sstore.StateCache
+	eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache)
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	raw := writeCache.Export(univalue.Sorter)
+	raw := writeCache.Export(statecell.Sorter)
 
 	raw[0].Value().(*commutative.Path).SetSubPaths([]string{"k0", "k1"})
 	raw[0].Value().(*commutative.Path).SetAdded([]string{"123", "456"})
@@ -157,7 +157,7 @@ func TestAccessFilters(t *testing.T) {
 	raw[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(999), true)
 	raw[1].Value().(*commutative.U256).SetLimits(*uint256.NewInt(1), *uint256.NewInt(2222222))
 
-	acctTrans := univalue.Univalues(slice.Clone(raw)).To(univalue.IPAccess{})
+	acctTrans := statecell.StateCells(slice.Clone(raw)).To(statecell.IPAccess{})
 
 	if acctTrans[0].Value() != nil {
 		t.Error("Error: Value altered")
@@ -182,7 +182,7 @@ func TestAccessFilters(t *testing.T) {
 		t.Error("Error: A non-path commutative variable should have the initial value")
 	}
 
-	idx, v := slice.FindFirstIf(acctTrans, func(_ int, v *univalue.Univalue) bool {
+	idx, v := slice.FindFirstIf(acctTrans, func(_ int, v *statecell.StateCell) bool {
 		// If balance is nil or nonce is nil, which shoudn't happen
 		return (strings.Contains(*v.GetPath(), "/balance") && v.Value() == nil) || (strings.Contains(*v.GetPath(), "/nonce") && v.Value() == nil)
 	})

@@ -18,13 +18,11 @@
 package runtime
 
 import (
-	"encoding/hex"
 	"fmt"
 	"math"
 
 	"github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/common"
-	"github.com/arcology-network/common-lib/exp/slice"
 
 	"github.com/arcology-network/eu/abi"
 	eucommon "github.com/arcology-network/eu/common"
@@ -33,15 +31,16 @@ import (
 
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
-	schtype "github.com/arcology-network/scheduler"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/noncommutative"
+
+	workload "github.com/arcology-network/scheduler/workload"
 )
 
 type RuntimeHandlers struct {
 	api         intf.EthApiRouter
-	pathBuilder *eth.PathBuilder
+	pathBuilder *eth.ContainerPathBuilder
 }
 
 func NewRuntimeHandlers(ethApiRouter intf.EthApiRouter) *RuntimeHandlers {
@@ -62,14 +61,11 @@ func (this *RuntimeHandlers) writeCache(path string, val stgcommon.Type, gasMete
 }
 
 func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isReadOnly bool) ([]byte, bool, int64) {
-	signature := codec.Bytes4{}.FromBytes(input[:])
+	selector := codec.Bytes4{}.FromBytes(input[:])
 
-	switch signature {
+	switch selector {
 	case [4]byte{0xf1, 0x06, 0x84, 0x54}: // 79 fc 09 a2
 		return this.pid(caller, input[4:])
-
-	// case [4]byte{0x64, 0x23, 0xdb, 0x34}: // d3 01 e8 fe
-	// return this.rollback(caller, input[4:])
 
 	case [4]byte{0xbb, 0x07, 0xe8, 0x5d}: // bb 07 e8 5d
 		return this.uuid(caller, callee, input[4:])
@@ -87,6 +83,7 @@ func (this *RuntimeHandlers) Call(caller, callee [20]byte, input []byte, origin 
 		return this.print(caller, callee, input[4:])
 	}
 
+	fmt.Println("Function not found !!")
 	fmt.Println(input)
 	return []byte{}, false, eucommon.GAS_CALL_UNKNOW
 }
@@ -103,7 +100,7 @@ func (this *RuntimeHandlers) uuid(_, _ evmcommon.Address, _ []byte) ([]byte, boo
 // Get the number of running instances of a function.
 func (this *RuntimeHandlers) isInDeferred(_ evmcommon.Address, _ evmcommon.Address, _ []byte) ([]byte, bool, int64) {
 	job := this.api.VM().(*vm.EVM).ArcologyAPIs.Job()
-	encoded, err := abi.Encode(job.(*eucommon.Job).StdMsg.IsDeferred)
+	encoded, err := abi.Encode(job.(*workload.Job).StdMsg.IsDeferred)
 	return encoded, err == nil, eucommon.GAS_ENCODE + eucommon.GAS_GET_RUNTIME_INFO
 }
 
@@ -113,96 +110,80 @@ func (this *RuntimeHandlers) setParallelism(caller, addr evmcommon.Address, inpu
 	}
 
 	gasMeter := eucommon.NewGasMeter()
-	paraLvl, err := abi.Decode(input, 3, uint64(0), 1, 1)
+	paraLvl, err := abi.Decode(input, 3, uint32(0), 1, 1)
 	gasMeter.Use(0, 0, eucommon.GAS_DECODE) // Gas for decoding the input
 
 	if err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
-	executionMethod := stgcommon.PARALLEL_EXECUTION
-	if paraLvl == 1 {
-		executionMethod = stgcommon.SEQUENTIAL_EXECUTION // If the parallelism level is 1, set the execution method to sequential.
-	}
-
-	result, successful, gas := this.setExecutionParallelism(caller, addr, input, executionMethod)
+	result, successful, gas := this.setExecutionParallelism(caller, addr, input, paraLvl.(uint32))
 	gasMeter.Use(0, 0, gas) // Add the gas used for setting the execution method.
 
 	return result, successful, gasMeter.TotalGasUsed
 }
 
-func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address, input []byte, executionMethod uint8) ([]byte, bool, int64) {
+func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address, input []byte, degree uint32) ([]byte, bool, int64) {
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
 		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
 	}
 
 	gasMeter := eucommon.NewGasMeter()
-	funcSign, err := abi.DecodeTo(input, 0, [4]byte{}, 1, 4) // Get the target contract address.
+	selector, err := abi.DecodeTo(input, 0, [4]byte{}, 1, 4) // Get the target contract address.
 	gasMeter.Use(0, 0, eucommon.GAS_GET_RUNTIME_INFO+eucommon.GAS_DECODE)
 	if err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
-	targetAddr, err := abi.DecodeTo(input, 1, [20]byte{}, 1, math.MaxInt)
+	_, err = abi.DecodeTo(input, 1, [20]byte{}, 1, math.MaxInt)
 	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
 
 	if err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
-	// Get the target function signatures
-	signBytes, err := abi.DecodeTo(input, 2, []byte{}, 1, math.MaxInt)
+	// Get the target function selectors
+	selectorBytes, err := abi.DecodeTo(input, 2, []byte{}, 1, math.MaxInt)
 	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
 
-	if err != nil || len(signBytes) <= 32 {
+	if err != nil || len(selectorBytes) <= 32 {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
-	// Parse the function signatures.
-	signatures, err := abi.DecodeTo(signBytes[32:], 0, [][4]byte{}, 2, math.MaxInt)
+	// Parse the function selectors.
+	_, err = abi.DecodeTo(selectorBytes[32:], 0, [][4]byte{}, 2, math.MaxInt)
 	gasMeter.Use(0, 0, eucommon.GAS_DECODE)
 	if err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 
 	// Check if the property path exists, if not create it.
-	funcPath := stgcommon.FuncPath(caller, funcSign)
+	funcPath := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField("")
 	if _, cache := this.api.GetTxContext(); !cache.IfExists(funcPath) {
 		if err := this.writeCache(funcPath, commutative.NewPath(), gasMeter); err != nil {
 			return []byte{}, false, gasMeter.TotalGasUsed // If the property path write fails, return an error.
 		}
 	}
 
-	// If local method is parallel, global method is sequential and vice versa.
-	// How the scheduler all the function under the contract should be executed in parallel or sequentially by DEFAULT.
-	globalMethod := stgcommon.PARALLEL_EXECUTION
-	if executionMethod == stgcommon.PARALLEL_EXECUTION {
-		globalMethod = stgcommon.SEQUENTIAL_EXECUTION
-	}
-
-	if err := this.writeCache(stgcommon.ExecutionParallelism(caller, funcSign), noncommutative.NewBytes([]byte{globalMethod}), gasMeter); err != nil {
+	// blcc://eth1.0/account/[0x...]/profiles/paraDegree
+	path := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField(stgcommon.PARALLELISM_DEGREE)
+	v := noncommutative.NewUint32(uint32(degree))
+	if err := this.writeCache(path, v, gasMeter); err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
-
-	// Users can add some excepted callees so they can be handled differently.
-	callees := slice.Transform(signatures, func(i int, signature [4]byte) string { // Get the excepted callees.
-		return hex.EncodeToString(schtype.Compact(targetAddr[:], signature[:]))
-	})
-
-	err = this.writeCache(stgcommon.ExceptPaths(caller, funcSign), commutative.NewPath(callees...), gasMeter)
 	return []byte{}, err == nil, gasMeter.TotalGasUsed
 }
 
 // This function inform the scheduler to scheduler a defer call for a particular function.
-func (this *RuntimeHandlers) deferCall(caller, callee evmcommon.Address, input []byte) ([]byte, bool, int64) {
+func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	if !this.api.VM().(*vm.EVM).ArcologyAPIs.IsInConstructor() {
 		return []byte{}, false, eucommon.GAS_GET_RUNTIME_INFO // Can only be called from a constructor.
 	}
 
 	gasMeter := eucommon.NewGasMeter()
 
-	// Decode the function signature from the input.
-	funSignBytes, err := abi.DecodeTo(input, 0, []uint8{}, 1, 32)
+	// Decode the function selector from the input.
+	selectorBytes, err := abi.DecodeTo(input, 0, []uint8{}, 1, 32)
 	gasMeter.Use(0, 0, eucommon.GAS_GET_RUNTIME_INFO+eucommon.GAS_DEFER) // Gas for deferring the call.
 
 	if err != nil {
@@ -221,17 +202,17 @@ func (this *RuntimeHandlers) deferCall(caller, callee evmcommon.Address, input [
 	// Check if the function path exists, if not create it.
 	// It may be created by the developer in setting the parallelism
 	// level in the constructor as well.
-	funSign := new(codec.Bytes4).FromBytes(funSignBytes)
-	propertyPath := stgcommon.FuncPath(caller, funSign)
-	if _, cache := this.api.GetTxContext(); !cache.IfExists(propertyPath) {
-		if err := this.writeCache(propertyPath, commutative.NewPath(), gasMeter); err != nil {
+	selector := new(codec.Bytes4).FromBytes(selectorBytes)
+	profilePath := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField("")
+	if _, cache := this.api.GetTxContext(); !cache.IfExists(profilePath) {
+		if err := this.writeCache(profilePath, commutative.NewPath(), gasMeter); err != nil {
 			return []byte{}, false, gasMeter.TotalGasUsed
 		}
 	}
 
 	// Create the prepayer path if not existent.
 	txID, cache := this.api.GetTxContext()
-	prepayerPath := stgcommon.PrepayersPath(caller, funSign)
+	prepayerPath := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField(stgcommon.PREPAYERS)
 	if v, _, _ := cache.Read(txID, prepayerPath, new(commutative.Path)); v == nil {
 		// Create the full function path.
 		if err := this.writeCache(prepayerPath, commutative.NewPath(), gasMeter); err != nil {
@@ -240,8 +221,8 @@ func (this *RuntimeHandlers) deferCall(caller, callee evmcommon.Address, input [
 	}
 
 	// Write the required prepaid amount to storage
-	RequiredPrepaymentPath := stgcommon.RequiredPrepaymentPath(caller, funSign) // Generate the sub path for the prepaid gas amount.
-	if err := this.writeCache(RequiredPrepaymentPath, noncommutative.NewUint64(requiredPrepayment.(uint64)), gasMeter); err != nil {
+	path := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField(stgcommon.DEFERRED_PAYMENT)
+	if err := this.writeCache(path, noncommutative.NewUint64(requiredPrepayment.(uint64)), gasMeter); err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}
 	return []byte{}, true, gasMeter.TotalGasUsed

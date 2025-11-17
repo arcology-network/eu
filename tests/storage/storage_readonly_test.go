@@ -26,37 +26,37 @@ package stgtest
 // 	storage "github.com/arcology-network/common-lib/storage"
 // 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 // 	storage "github.com/arcology-network/storage-committer/storage/proxy"
-// 	univalue "github.com/arcology-network/storage-committer/type/univalue"
+// 	statecell "github.com/arcology-network/storage-committer/type/statecell"
 // )
 
 // func TestReadonlyStorageLocal(t *testing.T) {
 // 	// Server end
 // 	persistentDB := storage.NewMemoryDB()
 // 	serverCachePolicy := storage.NewCachePolicy(1, 0.8)
-// 	serverDataStore := storage.NewDataStore( serverCachePolicy, persistentDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 	serverDataStore := storage.NewDataStore( serverCachePolicy, persistentDB, stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode)
 
 // 	keys := []string{}
-// 	values := []interface{}{}
+// 	values := []any{}
 // 	for i := 0; i < 8; i++ { // 8 in the server db
 // 		keys = append(keys, fmt.Sprint(i))
-// 		v := univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
+// 		v := statecell.NewStateCell(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
 // 		values = append(values, v)
 
-// 		persistentDB.Set(fmt.Sprint(i), platform.Codec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
+// 		persistentDB.Set(fmt.Sprint(i), stgtypecommonCodec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 // 	}
 // 	serverDataStore.Precommit(keys[:4], values[:4]) // 4 in the server side cache
 // 	serverDataStore.Commit()
 
 // 	// Simulated Client
 // 	keys1 := []string{}
-// 	values1 := []interface{}{}
+// 	values1 := []any{}
 // 	for i := 0; i < 8; i++ { // 8 in the server db
 // 		keys1 = append(keys1, fmt.Sprint(i))
-// 		values1 = append(values1, univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
+// 		values1 = append(values1, statecell.NewStateCell(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
 // 	}
 
-// 	placeholderEncoder := func(v interface{}) []byte { return platform.Codec{}.Encode(v) }
-// 	placeholderDecoder := func(bytes []byte) interface{} { return platform.Codec{}.Decode(bytes) }
+// 	placeholderEncoder := func(v any) []byte { return stgtypecommonCodec{}.Encode(v) }
+// 	placeholderDecoder := func(bytes []byte) any { return stgtypecommonCodec{}.Decode(bytes) }
 
 // 	readonlyClientProxy := storage.NewReadonlyClient("", "", nil, serverDataStore)
 // 	clientCachePolicy := storage.NewCachePolicy(1, 0.8)
@@ -94,20 +94,20 @@ package stgtest
 // 	// Server end
 // 	persistentDB := storage.NewMemoryDB()
 // 	serverCachePolicy := storage.NewCachePolicy(1, 0.8)
-// 	serverDataStore := storage.NewDataStore( serverCachePolicy, persistentDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 	serverDataStore := storage.NewDataStore( serverCachePolicy, persistentDB, stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode)
 
 // 	keys := []string{}
-// 	values := []interface{}{}
+// 	values := []any{}
 // 	for i := 0; i < 8; i++ { // 8 in the server db
 // 		keys = append(keys, fmt.Sprint(i))
-// 		v := univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
+// 		v := statecell.NewStateCell(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i)))
 // 		values = append(values, v)
-// 		persistentDB.Set(fmt.Sprint(i), platform.Codec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
+// 		persistentDB.Set(fmt.Sprint(i), stgtypecommonCodec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 // 	}
 // 	serverDataStore.Precommit(keys[:4], values[:4]) // 4 in the server side cache
 // 	serverDataStore.Commit()
 
-// 	server := storage.NewReadonlyServer("", platform.Codec{}.Encode, platform.Codec{}.Decode, serverDataStore)
+// 	server := storage.NewReadonlyServer("", stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode, serverDataStore)
 // 	go func() {
 // 		http.HandleFunc("/store", server.Receive)
 // 		http.ListenAndServe(":8090", nil)
@@ -115,14 +115,14 @@ package stgtest
 // 	time.Sleep(5 * time.Second)
 
 // 	keys1 := []string{}
-// 	values1 := []interface{}{}
+// 	values1 := []any{}
 // 	for i := 0; i < 8; i++ { // 8 in the server db
 // 		keys1 = append(keys1, fmt.Sprint(i))
-// 		values1 = append(values1, univalue.NewUnivalue(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
+// 		values1 = append(values1, statecell.NewStateCell(uint32(i), fmt.Sprint(i), 1, 1, 2, noncommutative.NewInt64(int64(i))))
 // 	}
 
-// 	proxyEncoder := func(v interface{}) []byte { return platform.Codec{}.Encode(v) }
-// 	proxyDecoder := func(bytes []byte) interface{} { return platform.Codec{}.Decode(bytes) }
+// 	proxyEncoder := func(v any) []byte { return stgtypecommonCodec{}.Encode(v) }
+// 	proxyDecoder := func(bytes []byte) any { return stgtypecommonCodec{}.Decode(bytes) }
 
 // 	readonlyClientProxy := storage.NewReadonlyClient("http://localhost:8090", "store", nil)
 // 	clientCachePolicy := storage.NewCachePolicy(1, 0.8)

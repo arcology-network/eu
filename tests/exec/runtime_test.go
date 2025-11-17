@@ -44,7 +44,7 @@ func TestPrint(t *testing.T) {
 	}
 }
 
-func TestPropertiesToCalleeStruct(t *testing.T) {
+func TestCalleeProfiles(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
 

@@ -26,7 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-func DecodeEth(abiDefinition, encodedData, functionName string, types []interface{}) {
+func DecodeEth(abiDefinition, encodedData, functionName string, types []any) {
 	parsedABI, err := abi.JSON(strings.NewReader(abiDefinition))
 	if err != nil {
 		log.Fatal("Failed to parse ABI:", err)

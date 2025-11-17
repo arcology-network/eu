@@ -31,20 +31,20 @@ const (
 )
 
 var (
-	// encoder = platform.Codec{}.Encode
-	// decoder = platform.Codec{}.Decode
+	// encoder = stgtypecommonCodec{}.Encode
+	// decoder = stgtypecommonCodec{}.Decode
 
 	encoder = ethstg.Rlp{}.Encode
 	decoder = ethstg.Rlp{}.Decode
 )
 
 func chooseDataStore() interfaces.ReadOnlyStore {
-	// ethPair := associative.Pair[intf.Indexer[*univalue.Univalue], []intf.Datastore]{
+	// ethPair := associative.Pair[intf.Indexer[*statecell.StateCell], []intf.Datastore]{
 	// 	First:  ethstg.NewIndexer(store),
 	// 	Second: []intf.Datastore{store.(*stgproxy.StorageProxy).EthStore()},
 	// }
 
-	// ccPair := associative.Pair[intf.Indexer[*univalue.Univalue], []intf.Datastore]{
+	// ccPair := associative.Pair[intf.Indexer[*statecell.StateCell], []intf.Datastore]{
 	// 	First:  ccstg.NewIndexer(store),
 	// 	Second: []intf.Datastore{store.(*stgproxy.StorageProxy).CCStore()},
 	// }

@@ -33,18 +33,18 @@ import (
 func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	// db := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
 	db := chooseDataStore()
-	// db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
+	// db.Inject(ccurlcommon.ETH_ACCOUNT_PREFIX, commutative.NewPath())
 
-	// localCache := cache.NewWriteCache(datastore, 32, 1)
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(db, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }))
+	// localCache := cache.NewStateCache(datastore, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.StateCache](16, 1, func() *cache.StateCache {
+		return cache.NewStateCache(db, 32, 1)
+	}, func(cache *cache.StateCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
-	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
+	_, transitions := api.StateCache().(*cache.StateCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 	committer := stgcomm.NewStateCommitter(db, nil)
 	committer.Import(transitions)
@@ -63,18 +63,18 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 func TestStateDBV2GetNonexistCode(t *testing.T) {
 	// db := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
 	db := chooseDataStore()
-	// db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, commutative.NewPath())
+	// db.Inject(ccurlcommon.ETH_ACCOUNT_PREFIX, commutative.NewPath())
 
-	// localCache := cache.NewWriteCache(db, 32, 1)
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(db, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }))
+	// localCache := cache.NewStateCache(db, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.StateCache](16, 1, func() *cache.StateCache {
+		return cache.NewStateCache(db, 32, 1)
+	}, func(cache *cache.StateCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205}) // a random address, there should be no code.
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
-	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
+	_, transitions := api.StateCache().(*cache.StateCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 
 	committer := stgcomm.NewStateCommitter(db, nil)
@@ -95,18 +95,18 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	// db := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
 	db := chooseDataStore()
 	// meta := commutative.NewPath()
-	// db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
+	// db.Inject(ccurlcommon.ETH_ACCOUNT_PREFIX, meta)
 
-	// localCache := cache.NewWriteCache(db, 32, 1)
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-		return cache.NewWriteCache(db, 32, 1)
-	}, func(cache *cache.WriteCache) { cache.Clear() }))
+	// localCache := cache.NewStateCache(db, 32, 1)
+	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.StateCache](16, 1, func() *cache.StateCache {
+		return cache.NewStateCache(db, 32, 1)
+	}, func(cache *cache.StateCache) { cache.Clear() }))
 
 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 	ethStatedb := eth.NewImplStateDB(api)
 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 	ethStatedb.CreateAccount(account)
-	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
+	_, transitions := api.StateCache().(*cache.StateCache).ExportAll()
 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 	committer := stgcomm.NewStateCommitter(db, nil)
 	committer.Import(transitions)
@@ -126,19 +126,19 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 // 	// db := cachedstorage.NewDataStore(nil, cachedstorage.NewCachePolicy(0, 1), cachedstorage.NewMemDB(), ccurlstorage.Rlp{}.Encode, ccurlstorage.Rlp{}.Decode)
 // 	db := chooseDataStore()
 // 	meta := commutative.NewPath()
-// 	db.Inject(ccurlcommon.ETH10_ACCOUNT_PREFIX, meta)
+// 	db.Inject(ccurlcommon.ETH_ACCOUNT_PREFIX, meta)
 // 	committer := stgcomm.NewStateCommitter(db)
 
-// 	// localCache := cache.NewWriteCache(db, 32, 1)
-// 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.WriteCache](16, 1, func() *cache.WriteCache {
-// 		return cache.NewWriteCache(db, 32, 1)
-// 	}, func(cache *cache.WriteCache) { cache.Clear() }))
+// 	// localCache := cache.NewStateCache(db, 32, 1)
+// 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.StateCache](16, 1, func() *cache.StateCache {
+// 		return cache.NewStateCache(db, 32, 1)
+// 	}, func(cache *cache.StateCache) { cache.Clear() }))
 
 // 	account := evmcommon.BytesToAddress([]byte{201, 202, 203, 204, 205})
 // 	ethStatedb := eth.NewImplStateDB(api)
 // 	ethStatedb.PrepareFormer(evmcommon.Hash{}, evmcommon.Hash{}, 1)
 // 	ethStatedb.CreateAccount(account)
-// 	_, transitions := api.WriteCache().(*cache.WriteCache).ExportAll()
+// 	_, transitions := api.StateCache().(*cache.StateCache).ExportAll()
 // 	// fmt.Println("\n" + euCommon.FormatTransitions(transitions))
 // 	committer.Import(transitions)
 // 	committer.Precommit([]uint64{1})
@@ -221,7 +221,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 // 	// 	t.Error(err)
 // 	// }
 
-// 	localCache := api.WriteCache().(*cache.WriteCache)
+// 	localCache := api.StateCache().(*cache.StateCache)
 
 // 	if _, err := localCache.Write(1, "blcc://eth1.0/account/"+string(alice[:])+"/storage/container/ctrn-0/elem-000", noncommutative.NewString("123")); err == nil {
 // 		t.Error(err)

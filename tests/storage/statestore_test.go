@@ -32,19 +32,19 @@ import (
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	univalue "github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 )
 
 func TestRandomOrderImport(t *testing.T) {
 	alice := AliceAccount()
 	store := stgproxy.NewMemDBStoreProxy().EnableCache()
 	sstore := statestore.NewStateStore(store)
-	WriteCache := sstore.WriteCache
+	StateCache := sstore.StateCache
 
-	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, StateCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans := statecell.StateCells(slice.Clone(StateCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
@@ -56,7 +56,7 @@ func TestRandomOrderImport(t *testing.T) {
 	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
-	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	// committer.Import(acctTrans)
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
@@ -72,7 +72,7 @@ func TestRandomOrderImport(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
@@ -104,7 +104,7 @@ func TestRandomOrderImport(t *testing.T) {
 		t.Error(err)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	common.Swap(&acctTrans[0], &acctTrans[1])
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
@@ -121,10 +121,10 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	alice := AliceAccount()
 	// sstore:= statestore.NewStateStore(store)
 
-	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, sstore.StateCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans := statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	committer := stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 	committer.Import(acctTrans)
@@ -140,7 +140,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
-	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	// committer.Import(acctTrans)
 	committer = stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
@@ -187,7 +187,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(2)
@@ -221,12 +221,12 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	alice := AliceAccount()
 	store := stgproxy.NewMemDBStoreProxy().EnableCache()
 	sstore := statestore.NewStateStore(store)
-	WriteCache := sstore.WriteCache
+	StateCache := sstore.StateCache
 
-	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, WriteCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, StateCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
-	acctTrans := univalue.Univalues(slice.Clone(WriteCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans := statecell.StateCells(slice.Clone(StateCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
@@ -244,7 +244,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 		t.Error(err)
 	}
-	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	// committer.Import(acctTrans)
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
@@ -292,7 +292,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 		t.Error("Error: The path should not exist", outV)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	// committer = statestore.NewStateStore(store)
 	committer.Import(acctTrans)

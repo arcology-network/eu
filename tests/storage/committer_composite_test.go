@@ -25,30 +25,29 @@ import (
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
 	stgcommon "github.com/arcology-network/storage-committer/common"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	univalue "github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 )
 
 func TestAuxTrans(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	// _, trans00 := writeCache.Export(univalue.Sorter)
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
+	// _, trans00 := writeCache.Export(statecell.Sorter)
+	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
+	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
+	committer.Precommit([]uint64{stgcommon.SYSTEM})
 	committer.Commit(10) // Commit
 
 	committer.SetStore(store)
@@ -100,7 +99,7 @@ func TestAuxTrans(t *testing.T) {
 		}
 	}
 
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	transitions := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 	delv, _ := transitions[0].Value().(stgcommon.Type).Delta()
 	if len(transitions) == 0 || !reflect.DeepEqual(delv.(*softdeltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
@@ -116,8 +115,8 @@ func TestAuxTrans(t *testing.T) {
 		t.Error("The variable has been cleared")
 	}
 
-	in := univalue.Univalues(transitions).Encode()
-	out := univalue.Univalues{}.Decode(in).(univalue.Univalues)
+	in := statecell.StateCells(transitions).Encode()
+	out := statecell.StateCells{}.Decode(in).(statecell.StateCells)
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
@@ -129,19 +128,19 @@ func TestAuxTrans(t *testing.T) {
 func TestCheckAccessRecords(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	// _, trans00 := writeCache.Export(univalue.Sorter)
-	trans00 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	// _, trans00 := writeCache.Export(statecell.Sorter)
+	trans00 := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans00)
-	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
+	committer.Precommit([]uint64{stgcommon.SYSTEM})
 	committer.Commit(10) // Commit
 
 	// committer.SetStore(store)
@@ -150,11 +149,11 @@ func TestCheckAccessRecords(t *testing.T) {
 		t.Error("Error: Failed to write blcc://eth1.0/account/alice/storage/ctrn-0/") // create a path
 	}
 
-	// _, trans10 := writeCache.Export(univalue.Sorter)
-	trans10 := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	// _, trans10 := writeCache.Export(statecell.Sorter)
+	trans10 := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(trans10).Encode()).(univalue.Univalues))
+	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(trans10).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{1})
 	committer.Commit(10) // Commit
 

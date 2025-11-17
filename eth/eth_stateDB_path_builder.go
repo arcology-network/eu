@@ -28,68 +28,67 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
-type EthPathBuilder struct {
-	// ccurl cache.WriteCache
-}
+// This class helps to build paths to access Eth related data in Eth StateDB.
+type EthPathBuilder struct{}
 
-func (this *EthPathBuilder) AccountExist(writeCache *cache.WriteCache, account evmcommon.Address, tid uint64) bool {
+func (this *EthPathBuilder) AccountExist(writeCache *cache.StateCache, account evmcommon.Address, tid uint64) bool {
 	return writeCache.IfExists(this.AccountRootPath(account))
 }
 
 func (this *EthPathBuilder) AccountRootPath(account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/")
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/")
 }
 
 func (this *EthPathBuilder) StorageRootPath(account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/")
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/")
 }
 
 func (this *EthPathBuilder) BalancePath(account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/balance")
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/balance")
 }
 
 func (this *EthPathBuilder) NoncePath(account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/nonce")
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/nonce")
 }
 
 func (this *EthPathBuilder) CodePath(account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/code")
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/code")
 }
 
-func getAccountRootPath(writeCache *cache.WriteCache, account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/")
+func getAccountRootPath(writeCache *cache.StateCache, account evmcommon.Address) string {
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/")
 }
 
-func getStorageRootPath(writeCache *cache.WriteCache, account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/")
+func getStorageRootPath(writeCache *cache.StateCache, account evmcommon.Address) string {
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/")
 }
 
 func getLocalStorageKeyPath(api intf.EthApiRouter, account evmcommon.Address, key evmcommon.Hash) string {
-	return stgcommon.ETH10_ACCOUNT_PREFIX + hexutil.Encode(account[:]) + "/storage/native/local/" + "0"
+	return stgcommon.ETH_ACCOUNT_PREFIX + hexutil.Encode(account[:]) + "/storage/native/local/" + "0"
 }
 
 func getStorageKeyPath(api intf.EthApiRouter, account evmcommon.Address, key evmcommon.Hash) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/", key.Hex())
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/storage/native/", key.Hex())
 }
 
-func getBalancePath(writeCache *cache.WriteCache, account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/balance")
+func getBalancePath(writeCache *cache.StateCache, account evmcommon.Address) string {
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/balance")
 }
 
-func getNoncePath(writeCache *cache.WriteCache, account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/nonce")
+func getNoncePath(writeCache *cache.StateCache, account evmcommon.Address) string {
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/nonce")
 }
 
-func getCodePath(writeCache *cache.WriteCache, account evmcommon.Address) string {
-	return commonlib.StrCat(stgcommon.ETH10_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/code")
+func getCodePath(writeCache *cache.StateCache, account evmcommon.Address) string {
+	return commonlib.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, hexutil.Encode(account[:]), "/code")
 }
 
-func accountExist(writeCache *cache.WriteCache, account evmcommon.Address, tid uint64) bool {
+func accountExist(writeCache *cache.StateCache, account evmcommon.Address, tid uint64) bool {
 	return writeCache.IfExists(getAccountRootPath(writeCache, account))
 }
 
 // Create a new account in the write cache
-func createAccount(writeCache *cache.WriteCache, account evmcommon.Address, tid uint64) {
+func createAccount(writeCache *cache.StateCache, account evmcommon.Address, tid uint64) {
 	if _, err := CreateDefaultPaths(tid, hexutil.Encode(account[:]), writeCache); err != nil {
 		panic(err)
 	}

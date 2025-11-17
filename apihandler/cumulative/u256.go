@@ -38,7 +38,7 @@ import (
 // U256CumulativeHandlers handles the U256Cumulative APIs that can be called by concurrent API called.
 type U256CumHandler struct {
 	api       intf.EthApiRouter
-	connector *path.PathBuilder
+	connector *path.ContainerPathBuilder
 	key       string
 }
 
@@ -104,7 +104,7 @@ func (this *U256CumHandler) new(caller evmcommon.Address, input []byte) ([]byte,
 
 	keyPath := this.connector.Key(caller) + string(this.key) // Element ID
 	newU256 := commutative.NewBoundedU256(min.(*uint256.Int), max.(*uint256.Int))
-	if _, err := this.api.WriteCache().(*cache.WriteCache).Write(txIndex, keyPath, newU256); err != nil {
+	if _, err := this.api.StateCache().(*cache.StateCache).Write(txIndex, keyPath, newU256); err != nil {
 		return []byte{}, false, 0
 	}
 	return []byte{}, true, 0
@@ -117,7 +117,7 @@ func (this *U256CumHandler) get(caller evmcommon.Address, input []byte) ([]byte,
 	}
 
 	keyPath := path + string(this.key) // Element ID
-	if value, _, _ := this.api.WriteCache().(*cache.WriteCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), keyPath, new(commutative.U256)); value == nil {
+	if value, _, _ := this.api.StateCache().(*cache.StateCache).Read(this.api.GetEU().(interface{ ID() uint64 }).ID(), keyPath, new(commutative.U256)); value == nil {
 		return []byte{}, false, 0
 	} else {
 		updated := value.(uint256.Int)
@@ -128,7 +128,7 @@ func (this *U256CumHandler) get(caller evmcommon.Address, input []byte) ([]byte,
 	return []byte{}, false, 0
 }
 
-// Peek reads the initial value from the WriteCache. It assumes that the initial value
+// Peek reads the initial value from the StateCache. It assumes that the initial value
 // is always in the cache by the time it is called.
 func (this *U256CumHandler) peek(caller evmcommon.Address, input []byte) ([]byte, bool, int64) {
 	path := this.connector.Key(caller) // Build container path
@@ -137,7 +137,7 @@ func (this *U256CumHandler) peek(caller evmcommon.Address, input []byte) ([]byte
 	}
 
 	keyPath := path + string(this.key) // Element ID
-	if value, _ := this.api.WriteCache().(*cache.WriteCache).PeekCommitted(keyPath, new(commutative.U256)); value != nil {
+	if value, _ := this.api.StateCache().(*cache.StateCache).PeekCommitted(keyPath, new(commutative.U256)); value != nil {
 		initv := value.(*commutative.U256).Value().(uint256.Int)
 		if encoded, err := abi.Encode((*uint256.Int)(&initv)); err == nil { // Encode the result
 			return encoded, true, 0
@@ -171,7 +171,7 @@ func (this *U256CumHandler) set(caller evmcommon.Address, input []byte, isPositi
 
 	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	keyPath := path + string(this.key) // Element ID
-	_, err = this.api.WriteCache().(*cache.WriteCache).Write(txIndex, keyPath, value)
+	_, err = this.api.StateCache().(*cache.StateCache).Write(txIndex, keyPath, value)
 	return []byte{}, err == nil, 0
 }
 
@@ -184,7 +184,7 @@ func (this *U256CumHandler) min(caller evmcommon.Address, input []byte) ([]byte,
 	// Min and Max are read only variable
 	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	keyPath := path + string(this.key) // Element ID
-	if value, _, _ := this.api.WriteCache().(*cache.WriteCache).FindForRead(txIndex, keyPath, new(commutative.U256), nil); value != nil {
+	if value, _, _ := this.api.StateCache().(*cache.StateCache).FindForRead(txIndex, keyPath, new(commutative.U256), nil); value != nil {
 		rawmin, _ := value.(*commutative.U256).Limits()
 		minv := rawmin.(uint256.Int)
 		if encoded, err := abi.Encode((*uint256.Int)(&minv)); err == nil { // Encode the result
@@ -202,7 +202,7 @@ func (this *U256CumHandler) max(caller evmcommon.Address, input []byte) ([]byte,
 
 	txIndex := this.api.GetEU().(interface{ ID() uint64 }).ID()
 	keyPath := path + string(this.key) // Element ID
-	if value, _, _ := this.api.WriteCache().(*cache.WriteCache).FindForRead(txIndex, keyPath, new(commutative.U256), nil); value != nil {
+	if value, _, _ := this.api.StateCache().(*cache.StateCache).FindForRead(txIndex, keyPath, new(commutative.U256), nil); value != nil {
 		_, rawmax := value.(*commutative.U256).Limits()
 		maxv := rawmax.(uint256.Int)
 		if encoded, err := abi.Encode((*uint256.Int)(&maxv)); err == nil { // Encode the result

@@ -41,10 +41,10 @@ package stgtest
 // 	alice := AliceAccount()
 // 	// sstore:= statestore.NewStateStore(store)
 
-// 	if _, err := eucommon.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.WriteCache); err != nil { // NewAccount account structure {
+// 	if _, err := eucommon.CreateNewAccount(stgcomm.SYSTEM, alice, sstore.StateCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
-// 	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+// 	acctTrans := statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 // 	committer := stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 // 	committer.Import(acctTrans)
@@ -60,7 +60,7 @@ package stgtest
 // 	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+RandomKey(0), noncommutative.NewBytes([]byte{199, 45, 67})); err != nil {
 // 		t.Error(err)
 // 	}
-// 	acctTrans = univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
+// 	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 // 	// committer.Import(acctTrans)
 // 	committer = stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())

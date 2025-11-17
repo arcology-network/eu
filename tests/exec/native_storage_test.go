@@ -49,6 +49,7 @@ func TestNativeStorage(t *testing.T) {
 	}
 }
 
+
 func TestGasDebitInFailedTx(t *testing.T) {
 	currentPath, _ := os.Getwd()
 	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/native/")

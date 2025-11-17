@@ -24,7 +24,7 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
-	univalue "github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -39,6 +39,7 @@ import (
 
 	basecontainer "github.com/arcology-network/eu/apihandler/container"
 	intf "github.com/arcology-network/eu/interface"
+	workload "github.com/arcology-network/scheduler/workload"
 )
 
 // APIs under the concurrency namespace
@@ -48,13 +49,13 @@ type MultiprocessHandler struct {
 
 func NewMultiprocessHandler(ethApiRouter intf.EthApiRouter) *MultiprocessHandler {
 	handler := &MultiprocessHandler{}
-	handler.BaseHandlers = basecontainer.NewBaseHandlers(ethApiRouter, handler.Run, &eu.Generation{})
+	handler.BaseHandlers = basecontainer.NewBaseHandlers(ethApiRouter, handler.Run, &workload.Generation{})
 	return handler
 }
 
 func (this *MultiprocessHandler) Address() [20]byte { return eucommon.MULTIPROCESS_HANDLER }
 
-func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args ...interface{}) ([]byte, bool, int64) {
+func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args ...any) ([]byte, bool, int64) {
 	accumFee := int64(0)
 
 	accumFee += eucommon.GAS_DECODE
@@ -103,30 +104,30 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 
 	// Generate the configuration for the sub processes based on the current block context.
 	subConfig := eucommon.NewConfigFromBlockContext(this.Api().GetEU().(interface{ VM() any }).VM().(*vm.EVM).Context)
-	newGen := eu.NewGenerationFromMsgs(0, threads, ethMsgs, this.Api())
+	newGen := eu.NewGenerationFromMsgs(0, ethMsgs, this.Api())
 
 	// Run the job sequences in parallel.
-	transitions := newGen.Execute(subConfig, this.Api())
+	transitions := eu.ExecuteGeneration(newGen, uint32(threads), subConfig, this.Api())
 
 	// Unify tx IDs
 	mainTxID := uint64(this.Api().GetEU().(interface{ ID() uint64 }).ID())
-	slice.Foreach(transitions, func(_ int, v **univalue.Univalue) { (*v).SetTx(mainTxID) })
-	this.Api().WriteCache().(*cache.WriteCache).Insert(transitions) // Merge the write cache to the main cache
+	slice.Foreach(transitions, func(_ int, v **statecell.StateCell) { (*v).SetTx(mainTxID) })
+	this.Api().StateCache().(*cache.StateCache).Insert(transitions) // Merge the write cache to the main cache
 
 	// Prepare the return values to return to the caller.
 	returnValues := make([][]byte, length)
 	successes := make([]bool, length)
 	inConflict := make([]bool, length)
 	totalSubExecGasUsed := uint64(0) // The total gas used by the sub processes
-	for i, seq := range newGen.JobSeqs() {
+	for i, seq := range newGen.JobSeqs {
 		// only one job per sequence for multiprocessing
-		successes[i] = seq.Jobs[0].Results.Receipt.Status == 1 // Check if the transaction was successful
-		inConflict[i] = seq.Jobs[0].Results.Err != nil
-		returnValues[i] = seq.Jobs[0].Results.EvmResult.Return()
-		totalSubExecGasUsed += uint64(seq.Jobs[0].Results.Receipt.GasUsed) // Get the gas used by the transaction
+		successes[i] = seq.Jobs[0].Result.Receipt.Status == 1 // Check if the transaction was successful
+		inConflict[i] = seq.Jobs[0].Result.Err != nil
+		returnValues[i] = seq.Jobs[0].Result.EvmResult.Return()
+		totalSubExecGasUsed += uint64(seq.Jobs[0].Result.Receipt.GasUsed) // Get the gas used by the transaction
 
 		// Append the sub logs to the main thread
-		for _, log := range seq.Jobs[0].Results.Receipt.Logs {
+		for _, log := range seq.Jobs[0].Result.Receipt.Logs {
 			this.Api().VM().(*vm.EVM).StateDB.AddLog(log)
 		}
 	}

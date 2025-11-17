@@ -20,7 +20,7 @@ package eth
 import (
 	common "github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/types"
-	ccurlcommon "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
@@ -30,45 +30,43 @@ import (
 	intf "github.com/arcology-network/eu/interface"
 )
 
-// Ccurl connectors for Arcology APIs
-type PathBuilder struct {
+// This class helps to build paths to access container related data in Arcology storage structure.
+type ContainerPathBuilder struct {
 	apiRouter intf.EthApiRouter
-	// apiRouter.WriteCache()     *concurrenturl.ConcurrentUrl
-	subDir string
+	subDir    string
 }
 
-func NewPathBuilder(subDir string, api intf.EthApiRouter) *PathBuilder {
-	return &PathBuilder{
+func NewPathBuilder(subDir string, api intf.EthApiRouter) *ContainerPathBuilder {
+	return &ContainerPathBuilder{
 		subDir:    subDir,
 		apiRouter: api,
-		// apiRouter.WriteCache():     apiRouter.WriteCache(),
 	}
 }
 
 // Make Arcology paths under the current account
-func (this *PathBuilder) CreateNewAccount(txIndex uint64, account types.Address) (bool, string) {
-	accountRoot := common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(account), "/")
-	if !this.apiRouter.WriteCache().(*cache.WriteCache).IfExists(accountRoot) {
+func (this *ContainerPathBuilder) CreateNewAccount(txIndex uint64, account types.Address) (bool, string) {
+	accountRoot := common.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, string(account), "/")
+	if !this.apiRouter.StateCache().(*cache.StateCache).IfExists(accountRoot) {
 		return true, this.key(account) // ALready exists
 	}
 
-	_, err := CreateDefaultPaths(txIndex, string(account), this.apiRouter.WriteCache().(*cache.WriteCache))
+	_, err := CreateDefaultPaths(txIndex, string(account), this.apiRouter.StateCache().(*cache.StateCache))
 	return err == nil, this.key(account)
 }
 
-func (this *PathBuilder) Key(caller [20]byte) string { // container ID
+func (this *ContainerPathBuilder) Key(caller [20]byte) string { // container ID
 	return this.key(types.Address(hexutil.Encode(caller[:])))
 }
 
-func (this *PathBuilder) key(account types.Address) string { // container ID
-	return common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, string(account), this.subDir, "/")
+func (this *ContainerPathBuilder) key(account types.Address) string { // container ID
+	return common.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, string(account), this.subDir, "/")
 }
 
-func (this *PathBuilder) Root() string { // container ID
-	return common.StrCat(ccurlcommon.ETH10_ACCOUNT_PREFIX, this.subDir, "/")
+func (this *ContainerPathBuilder) Root() string { // container ID
+	return common.StrCat(stgcommon.ETH_ACCOUNT_PREFIX, this.subDir, "/")
 }
 
-func (this *PathBuilder) GetPathType(caller evmcommon.Address) uint8 {
+func (this *ContainerPathBuilder) GetPathType(caller evmcommon.Address) uint8 {
 	pathStr := this.Key(caller) // Container path
 	if len(pathStr) == 0 {
 		return 0
@@ -76,7 +74,7 @@ func (this *PathBuilder) GetPathType(caller evmcommon.Address) uint8 {
 	return this.PathElemTypeIDs(pathStr) // Get the path type
 }
 
-func (this *PathBuilder) PathElemTypeIDs(pathStr string) uint8 {
-	_, path, _ := this.apiRouter.WriteCache().(*cache.WriteCache).Peek(pathStr, commutative.Path{})
+func (this *ContainerPathBuilder) PathElemTypeIDs(pathStr string) uint8 {
+	_, path, _ := this.apiRouter.StateCache().(*cache.StateCache).Peek(pathStr, commutative.Path{})
 	return path.(*commutative.Path).ElemType
 }

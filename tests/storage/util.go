@@ -29,14 +29,14 @@ import (
 	eth "github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
 	interfaces "github.com/arcology-network/storage-committer/common"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	opadapter "github.com/arcology-network/storage-committer/op"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
 	"github.com/arcology-network/storage-committer/storage/proxy"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	"github.com/arcology-network/storage-committer/type/univalue"
+	"github.com/arcology-network/storage-committer/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
@@ -87,7 +87,7 @@ func RandomAccounts(n int) []string {
 	return accounts
 }
 
-func rlpEncoder(args ...interface{}) []byte {
+func rlpEncoder(args ...any) []byte {
 	encoded, err := rlp.EncodeToBytes(args)
 	if err != nil {
 		log.Fatal("Error encoding data:", err)
@@ -109,9 +109,9 @@ func RandomKeys[T constraints.Integer](s0, s1 T) []string {
 }
 
 // Initiate the input new accounts in the cache
-func WriteNewAcountsToCache(writeCache *cache.WriteCache, tx uint64, accounts ...string) {
+func WriteNewAcountsToCache(writeCache *cache.StateCache, tx uint64, accounts ...string) {
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	// writeCache := sstore.WriteCache
+	// writeCache := sstore.StateCache
 	for i := range accounts {
 		if _, err := eth.CreateDefaultPaths(tx, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
@@ -119,11 +119,11 @@ func WriteNewAcountsToCache(writeCache *cache.WriteCache, tx uint64, accounts ..
 	}
 }
 
-func NewWriteCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string) *cache.WriteCache {
+func NewStateCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string) *cache.StateCache {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 	for i := range accounts {
-		if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}
@@ -153,8 +153,8 @@ func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfa
 
 // It's mainly used for TESTING purpose.
 func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
-	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint64 {
+	acctTrans := statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
+	txs := slice.Transform(acctTrans, func(_ int, v *statecell.StateCell) uint64 {
 		return v.GetTx()
 	})
 
@@ -168,8 +168,8 @@ func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
 
 // It's mainly used for TESTING purpose.
 func FlushGeneration(sstore *statestore.StateStore) []uint64 {
-	acctTrans := univalue.Univalues(slice.Clone(sstore.Export(univalue.Sorter))).To(univalue.IPTransition{})
-	txs := slice.Transform(acctTrans, func(_ int, v *univalue.Univalue) uint64 {
+	acctTrans := statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
+	txs := slice.Transform(acctTrans, func(_ int, v *statecell.StateCell) uint64 {
 		return v.GetTx()
 	})
 

@@ -23,9 +23,9 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	univalue "github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	statestore "github.com/arcology-network/storage-committer"
@@ -36,31 +36,31 @@ import (
 func TestAccumulatorUpperLimit(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	itc := univalue.ITTransition{}
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(itc)
-	transV := []*univalue.Univalue(trans)
-	balanceDeltas := slice.CopyIf(transV, func(_ int, v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
+	itc := statecell.ITTransition{}
+	trans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(itc)
+	transV := []*statecell.StateCell(trans)
+	balanceDeltas := slice.CopyIf(transV, func(_ int, v *statecell.StateCell) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	// v := *uint256.NewInt(0)
 	balanceDeltas[0].Value().(*commutative.U256).SetLimits(*uint256.NewInt(0), *uint256.NewInt(100))
 	balanceDeltas[0].Value().(*commutative.U256).SetDelta(*uint256.NewInt(11), true)
 
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*statecell.StateCell))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*statecell.StateCell))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*statecell.StateCell))
 
 	balanceDeltas[1].Value().(*commutative.U256).SetDelta(*uint256.NewInt(21), true)
 	balanceDeltas[2].Value().(*commutative.U256).SetDelta(*uint256.NewInt(5), true)
 	balanceDeltas[3].Value().(*commutative.U256).SetDelta(*uint256.NewInt(63), true)
 
-	// dict := make(map[string]*[]*univalue.Univalue)
+	// dict := make(map[string]*[]*statecell.StateCell)
 	// dict[*(balanceDeltas[0]).GetPath()] = &balanceDeltas
 
 	conflicts := (&arbitrator.Accumulator{}).CheckMinMax(balanceDeltas)
@@ -78,24 +78,24 @@ func TestAccumulatorUpperLimit(t *testing.T) {
 func TestAccumulatorLowerLimit(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
-	trans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	transV := []*univalue.Univalue(trans)
-	balanceDeltas := slice.CopyIf(transV, func(_ int, v *univalue.Univalue) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
+	trans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
+	transV := []*statecell.StateCell(trans)
+	balanceDeltas := slice.CopyIf(transV, func(_ int, v *statecell.StateCell) bool { return strings.LastIndex(*v.GetPath(), "/balance") > 0 })
 
 	balanceDeltas[0].SetTx(0)
 	balanceDeltas[0].Value().(*commutative.U256).SetLimits((*uint256.NewInt(0)), (*uint256.NewInt(100)))
 	balanceDeltas[0].Value().(*commutative.U256).SetDelta((*uint256.NewInt(11)), true)
 
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
-	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*univalue.Univalue))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*statecell.StateCell))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*statecell.StateCell))
+	balanceDeltas = append(balanceDeltas, balanceDeltas[0].Clone().(*statecell.StateCell))
 
 	balanceDeltas[1].SetTx(1)
 	balanceDeltas[1].Value().(*commutative.U256).SetDelta((*uint256.NewInt(21)), true)

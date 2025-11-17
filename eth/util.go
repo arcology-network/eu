@@ -20,21 +20,21 @@ package eth
 import (
 	"reflect"
 
-	stgcommcom "github.com/arcology-network/storage-committer/platform"
+	stgtypecommon "github.com/arcology-network/storage-committer/type/common"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/noncommutative"
-	"github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 )
 
 // CreateDefaultPaths creates default paths for an account in the storage committer.
 func CreateDefaultPaths(tx uint64, acct string, store interface {
 	IfExists(string) bool
-	Write(uint64, string, interface{}, ...any) (int64, error)
-}) ([]*univalue.Univalue, error) {
+	Write(uint64, string, any, ...any) (int64, error)
+}) ([]*statecell.StateCell, error) {
 
-	paths, typeids := stgcommcom.NewPlatform().GetBuiltins(acct)
+	paths, typeids := stgtypecommon.NewPlatform().GetDefault(acct)
 
-	transitions := []*univalue.Univalue{}
+	transitions := []*statecell.StateCell{}
 	for i, path := range paths {
 		var v any
 		switch typeids[i] {
@@ -59,7 +59,7 @@ func CreateDefaultPaths(tx uint64, acct string, store interface {
 
 		// fmt.Println(path)
 		if !store.IfExists(path) {
-			transitions = append(transitions, univalue.NewUnivalue(tx, path, 0, 1, 0, v, nil))
+			transitions = append(transitions, statecell.NewStateCell(tx, path, 0, 1, 0, v, nil))
 			if _, err := store.Write(tx, path, v); err != nil { // root path
 				return nil, err
 			}
@@ -67,16 +67,3 @@ func CreateDefaultPaths(tx uint64, acct string, store interface {
 	}
 	return transitions, nil
 }
-
-// This function is used for Multiprocessor execution ONLY !!!.
-// This function converts a list of raw calls to a list of parallel job sequences. One job sequence is created for each caller.
-// If there are N callers, there will be N job sequences. There sequences will be later added to a generation and executed in parallel.
-// func NewGenerationFromMsgs(id uint32, numThreads uint8, evmMsgs []*evmcore.Message, api typeexec.EthApiRouter) *Generation {
-// 	gen := NewGeneration(id, uint8(len(evmMsgs)), []*JobSequence{})
-// 	slice.Foreach(evmMsgs, func(i int, msg **evmcore.Message) {
-// 		gen.Add(new(JobSequence).NewFromCall(*msg, api.GetEU().(interface{ TxHash() [32]byte }).TxHash(), api))
-// 	})
-// 	gen.occurrences = gen.OccurrenceDict(gen.jobSeqs)
-// 	api.SetSchedule(gen.occurrences)
-// 	return gen
-// }

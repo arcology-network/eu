@@ -78,22 +78,22 @@ func TestNoncommutativeCodec(t *testing.T) {
 }
 
 // func TestUnivalueCodec(t *testing.T) {
-// 	store := ccstorage.NewDataStore(nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
-// 	transitions := []*univalue.Univalue{}
+// 	store := ccstorage.NewDataStore(nil, nil, stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode)
+// 	transitions := []*statecell.StateCell{}
 
 // 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-// 	writeCache := sstore.WriteCache
-// 	// committer.NewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"))
-// 	eucommon.CreateNewAccount(stgcommcommon.SYSTEM, fmt.Sprint("rand.Int()"), writeCache)
+// 	writeCache := sstore.StateCache
+// 	// committer.NewAccount(stgcommon.SYSTEM, fmt.Sprint("rand.Int()"))
+// 	eucommon.CreateNewAccount(stgcommon.SYSTEM, fmt.Sprint("rand.Int()"), writeCache)
 
-// 	transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+// 	transVec := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 // 	transitions = append(transitions, transVec...)
 
 // 	for i := 0; i < len(transitions); i++ {
 // 		buffer := transitions[i].Encode()
 // 		in := transitions[i]
-// 		out := (&univalue.Univalue{}).Decode(buffer).(*univalue.Univalue)
-// 		// out.(*univalue.Univalue).ClearReserve()
+// 		out := (&statecell.StateCell{}).Decode(buffer).(*statecell.StateCell)
+// 		// out.(*statecell.StateCell).ClearReserve()
 
 // 		if !in.Equal(out) {
 // 			t.Error("Error: Missmatched")
@@ -102,26 +102,26 @@ func TestNoncommutativeCodec(t *testing.T) {
 // }
 
 // func TestUnivaluesCodec(t *testing.T) {
-// 	store := ccstorage.NewDataStore(nil, nil, platform.Codec{}.Encode, platform.Codec{}.Decode)
-// 	transitions := []*univalue.Univalue{}
+// 	store := ccstorage.NewDataStore(nil, nil, stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode)
+// 	transitions := []*statecell.StateCell{}
 // 	for i := 0; i < 10; i++ {
 // 		acct := RandomAccount()
 
 // 		sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-// 		writeCache := sstore.WriteCache
-// 		// committer.NewAccount(stgcommcommon.SYSTEM, acct)
+// 		writeCache := sstore.StateCache
+// 		// committer.NewAccount(stgcommon.SYSTEM, acct)
 
-// 		eucommon.CreateNewAccount(stgcommcommon.SYSTEM, acct, writeCache)
+// 		eucommon.CreateNewAccount(stgcommon.SYSTEM, acct, writeCache)
 
-// 		transVec := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+// 		transVec := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 // 		transitions = append(transitions, transVec...)
 // 	}
 // 	t0 := time.Now()
-// 	buffer := univalue.Univalues(transitions).Encode()
+// 	buffer := statecell.StateCells(transitions).Encode()
 // 	fmt.Println("Encode() ", len(transitions), " univalue in :", time.Since(t0))
 
 // 	t0 = time.Now()
-// 	out := (univalue.Univalues([]*univalue.Univalue{})).Decode(buffer).(univalue.Univalues)
+// 	out := (statecell.StateCells([]*statecell.StateCell{})).Decode(buffer).(statecell.StateCells)
 // 	fmt.Println("Decode() ", len(transitions), " univalue in :", time.Since(t0))
 
 // 	for i := 0; i < len(transitions); i++ {

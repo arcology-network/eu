@@ -102,7 +102,7 @@ func DecodeTo[T any](raw []byte, idx int, initv T, depth uint8, maxLength int) (
 	return initv, err
 }
 
-func Decode(raw []byte, idx int, initv interface{}, depth uint8, maxLength int) (interface{}, error) {
+func Decode(raw []byte, idx int, initv any, depth uint8, maxLength int) (any, error) {
 	if depth < 1 {
 		return nil, errors.New("Error: Can be 0 deep!!")
 	}
@@ -183,7 +183,7 @@ func Decode(raw []byte, idx int, initv interface{}, depth uint8, maxLength int) 
 	return raw, errors.New("Error: Unknown type")
 }
 
-func next(raw []byte, offset uint32, depth uint8, maxLength int) (interface{}, error) {
+func next(raw []byte, offset uint32, depth uint8, maxLength int) (any, error) {
 	if len(raw) <= int(offset) {
 		return nil, errors.New("Error: Access out of range")
 	}

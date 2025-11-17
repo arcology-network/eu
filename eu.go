@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package common
+package execution
 
 import (
 	"bytes"
@@ -25,6 +25,9 @@ import (
 
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
+	workload "github.com/arcology-network/scheduler/workload"
+	cache "github.com/arcology-network/storage-committer/storage/cache"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	evmcore "github.com/ethereum/go-ethereum/core"
@@ -36,7 +39,7 @@ import (
 )
 
 type EU struct {
-	job         *Job              // The job that is being executed
+	job         *workload.Job     // The job that is being executed
 	evm         *vm.EVM           // Original ETH EVM
 	statedb     vm.StateDB        // Arcology Implementation of Eth StateDB
 	api         intf.EthApiRouter // Arcology API calls
@@ -58,28 +61,7 @@ func NewEU(chainConfig *params.ChainConfig, vmConfig vm.Config, statedb vm.State
 	return eu
 }
 
-func (this *EU) ID() uint64         { return uint64(this.job.StdMsg.ID) }
-func (this *EU) TxHash() [32]byte   { return this.job.StdMsg.TxHash }
-func (this *EU) GasPrice() *big.Int { return this.job.StdMsg.Native.GasPrice }
-func (this *EU) Coinbase() [20]byte { return this.evm.Context.Coinbase }
-func (this *EU) Origin() [20]byte   { return this.evm.TxContext.Origin }
-func (this *EU) Job() *Job          { return this.job }
-
-func (this *EU) Message() interface{}            { return this.job.StdMsg }
-func (this *EU) VM() interface{}                 { return this.evm }
-func (this *EU) Statedb() vm.StateDB             { return this.statedb }
-func (this *EU) Api() intf.EthApiRouter          { return this.api }
-func (this *EU) SetApi(newApi intf.EthApiRouter) { this.api = newApi }
-
-func (this *EU) SetRuntimeContext(statedb vm.StateDB, api intf.EthApiRouter) {
-	this.api = api
-	this.statedb = statedb
-
-	this.evm.StateDB = this.statedb
-	this.evm.ArcologyAPIs.APIs = api
-}
-
-func (this *EU) Run(job *Job, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
+func (this *EU) Run(job *workload.Job, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
 	this.statedb.(*eth.ImplStateDB).PrepareFormer(job.StdMsg.TxHash, ethcommon.Hash{}, uint64(job.StdMsg.ID))
 	this.evm.Context = blockContext
 	this.evm.TxContext = txContext
@@ -119,6 +101,31 @@ func (this *EU) Run(job *Job, blockContext vm.BlockContext, txContext vm.TxConte
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
 	return receipt, result, err
+}
+
+func (this *EU) GetStateAccesses() []*statecell.StateCell {
+	return cache.NewStateCacheFilter(this.api.StateCache()).ToBuffer()
+}
+
+func (this *EU) ID() uint64         { return uint64(this.job.StdMsg.ID) }
+func (this *EU) TxHash() [32]byte   { return this.job.StdMsg.TxHash }
+func (this *EU) GasPrice() *big.Int { return this.job.StdMsg.Native.GasPrice }
+func (this *EU) Coinbase() [20]byte { return this.evm.Context.Coinbase }
+func (this *EU) Origin() [20]byte   { return this.evm.TxContext.Origin }
+func (this *EU) Job() *workload.Job { return this.job }
+
+func (this *EU) Message() any                    { return this.job.StdMsg }
+func (this *EU) VM() any                         { return this.evm }
+func (this *EU) Statedb() vm.StateDB             { return this.statedb }
+func (this *EU) Api() intf.EthApiRouter          { return this.api }
+func (this *EU) SetApi(newApi intf.EthApiRouter) { this.api = newApi }
+
+func (this *EU) SetRuntimeContext(statedb vm.StateDB, api intf.EthApiRouter) {
+	this.api = api
+	this.statedb = statedb
+
+	this.evm.StateDB = this.statedb
+	this.evm.ArcologyAPIs.APIs = api
 }
 
 // Get the assertion info from the execution result

@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2024 Arcology Network
+ *   Copyright (c) 2025 Arcology Network
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -15,13 +15,4 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package shared
-
-import "encoding/gob"
-
-func init() {
-	gob.Register(&[]*EuResult{})
-	gob.Register(&Euresults{})
-	gob.Register(&[]*TxAccessRecords{})
-	gob.Register(&TxAccessRecordSet{})
-}
+package exectest

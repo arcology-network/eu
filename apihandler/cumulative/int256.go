@@ -42,7 +42,7 @@ package api
 // func NewInt256CumulativeHandler(api intf.EthApiRouter) *Int256CumulativeHandler {
 // 	return &Int256CumulativeHandler{
 // 		api:       api,
-// 		connector: NewBuiltinPathMaker("/container", api, api.WriteCache()),
+// 		connector: NewBuiltinPathMaker("/container", api, api.StateCache()),
 // 	}
 // }
 
@@ -92,7 +92,7 @@ package api
 // 	}
 
 // 	newU256 := commutative.NewU256(min.(*uint256.Int), max.(*uint256.Int))
-// 	if _, err := this.api.WriteCache().(*cache.WriteCache).Write(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), key, newU256, true); err != nil {
+// 	if _, err := this.api.StateCache().(*cache.StateCache).Write(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), key, newU256, true); err != nil {
 // 		return []byte{}, false, 0
 // 	}
 // 	return id, true, 0
@@ -104,7 +104,7 @@ package api
 // 		return []byte{}, false, 0
 // 	}
 
-// 	if value, _, err := this.api.WriteCache().(*cache.WriteCache).ReadAt(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), path, 0); value == nil || err != nil {
+// 	if value, _, err := this.api.StateCache().(*cache.StateCache).ReadAt(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), path, 0); value == nil || err != nil {
 // 		return []byte{}, false, 0
 // 	} else {
 
@@ -128,7 +128,7 @@ package api
 // 	}
 
 // 	value := commutative.NewU256Delta(delta.(*uint256.Int), true)
-// 	_, err = this.api.WriteCache().(*cache.WriteCache).WriteAt(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), path, 0, value, true)
+// 	_, err = this.api.StateCache().(*cache.StateCache).WriteAt(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), path, 0, value, true)
 // 	return []byte{}, err == nil, 0
 // }
 
@@ -144,7 +144,7 @@ package api
 // 	}
 
 // 	value := commutative.NewU256Delta(delta.(*uint256.Int), false)
-// 	_, err = this.api.WriteCache().(*cache.WriteCache).WriteAt(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), path, 0, value, true)
+// 	_, err = this.api.StateCache().(*cache.StateCache).WriteAt(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), path, 0, value, true)
 // 	return []byte{}, err == nil, 0
 // }
 
@@ -165,7 +165,7 @@ package api
 // 	}
 
 // 	value := commutative.NewU256Delta(delta, sign)
-// 	_, err = this.api.WriteCache().(*cache.WriteCache).WriteAt(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), path, 0, value, true)
+// 	_, err = this.api.StateCache().(*cache.StateCache).WriteAt(uint32(this.api.StdMessage().(*execution.StandardMessage).ID), path, 0, value, true)
 // 	return []byte{}, err == nil, 0
 // }
 

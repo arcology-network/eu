@@ -2,13 +2,13 @@ module github.com/arcology-network/eu
 
 go 1.22
 
-// replace github.com/arcology-network/scheduler => ../scheduler/
+replace github.com/arcology-network/scheduler => ../scheduler/
 
 replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
 
-// replace github.com/arcology-network/common-lib => ../common-lib/
+replace github.com/arcology-network/common-lib => ../common-lib/
 
-// replace github.com/arcology-network/storage-committer => ../storage-committer/
+replace github.com/arcology-network/storage-committer => ../storage-committer/
 
 require (
 	github.com/arcology-network/common-lib v1.9.1-0.20250918121719-e35aaab097f3

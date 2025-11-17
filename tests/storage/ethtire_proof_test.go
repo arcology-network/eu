@@ -33,7 +33,7 @@ import (
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	univalue "github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
@@ -42,7 +42,7 @@ import (
 func TestEthWorldTrieProof(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
 	if _, err := eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -72,7 +72,7 @@ func TestEthWorldTrieProof(t *testing.T) {
 		t.Error("Deleting an non-existing entry should've flaged an error", err)
 	}
 
-	raw := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	raw := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 	if acctTrans := raw; len(acctTrans) != 0 {
 		t.Error("Error: Wrong number of transitions")
 	}
@@ -124,7 +124,7 @@ func TestGetProofAPI(t *testing.T) {
 	// store := stgcommstorage.NewParallelEthMemDataStore()
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	bob := BobAccount()
 	eth.CreateDefaultPaths(common.SYSTEM, bob, writeCache)
@@ -187,7 +187,7 @@ func TestProofCacheBigInt(t *testing.T) {
 	// store := hybridStore.(*stgproxy.StorageProxy).EthStore()
 	// store := stgcommstorage.NewParallelEthMemDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
 	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
@@ -246,7 +246,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	store := chooseDataStore()
 	// store := stgcommstorage.NewParallelEthMemDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
 	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
@@ -314,7 +314,7 @@ func TestProofCache(t *testing.T) {
 
 	// store := stgcommstorage.NewParallelEthMemDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
 	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
@@ -459,7 +459,7 @@ func TestProofCache(t *testing.T) {
 func TestHistoryProofs(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
 	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)

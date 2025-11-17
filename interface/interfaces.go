@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// KernelAPI provides system level function calls supported by arcology platform.
+// KernelAPI provides system level function calls supported by arcology stgtypecommon
 package interfaces
 
 import (
@@ -59,12 +59,12 @@ type EthApiRouter interface {
 	SetEU(any)
 
 	GetSchedule() any
-	SetSchedule(any)
+	SetSchedule(any) // Save the schedule info for the current execution context to make it schedule aware.
 
 	AuxDict() map[string]any
-	WriteCachePool() any
-	WriteCache() any
-	SetWriteCache(any) EthApiRouter
+	StateCachePool() any
+	StateCache() any
+	SetStateCache(any) EthApiRouter
 	New(any, any, evmcommon.Address, any) EthApiRouter
 	Cascade() EthApiRouter
 
@@ -84,5 +84,5 @@ type EthApiRouter interface {
 	UUID() []byte
 	ElementUID() []byte
 
-	GetTxContext() (uint64, *cache.WriteCache)
+	GetTxContext() (uint64, *cache.StateCache)
 }

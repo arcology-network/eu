@@ -45,7 +45,7 @@ import (
 // APIs under the concurrency namespace
 type BaseHandlers struct {
 	api         intf.EthApiRouter
-	pathBuilder *eth.PathBuilder
+	pathBuilder *eth.ContainerPathBuilder
 	args        []any
 }
 
@@ -57,8 +57,8 @@ func NewBaseHandlers(api intf.EthApiRouter, args ...any) *BaseHandlers {
 	}
 }
 
-func (this *BaseHandlers) Address() [20]byte           { return eucommon.BYTES_HANDLER }
-func (this *BaseHandlers) Connector() *eth.PathBuilder { return this.pathBuilder }
+func (this *BaseHandlers) Address() [20]byte                    { return eucommon.BYTES_HANDLER }
+func (this *BaseHandlers) Connector() *eth.ContainerPathBuilder { return this.pathBuilder }
 
 func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isFromStaticCall bool) ([]byte, bool, int64) {
 	// Real handlers
@@ -174,7 +174,7 @@ func (this *BaseHandlers) new(caller evmcommon.Address, input []byte) ([]byte, b
 	)
 
 	// Get the container meta and add the type info to the container.
-	_, path, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(pathStr, new(commutative.Path))
+	_, path, readDataSize := this.api.StateCache().(*cache.StateCache).Peek(pathStr, new(commutative.Path))
 	gasMeter.Use(readDataSize, 0, 0)
 	if err == nil {
 		path.(*commutative.Path).ElemType = elemTypeID.(uint8) // Set the path type Info
@@ -192,7 +192,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 	gasMeter.Use(0, 0, eucommon.GAS_NEW_CONTAINER) // Gas for creating a new container
 
 	path := this.pathBuilder.Key(caller)
-	if !this.api.WriteCache().(*cache.WriteCache).IfExists(path) { // Check if the container exists
+	if !this.api.StateCache().(*cache.StateCache).IfExists(path) { // Check if the container exists
 		gasMeter.Use(eucommon.DATA_MIN_READ_SIZE, 0, 0) // No gas used for non-existent container
 		return []byte{}, false, gasMeter.TotalGasUsed   // Doesn't exist, cannot initialize in a non-existent container.
 	}
@@ -204,7 +204,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 	}
 
 	//Get the type info here
-	_, typeInfo, readDataSize := this.api.WriteCache().(*cache.WriteCache).Peek(path, commutative.Path{})
+	_, typeInfo, readDataSize := this.api.StateCache().(*cache.StateCache).Peek(path, commutative.Path{})
 	gasMeter.Use(readDataSize, 0, eucommon.GAS_READ)
 
 	if typeInfo == nil {
@@ -238,7 +238,7 @@ func (this *BaseHandlers) init(caller evmcommon.Address, input []byte) ([]byte, 
 		v := commutative.NewBoundedU256(minv, maxv)
 
 		str := hex.EncodeToString(key)
-		writeDataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str, v)
+		writeDataSize, err := this.api.StateCache().(*cache.StateCache).Write(this.api.GetEU().(interface{ ID() uint64 }).ID(), path+str, v)
 		gasMeter.Use(0, writeDataSize, 0)                  // Gas for writing the value
 		return []byte{}, err == nil, gasMeter.TotalGasUsed // Write the value to the container
 	}
@@ -283,7 +283,7 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, _ []byte) ([
 	gasMeter := eucommon.NewGasMeter()
 	path := this.pathBuilder.Key(caller) // BaseHandlers path
 
-	typedv, dataSize := this.api.WriteCache().(*cache.WriteCache).PeekCommitted(path, new(commutative.Path))
+	typedv, dataSize := this.api.StateCache().(*cache.StateCache).PeekCommitted(path, new(commutative.Path))
 	gasMeter.Use(uint64(dataSize), 0, 0) // Gas for reading the path
 
 	if typedv != nil {
@@ -500,7 +500,7 @@ func (this *BaseHandlers) clearCommitted(caller evmcommon.Address, _ []byte) ([]
 	}
 
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
-	dataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(tx, path+"[:]", nil)
+	dataSize, err := this.api.StateCache().(*cache.StateCache).Write(tx, path+"[:]", nil)
 	gasMeter.Use(0, dataSize, 0) // Gas for erasing the container
 
 	return []byte{}, err == nil, gasMeter.TotalGasUsed
@@ -512,7 +512,7 @@ func (this *BaseHandlers) clear(caller evmcommon.Address, _ []byte) ([]byte, boo
 
 	// use the wildcard path to delete all elements in the container
 	tx := this.api.GetEU().(interface{ ID() uint64 }).ID()
-	writeDataSize, err := this.api.WriteCache().(*cache.WriteCache).Write(tx, path+"*", nil)
+	writeDataSize, err := this.api.StateCache().(*cache.StateCache).Write(tx, path+"*", nil)
 	gasMeter.Use(0, writeDataSize, 0) // Gas for erasing the container
 
 	return []byte{}, err == nil, gasMeter.TotalGasUsed

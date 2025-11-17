@@ -27,10 +27,10 @@ import (
 
 	// "github.com/arcology-network/eu/gas"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	commutative "github.com/arcology-network/storage-committer/type/commutative"
 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	"github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 
 	// "github.com/arcology-network/storage-committer/interfaces"
 	interfaces "github.com/arcology-network/storage-committer/common"
@@ -40,28 +40,28 @@ import (
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 )
 
-func GenerateDB(addr [20]uint8) (string, *cache.WriteCache, stgcommcommon.ReadOnlyStore, error) {
+func GenerateDB(addr [20]uint8) (string, *cache.StateCache, stgcommon.ReadOnlyStore, error) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	acct := CreateAccount(addr)
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
 		return acct, nil, nil, errors.New("Failed to create new account: " + err.Error())
 	}
 
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
-	committer.Precommit([]uint64{stgcommcommon.SYSTEM})
+	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
+	committer.Precommit([]uint64{stgcommon.SYSTEM})
 	committer.Commit(10)
 
 	return acct, writeCache, store, nil
 }
 
-func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*univalue.Univalue, error) {
+func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*statecell.StateCell, error) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
@@ -76,14 +76,14 @@ func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*u
 		return []byte{}, nil, err
 	}
 
-	rawTrans := writeCache.Export(univalue.Sorter)
-	transitions := univalue.Univalues(slice.Clone(rawTrans)).To(univalue.ITTransition{})
-	return univalue.Univalues(transitions).Encode(), transitions, nil
+	rawTrans := writeCache.Export(statecell.Sorter)
+	transitions := statecell.StateCells(slice.Clone(rawTrans)).To(statecell.ITTransition{})
+	return statecell.StateCells(transitions).Encode(), transitions, nil
 }
 
 // func ParallelInsert_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, error) {
 // 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-// 	writeCache := sstore.WriteCache
+// 	writeCache := sstore.StateCache
 // 	path := commutative.NewPath() // create a path
 // 	if _, err := writeCache.Write(0, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/", path); err != nil {
 // 		return []byte{}, err
@@ -97,13 +97,13 @@ func Create_Ctrn_0(account string, store interfaces.ReadOnlyStore) ([]byte, []*u
 // 		return []byte{}, err
 // 	}
 
-// 	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-// 	return univalue.Univalues(transitions).Encode(), nil
+// 	transitions := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
+// 	return statecell.StateCells(transitions).Encode(), nil
 // }
 
 func Create_Ctrn_1(account string, store interfaces.ReadOnlyStore) ([]byte, error) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 	path := commutative.NewPath() // create a path
 	if _, err := writeCache.Write(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-1/", path); err != nil {
 		return []byte{}, err
@@ -117,11 +117,11 @@ func Create_Ctrn_1(account string, store interfaces.ReadOnlyStore) ([]byte, erro
 		return []byte{}, err
 	}
 
-	transitions := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-	return univalue.Univalues(transitions).Encode(), nil
+	transitions := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
+	return statecell.StateCells(transitions).Encode(), nil
 }
 
-func CheckPaths(account string, writeCache *cache.WriteCache) error {
+func CheckPaths(account string, writeCache *cache.StateCache) error {
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+account+"/storage/ctrn-0/elem-00", new(noncommutative.String))
 	if v.(string) != "tx0-elem-00" {
 		return errors.New("Error: Not match")

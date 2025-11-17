@@ -26,22 +26,22 @@ import (
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 	statestore "github.com/arcology-network/storage-committer"
-	stgcommcommon "github.com/arcology-network/storage-committer/common"
+	stgcommon "github.com/arcology-network/storage-committer/common"
 	cache "github.com/arcology-network/storage-committer/storage/cache"
 	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
 	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
 	"github.com/arcology-network/storage-committer/type/commutative"
 	"github.com/arcology-network/storage-committer/type/noncommutative"
-	"github.com/arcology-network/storage-committer/type/univalue"
+	statecell "github.com/arcology-network/storage-committer/type/statecell"
 )
 
 func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
 	sstore := statestore.NewStateStore(store)
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -66,7 +66,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 		    └── ctrn-1-0/
 	*/
 
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
@@ -127,7 +127,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 		t.Errorf("Wrong elements after delete: %v", elems)
 	}
 
-	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.IPTransition{})
+	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
@@ -140,8 +140,8 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	}
 }
 
-func CommitToDBs(writeCache *cache.WriteCache, store *stgproxy.StorageProxy, sstore *statestore.StateStore, filter any) []*univalue.Univalue {
-	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(filter)
+func CommitToDBs(writeCache *cache.StateCache, store *stgproxy.StorageProxy, sstore *statestore.StateStore, filter any) []*statecell.StateCell {
+	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(filter)
 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
@@ -153,16 +153,16 @@ func CommitToDBs(writeCache *cache.WriteCache, store *stgproxy.StorageProxy, sst
 func TestAllUnderGrantParentPathWildcardSimplest(t *testing.T) {
 	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
 	sstore := statestore.NewStateStore(store)
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:0", noncommutative.NewInt64(33))
 
-	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+	CommitToDBs(writeCache, store, sstore, statecell.IPTransition{})
 
 	// Delete all elements under the path with wildcard
 	_, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
@@ -170,7 +170,7 @@ func TestAllUnderGrantParentPathWildcardSimplest(t *testing.T) {
 		t.Error(err)
 	}
 
-	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+	CommitToDBs(writeCache, store, sstore, statecell.IPTransition{})
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
@@ -182,9 +182,9 @@ func TestAllUnderGrantParentPathWildcardSimplest(t *testing.T) {
 func TestAllUnderGrantParentPathWildcardSimple(t *testing.T) {
 	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
 	sstore := statestore.NewStateStore(store)
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -193,7 +193,7 @@ func TestAllUnderGrantParentPathWildcardSimple(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", noncommutative.NewInt64(11))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", noncommutative.NewInt64(22))
 
-	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+	CommitToDBs(writeCache, store, sstore, statecell.IPTransition{})
 
 	// Delete all elements under the path with wildcard
 	_, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
@@ -206,7 +206,7 @@ func TestAllUnderGrantParentPathWildcardSimple(t *testing.T) {
 		t.Errorf("The element should have been deleted already: %v", v)
 	}
 
-	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+	CommitToDBs(writeCache, store, sstore, statecell.IPTransition{})
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
 	if !reflect.DeepEqual(elems, []string{}) {
@@ -222,9 +222,9 @@ func TestAllUnderGrantParentPathWildcardSimple(t *testing.T) {
 func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 	store := chooseDataStore().(*stgproxy.StorageProxy).DisableCache()
 	sstore := statestore.NewStateStore(store)
-	writeCache := sstore.WriteCache
+	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -233,7 +233,7 @@ func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:1", noncommutative.NewInt64(11))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/elem:2", noncommutative.NewInt64(22))
 
-	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+	CommitToDBs(writeCache, store, sstore, statecell.IPTransition{})
 
 	// Delete all elements under the path with wildcard
 	_, err := writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/*", nil)
@@ -241,7 +241,7 @@ func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 		t.Error(err)
 	}
 
-	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+	CommitToDBs(writeCache, store, sstore, statecell.IPTransition{})
 
 	// Check the elements are back
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
@@ -296,7 +296,7 @@ func TestAllUnderGrantParentPathWildcard(t *testing.T) {
 		t.Errorf("Wrong elements after delete: %v", elems)
 	}
 
-	CommitToDBs(writeCache, store, sstore, univalue.IPTransition{})
+	CommitToDBs(writeCache, store, sstore, statecell.IPTransition{})
 
 	// 	It is in the execCache, meaning committion was successful.
 	// but the line below cannot load the right meta, containing the elements.

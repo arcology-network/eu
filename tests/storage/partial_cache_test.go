@@ -24,7 +24,7 @@ package stgtest
 // 	storage "github.com/arcology-network/common-lib/storage"
 // 	"github.com/arcology-network/common-lib/common"
 // 	stgcomm "github.com/arcology-network/storage-committer"
-// 	stgcommcommon "github.com/arcology-network/storage-committer/common"
+// 	stgcommon "github.com/arcology-network/storage-committer/common"
 // 	importer "github.com/arcology-network/storage-committer/storage/committer"
 // 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
 // 	storage "github.com/arcology-network/storage-committer/storage/proxy"
@@ -33,19 +33,19 @@ package stgtest
 // func TestPartialCache(t *testing.T) {
 // 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
-// 	store := storage.NewDataStore( policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode)
+// 	store := storage.NewDataStore( policy, memDB, stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode)
 // 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-// writeCache := committer.WriteCache()
+// writeCache := committer.StateCache()
 // 	alice := AliceAccount()
-// 	if _, err := eucommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+// 	if _, err := eucommon.CreateNewAccount(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
-// 	committer.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-// 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-// 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+// 	committer.Write(stgcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+// 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
+// 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 //
-// 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+// 	committer.Precommit([]uint32{stgcommon.SYSTEM})
 // committer.Commit(10)
 
 // 	/* Filter persistent data source */
@@ -55,9 +55,9 @@ package stgtest
 // 	}
 
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
-// 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+// 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()
-// 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues), true, excludeMemDB) // The changes will be discarded.
+// 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells), true, excludeMemDB) // The changes will be discarded.
 //
 // 	committer.Precommit([]uint32{1})
 // committer.Commit(10)
@@ -73,7 +73,7 @@ package stgtest
 // 	/* Don't filter persistent data source	*/
 // 	committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999"))
 // 	committer.Importer().Store().(*storage.DataStore).Cache().Clear()                                 // Make sure only the persistent storage has the data.
-// 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues)) // This should take effect
+// 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells)) // This should take effect
 //
 // 	committer.Precommit([]uint32{1})
 // committer.Commit(10)
@@ -96,35 +96,35 @@ package stgtest
 // 		return name == "*storage.MemDB"
 // 	}
 
-// 	store := storage.NewDataStore( policy, memDB, platform.Codec{}.Encode, platform.Codec{}.Decode, excludeMemDB)
+// 	store := storage.NewDataStore( policy, memDB, stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode, excludeMemDB)
 // 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-// writeCache := committer.WriteCache()
+// writeCache := committer.StateCache()
 // 	alice := AliceAccount()
-// 	if _, err := eucommon.CreateNewAccount(stgcommcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+// 	if _, err := eucommon.CreateNewAccount(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 // 		t.Error(err)
 // 	}
 
-// 	committer.Write(stgcommcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
-// 	acctTrans := univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
-// 	committer.Import(univalue.Univalues{}.Decode(univalue.Univalues(acctTrans).Encode()).(univalue.Univalues))
+// 	committer.Write(stgcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("1234"))
+// 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
+// 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 //
-// 	committer.Precommit([]uint32{stgcommcommon.SYSTEM})
+// 	committer.Precommit([]uint32{stgcommon.SYSTEM})
 // committer.Commit(10)
 
 // 	if _, err := committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
 // 		t.Error(err)
 // 	}
 
-// 	acctTrans = univalue.Univalues(slice.Clone(writeCache.Export(univalue.Sorter))).To(univalue.ITTransition{})
+// 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 
 // 	// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
-// writeCache := committer.WriteCache()
+// writeCache := committer.StateCache()
 
-// 	committer.WriteCache().Clear()
+// 	committer.StateCache().Clear()
 
 // 	// ccmap2 := committer.Importer().Store().(*storage.DataStore).Cache()
 // 	// fmt.Print(ccmap2)
-// 	out := univalue.Univalues{}.Decode(univalue.Univalues(slice.Clone(acctTrans)).Encode()).(univalue.Univalues)
+// 	out := statecell.StateCells{}.Decode(statecell.StateCells(slice.Clone(acctTrans)).Encode()).(statecell.StateCells)
 // 	committer.Import(out, true, excludeMemDB) // The changes will be discarded.
 //
 // 	committer.Precommit([]uint32{1})
