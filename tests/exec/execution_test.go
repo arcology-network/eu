@@ -53,8 +53,14 @@ func TestSequence(t *testing.T) {
 
 	api := testEu.eu.Api()
 	seq := new(workload.JobSequence).FromEthMessages(1, []uint64{1}, []*evmcore.Message{&deployMsg}, slice.New(1, [32]byte{}))
-	// seq.ExecuteSequence(testEu.config, testEu.eu.Api(), 0)
-	eu.ExecuteSequence(seq, testEu.config, testEu.eu.Api(), 0)
+	// seq.RunSequence(testEu.config, testEu.eu.Api(), 0)
+	// execPipline := eu.NewExecutionPipeline(2, testEu.config)
+
+	(&eu.ExecutionPipeline{Config: testEu.config}).RunSequence(seq, testEu.eu.Api(), 0)
+
+	// execPipline.RunSequence(seq, testEu.eu.Api(), 0)
+
+	// eu.RunSequence(seq, testEu.config, testEu.eu.Api(), 0)
 	contractAddr := seq.Jobs[0].Result.Receipt.ContractAddress
 
 	tests.FlushToStore(testEu.store.(*statestore.StateStore))
@@ -74,7 +80,9 @@ func TestSequence(t *testing.T) {
 	// Put the messages into the sequence and run it in sequence.
 	testEu.eu.Api().StateCache().(*cache.StateCache).Clear()
 	seq = new(workload.JobSequence).FromEthMessages(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), slice.New(2, [32]byte{}))
-	eu.ExecuteSequence(seq, testEu.config, api, 0)
+	// eu.RunSequence(seq, testEu.config, api, 0)
+
+	(&eu.ExecutionPipeline{Config: testEu.config}).RunSequence(seq, api, 0)
 }
 
 func TestSequence2(t *testing.T) {
@@ -90,9 +98,15 @@ func TestSequence2(t *testing.T) {
 	deployMsg := core.NewMessage(Alice, nil, 0, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), evmcommon.Hex2Bytes(code), nil, false)
 	testEu := NewTestEU(Coinbase, Alice, Bob)
 
-	api := testEu.eu.Api()
+	// api := testEu.eu.Api()
 	seq := new(workload.JobSequence).FromEthMessages(1, []uint64{1}, []*evmcore.Message{&deployMsg}, slice.New(1, [32]byte{}))
-	eu.ExecuteSequence(seq, testEu.config, testEu.eu.Api(), 0)
+	// eu.RunSequence(seq, testEu.config, testEu.eu.Api(), 0)
+
+	// execPipline := eu.NewExecutionPipeline(2, testEu.config)
+	// execPipline.RunSequence(seq, testEu.eu.Api(), 0)
+
+	(&eu.ExecutionPipeline{Config: testEu.config}).RunSequence(seq, testEu.eu.Api(), 0)
+
 	contractAddr := seq.Jobs[0].Result.Receipt.ContractAddress
 
 	// seq.SeqAPI.StateCache().(*cache.StateCache).FlushToStore(testEu.store)
@@ -111,7 +125,11 @@ func TestSequence2(t *testing.T) {
 	// // Put the messages into the sequence and run it in sequence.
 	// testEu.eu.Api().StateCache().(*cache.StateCache).Clear()
 	seq = new(workload.JobSequence).FromEthMessages(1, []uint64{1, 2, 3}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2, &msgCallCheck), slice.New(3, [32]byte{}))
-	eu.ExecuteSequence(seq, testEu.config, api, 0)
+	// eu.RunSequence(seq, testEu.config, api, 0)
+
+	// execPipline := eu.NewExecutionPipeline(2, testEu.config)
+	// execPipline.RunSequence(seq, testEu.eu.Api(), 0)
+	(&eu.ExecutionPipeline{Config: testEu.config}).RunSequence(seq, testEu.eu.Api(), 0)
 }
 
 func TestGeneration(t *testing.T) {
@@ -134,11 +152,13 @@ func TestGeneration(t *testing.T) {
 
 	// ================================== contract Deployment  ==================================
 	testEu := NewTestEU(Coinbase, Alice, Bob)
-	api := testEu.eu.Api()
+	// api := testEu.eu.Api()
 	_0thSeq := new(workload.JobSequence).FromEthMessages(1, []uint64{1, 2, 3}, slice.ToSlice(&deployNativeStorageMsg, &deploySequentialMsg), slice.New(3, [32]byte{}))
-	// _, seqUniv := _0thseq.ExecuteSequence(testEu.config, api, 0)
+	// _, seqUniv := _0thseq.RunSequence(testEu.config, api, 0)
 	gen := workload.NewGeneration(0, 2, []*workload.JobSequence{_0thSeq})
-	eu.ExecuteGeneration(gen, 8, testEu.config, api)
+	// eu.RunGeneration(gen, 8, testEu.config, api)
+
+	(&eu.ExecutionPipeline{NumThreads: 8, Config: testEu.config}).RunGeneration(gen, testEu.eu.Api())
 
 	tests.FlushToStore(testEu.store.(*statestore.StateStore))
 
@@ -155,7 +175,9 @@ func TestGeneration(t *testing.T) {
 	sequentialSeq := new(workload.JobSequence).FromEthMessages(2, []uint64{3, 4}, slice.ToSlice(&msgSequentialAdd, &msgSequentialCheck), slice.New(2, [32]byte{}))
 
 	_1stGen := workload.NewGeneration(0, 2, []*workload.JobSequence{nativeSeq, sequentialSeq})
-	clearTransitions := eu.ExecuteGeneration(_1stGen, 8, testEu.config, api) // Export transitions
+	// clearTransitions := eu.RunGeneration(_1stGen, 8, testEu.config, api) // Export transitions
+
+	clearTransitions := (&eu.ExecutionPipeline{NumThreads: 8, Config: testEu.config}).RunGeneration(_1stGen, testEu.eu.Api())
 
 	// // ================================== Commit to DB  ==================================
 	acctTrans := statecell.StateCells(clearTransitions).To(statecell.IPTransition{})
@@ -166,14 +188,18 @@ func TestGeneration(t *testing.T) {
 
 	seq := new(workload.JobSequence).FromEthMessages(1, []uint64{1}, slice.ToSlice(&msgNativeCheck2), slice.New(1, [32]byte{}))
 	_2ndGen := workload.NewGeneration(0, 2, []*workload.JobSequence{seq})
-	eu.ExecuteGeneration(_2ndGen, 8, testEu.config, testEu.eu.Api())
+	// eu.RunGeneration(_2ndGen, 8, testEu.config, testEu.eu.Api())
+
+	(&eu.ExecutionPipeline{NumThreads: 8, Config: testEu.config}).RunGeneration(_2ndGen, testEu.eu.Api())
 
 	// Add again
 	addMsg := core.NewMessage(Alice, &contractNativeStorageAddr, 4, new(big.Int).SetUint64(0), 1e15, new(big.Int).SetUint64(1), crypto.Keccak256([]byte("call2()"))[:4], nil, false)
 	seq = new(workload.JobSequence).FromEthMessages(1, []uint64{1}, slice.ToSlice(&addMsg), slice.New(1, [32]byte{}))
 
 	newGen := workload.NewGeneration(0, 2, []*workload.JobSequence{seq})
-	clearTransitions = eu.ExecuteGeneration(newGen, 8, testEu.config, testEu.eu.Api())
+	// clearTransitions = eu.RunGeneration(newGen, 8, testEu.config, testEu.eu.Api())
+	clearTransitions = (&eu.ExecutionPipeline{NumThreads: 8, Config: testEu.config}).RunGeneration(newGen, testEu.eu.Api())
+
 	acctTrans = statecell.StateCells(clearTransitions).To(statecell.IPTransition{})
 
 	testEu.eu.Api().StateCache().(*cache.StateCache).Clear().Insert(acctTrans)
@@ -182,7 +208,8 @@ func TestGeneration(t *testing.T) {
 	seq = new(workload.JobSequence).FromEthMessages(1, []uint64{1}, slice.ToSlice(&checkMsg), slice.New(1, [32]byte{}))
 
 	nextGen := workload.NewGeneration(0, 2, []*workload.JobSequence{seq})
-	eu.ExecuteGeneration(nextGen, 8, testEu.config, testEu.eu.Api())
+	// eu.RunGeneration(nextGen, 8, testEu.config, testEu.eu.Api())
+	(&eu.ExecutionPipeline{NumThreads: 8, Config: testEu.config}).RunGeneration(nextGen, testEu.eu.Api())
 }
 
 func TestMultiCummutiaves(t *testing.T) {
@@ -200,7 +227,11 @@ func TestMultiCummutiaves(t *testing.T) {
 
 	api := testEu.eu.Api()
 	jobSeq := new(workload.JobSequence).FromEthMessages(1, []uint64{1}, []*evmcore.Message{&deployMsg}, slice.New(1, [32]byte{}))
-	eu.ExecuteSequence(jobSeq, testEu.config, testEu.eu.Api(), 0)
+	// eu.RunSequence(jobSeq, testEu.config, testEu.eu.Api(), 0)
+
+	execPipline := (&eu.ExecutionPipeline{Config: testEu.config})
+	execPipline.RunSequence(jobSeq, testEu.eu.Api(), 0)
+
 	contractAddr := jobSeq.Jobs[0].Result.Receipt.ContractAddress
 
 	// Move all the transitions from local write cache to the global write cache, so they can be inserted.
@@ -220,7 +251,10 @@ func TestMultiCummutiaves(t *testing.T) {
 	// // Put the messages into the sequence and run it in sequence.
 	testEu.eu.Api().StateCache().(*cache.StateCache).Clear()
 	jobSeq = new(workload.JobSequence).FromEthMessages(1, []uint64{1, 2}, slice.ToSlice(&msgCallAdd1, &msgCallAdd2), slice.New(2, [32]byte{}))
-	eu.ExecuteSequence(jobSeq, testEu.config, api, 0)
+	// eu.RunSequence(jobSeq, testEu.config, api, 0)
+
+	execPipline = (&eu.ExecutionPipeline{Config: testEu.config})
+	execPipline.RunSequence(jobSeq, testEu.eu.Api(), 0)
 
 	if jobSeq.Jobs[0].Result.Receipt.Status != 1 || jobSeq.Jobs[1].Result.Receipt.Status != 1 {
 		t.Error("Error: Failed to call")
@@ -236,7 +270,10 @@ func TestMultiCummutiaves(t *testing.T) {
 
 	testEu.eu.Api().StateCache().(*cache.StateCache).Clear()
 	jobSeq = new(workload.JobSequence).FromEthMessages(1, []uint64{1, 2}, slice.ToSlice(&msgCallCheck), slice.New(1, [32]byte{}))
-	eu.ExecuteSequence(jobSeq, testEu.config, api, 0)
+	// eu.RunSequence(jobSeq, testEu.config, api, 0)
+
+	execPipline = (&eu.ExecutionPipeline{Config: testEu.config})
+	execPipline.RunSequence(jobSeq, testEu.eu.Api(), 0)
 
 	if jobSeq.Jobs[0].Result.Receipt.Status != 1 {
 		t.Error("Error: Failed to call")

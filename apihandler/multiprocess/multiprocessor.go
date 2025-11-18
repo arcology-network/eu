@@ -107,7 +107,12 @@ func (this *MultiprocessHandler) Run(caller, callee [20]byte, input []byte, args
 	newGen := eu.NewGenerationFromMsgs(0, ethMsgs, this.Api())
 
 	// Run the job sequences in parallel.
-	transitions := eu.ExecuteGeneration(newGen, uint32(threads), subConfig, this.Api())
+	// transitions := eu.NewExecutionPipeline(uint32(threads), subConfig).RunGeneration(newGen, this.Api())
+
+	transitions :=
+		(&eu.ExecutionPipeline{
+			NumThreads: uint32(threads),
+			Config:     subConfig}).RunGeneration(newGen, this.Api())
 
 	// Unify tx IDs
 	mainTxID := uint64(this.Api().GetEU().(interface{ ID() uint64 }).ID())

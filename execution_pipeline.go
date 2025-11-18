@@ -35,18 +35,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 )
 
-type Executor struct {
-	numThreads uint32
-	configInfo *eucommon.Config
-	vmConfig   *vm.Config
-}
-
-func NewExecutor(numThreads uint32, configInfo *eucommon.Config, vmConfig *vm.Config) *Executor {
-	return &Executor{
-		numThreads: numThreads,
-		configInfo: configInfo,
-		vmConfig:   vmConfig,
-	}
+// ExecutionPipeline coordinates the full multi-stage execution flow for a workload
+// generation. It manages parallel execution of job sequences, sequential execution
+// of jobs within each sequence, state-snapshot creation via API cascades, merging
+// of per-job state changes, conflict detection across sequences, and transition
+// normalization (gas/nonce). This struct provides the top-level orchestration for
+// Arcology’s deterministic parallel EVM execution model.
+type ExecutionPipeline struct {
+	NumThreads uint32           // Maximum parallelism for running job sequences.
+	Config     *eucommon.Config // Runtime/block-level configuration (dynamic context).
 }
 
 // The run function executes the job sequences in parallel and returns the results in a single slice.
@@ -65,17 +62,17 @@ func NewExecutor(numThreads uint32, configInfo *eucommon.Config, vmConfig *vm.Co
 // don't want to cause any conflict. That is why we need to give different nonceOffset to different child threads, so they can deploy
 // their contracts at different addresses.
 
-func ExecuteGeneration(generation *workload.Generation, numThreads uint32, config *eucommon.Config, blockAPI intf.EthApiRouter) []*statecell.StateCell {
+func (this *ExecutionPipeline) RunGeneration(generation *workload.Generation, blockAPI intf.EthApiRouter) []*statecell.StateCell {
 	seqIDs := make([][]uint64, len(generation.JobSeqs))
 	records := make([][]*statecell.StateCell, len(generation.JobSeqs))
 
 	// Execute the job sequences in parallel. All the access records from the same sequence share
 	// the same sequence ID. The sequence ID is used to detect the conflicts between different sequences.
-	slice.ParallelForeach(generation.JobSeqs, int(numThreads), func(i int, _ **workload.JobSequence) {
-		seqIDs[i], records[i] = ExecuteSequence(generation.JobSeqs[i], config, blockAPI.Cascade(), uint64(i))
+	slice.ParallelForeach(generation.JobSeqs, int(this.NumThreads), func(i int, _ **workload.JobSequence) {
+		seqIDs[i], records[i] = this.RunSequence(generation.JobSeqs[i], blockAPI.Cascade(), uint64(i))
 	})
 
-	conflictInfo := DetectConflicts(seqIDs, records)
+	conflictInfo := this.DetectConflicts(seqIDs, records)
 	txDict, seqDict, _ := conflictInfo.ToDict()
 
 	// Mark the conflicts in the job sequences.
@@ -90,7 +87,7 @@ func ExecuteGeneration(generation *workload.Generation, numThreads uint32, confi
 
 // There needs to be a sequence ID for each transaction in the sequence, not just the transaction ID because
 // multiple transactions may be in the same sequence and they may have the same transaction ID.
-func DetectConflicts(seqIDs [][]uint64, records [][]*statecell.StateCell) arbitrator.Conflicts {
+func (this *ExecutionPipeline) DetectConflicts(seqIDs [][]uint64, records [][]*statecell.StateCell) arbitrator.Conflicts {
 	if len(records) == 1 {
 		return arbitrator.Conflicts{}
 	}
@@ -98,13 +95,13 @@ func DetectConflicts(seqIDs [][]uint64, records [][]*statecell.StateCell) arbitr
 }
 
 // Execute a sequence of jobs in a sequential order.
-func ExecuteSequence(jobSeq *workload.JobSequence, config *eucommon.Config, seqAPI intf.EthApiRouter, threadId uint64) ([]uint64, []*statecell.StateCell) {
+func (this *ExecutionPipeline) RunSequence(jobSeq *workload.JobSequence, seqAPI intf.EthApiRouter, threadId uint64) ([]uint64, []*statecell.StateCell) {
 	// seqAPI = seqAPI //.Cascade() // Create a new write cache for the sequence with the main router as the data source.
 	seqAPI.DecrementDepth()
 
 	// Only one transaction in the sequence, no need to create a new API router.
 	if len(jobSeq.Jobs) == 1 {
-		ExecuteJob(jobSeq.Jobs[0], config, seqAPI.Cascade())
+		this.RunJob(jobSeq.Jobs[0], this.Config, seqAPI.Cascade())
 		return slice.Fill(make([]uint64, len(jobSeq.Jobs[0].Result.RawStateAccesses)), jobSeq.ID), jobSeq.Jobs[0].Result.RawStateAccesses
 	}
 
@@ -113,7 +110,7 @@ func ExecuteSequence(jobSeq *workload.JobSequence, config *eucommon.Config, seqA
 		txApi := seqAPI.Cascade() // A new router whose writeCache uses the parent APIHandler's writeCache as the data source.
 		txApi.DecrementDepth()    // The api router always increments the depth.  So we need to decrement it here.
 
-		ExecuteJob(job, config, txApi)
+		this.RunJob(job, this.Config, txApi)
 
 		// the line below modifies the cache in the major api as well.
 		seqAPI.StateCache().(*cache.StateCache).Insert(job.Result.RawStateAccesses) // Merge the txApi write cache back into the api router.
@@ -125,7 +122,7 @@ func ExecuteSequence(jobSeq *workload.JobSequence, config *eucommon.Config, seqA
 	return slice.Fill(make([]uint64, len(accmulatedAccessRecords)), jobSeq.ID), accmulatedAccessRecords
 }
 
-func ExecuteJob(job *workload.Job, configInfo *eucommon.Config, api intf.EthApiRouter) {
+func (this *ExecutionPipeline) RunJob(job *workload.Job, configInfo *eucommon.Config, api intf.EthApiRouter) {
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(job.StdMsg.TxHash, [32]byte{}, uint64(job.StdMsg.ID))
 
