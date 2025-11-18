@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package execution
+package eu
 
 import (
 	"errors"
@@ -145,7 +145,6 @@ func (this *ExecutionPipeline) RunJob(job *workload.Job, configInfo *eucommon.Co
 		TxHash:           common.IfThenDo1st(receipt != nil, func() evmcommon.Hash { return receipt.TxHash }, evmcommon.Hash{}),
 		RawStateAccesses: eu.GetStateAccesses(),
 		Err:              common.IfThenDo1st(prechkErr == nil, func() error { return evmResult.Err }, prechkErr),
-		From:             job.StdMsg.Native.From,
 		Receipt:          receipt,
 		EvmResult:        evmResult,
 		StdMsg:           job.StdMsg,
