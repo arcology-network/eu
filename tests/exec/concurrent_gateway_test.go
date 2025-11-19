@@ -26,8 +26,17 @@ import (
 
 func TestConcurrentGateway(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "core/Gateway_test.sol", "0.8.19", "ConcurrentGatewayTest", "", []byte{}, false)
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrent/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "test/crdt/core/Gateway.t.sol", "0.8.19", "ConcurrentGatewayTest", "", []byte{}, false)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestContractWildcard(t *testing.T) {
+	currentPath, _ := os.Getwd()
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrent/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "test/crdt/core/Gateway.t.sol", "0.8.19", "ContainerClearTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

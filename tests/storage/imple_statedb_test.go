@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package exectest
+package stgtest
 
 import (
 	"bytes"
@@ -36,7 +36,7 @@ func TestStateDBV2GetNonexistBalance(t *testing.T) {
 	// db.Inject(ccurlcommon.ETH_ACCOUNT_PREFIX, commutative.NewPath())
 
 	// localCache := cache.NewStateCache(datastore, 32, 1)
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.StateCache](16, 1, func() *cache.StateCache {
+	api := apihandler.NewAPIHandler(mempool.NewMempool(16, 1, func() *cache.StateCache {
 		return cache.NewStateCache(db, 32, 1)
 	}, func(cache *cache.StateCache) { cache.Clear() }))
 
@@ -66,7 +66,7 @@ func TestStateDBV2GetNonexistCode(t *testing.T) {
 	// db.Inject(ccurlcommon.ETH_ACCOUNT_PREFIX, commutative.NewPath())
 
 	// localCache := cache.NewStateCache(db, 32, 1)
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.StateCache](16, 1, func() *cache.StateCache {
+	api := apihandler.NewAPIHandler(mempool.NewMempool(16, 1, func() *cache.StateCache {
 		return cache.NewStateCache(db, 32, 1)
 	}, func(cache *cache.StateCache) { cache.Clear() }))
 
@@ -98,7 +98,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 	// db.Inject(ccurlcommon.ETH_ACCOUNT_PREFIX, meta)
 
 	// localCache := cache.NewStateCache(db, 32, 1)
-	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.StateCache](16, 1, func() *cache.StateCache {
+	api := apihandler.NewAPIHandler(mempool.NewMempool(16, 1, func() *cache.StateCache {
 		return cache.NewStateCache(db, 32, 1)
 	}, func(cache *cache.StateCache) { cache.Clear() }))
 
@@ -130,7 +130,7 @@ func TestStateDBV2GetNonexistStorageState(t *testing.T) {
 // 	committer := stgcomm.NewStateCommitter(db)
 
 // 	// localCache := cache.NewStateCache(db, 32, 1)
-// 	api := apihandler.NewAPIHandler(mempool.NewMempool[*cache.StateCache](16, 1, func() *cache.StateCache {
+// 	api := apihandler.NewAPIHandler(mempool.NewMempool(16, 1, func() *cache.StateCache {
 // 		return cache.NewStateCache(db, 32, 1)
 // 	}, func(cache *cache.StateCache) { cache.Clear() }))
 

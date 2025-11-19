@@ -26,9 +26,9 @@ import (
 
 func TestDeferred(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrent/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "DeferredTest", "init()", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "test/runtime/Runtime.t.sol", "0.8.19", "DeferredTest", "init()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -36,9 +36,9 @@ func TestDeferred(t *testing.T) {
 
 func TestPrint(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrent/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "PrintTest", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "test/runtime/Runtime.t.sol", "0.8.19", "PrintTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -46,9 +46,9 @@ func TestPrint(t *testing.T) {
 
 func TestCalleeProfiles(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrent/")
 
-	_, err, _, _ := DeployThenInvoke(targetPath, "runtime/Runtime_test.sol", "0.8.19", "SequentializerTest", "", []byte{}, false)
+	_, err, _, _ := DeployThenInvoke(targetPath, "test/runtime/Runtime.t.sol", "0.8.19", "SequentializerTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}

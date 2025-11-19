@@ -58,7 +58,7 @@ In the example below, the MP is used to process two sub transactions in parallel
 
 ```solidity
 pragma solidity >= 0.8.0 < 0.9.0;
-import "@arcologynetwork/concurrentlib/lib/mulitprocess/Multiprocess.sol";
+import "@arcologynetwork/concurrent/lib/mulitprocess/Multiprocess.sol";
 
 contract ParallelAssigner {
     uint256[2] array; 
@@ -85,7 +85,7 @@ Recursive MP calls are possible but constrained by the depth and the concurrency
 
 ```solidity
 pragma solidity >= 0.8.0 < 0.9.0;
-import "@arcologynetwork/concurrentlib/lib/mulitprocess/Multiprocess.sol";
+import "@arcologynetwork/concurrent/lib/mulitprocess/Multiprocess.sol";
 
 contract NestedAssigner {
     uint256[4] array; 
@@ -155,7 +155,7 @@ MP determines which transaction to revert based on a number of factors. But the 
 
 ```solidity
 pragma solidity >= 0.8.0 < 0.9.0;
-import "@arcologynetwork/concurrentlib/lib/mulitprocess/Multiprocess.sol";
+import "@arcologynetwork/concurrent/lib/mulitprocess/Multiprocess.sol";
 
 contract SimpleConflict {
     uint256 data;

@@ -25,8 +25,8 @@ import (
 
 func TestCumulativeU256InMapping(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "commutative/u256Cum_test.sol", "0.8.19", "CumulativeU256InMappingTest", "", []byte{}, false)
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrent/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "test/crdt/commutative/u256Cum.t.sol", "0.8.19", "CumulativeU256InMappingTest", "", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -34,8 +34,8 @@ func TestCumulativeU256InMapping(t *testing.T) {
 
 func TestCumulativeU256(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "commutative/u256Cum_test.sol", "0.8.19", "CumulativeU256Test", "call()", []byte{}, false)
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrent/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "test/crdt/commutative/u256Cum.t.sol", "0.8.19", "CumulativeU256Test", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -43,8 +43,8 @@ func TestCumulativeU256(t *testing.T) {
 
 func TestCumulativeU256Counter(t *testing.T) {
 	currentPath, _ := os.Getwd()
-	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrentlib/lib/")
-	_, err, _, _ := DeployThenInvoke(targetPath, "commutative/u256Cum_test.sol", "0.8.19", "VisitCounter", "call()", []byte{}, false)
+	targetPath := path.Join(path.Dir(path.Dir(filepath.Dir(currentPath))), "concurrent/")
+	_, err, _, _ := DeployThenInvoke(targetPath, "test/crdt/commutative/u256Cum.t.sol", "0.8.19", "VisitCounter", "call()", []byte{}, false)
 	if err != nil {
 		t.Error(err)
 	}
