@@ -27,16 +27,16 @@ import (
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	statestore "github.com/arcology-network/state-engine"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
 )
 
 func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
@@ -49,7 +49,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	trans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 
 	// sstore:= statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
@@ -95,7 +95,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	initTrans := writeCache.Export(statecell.Sorter)
 	trans := statecell.StateCells(slice.Clone(initTrans)).To(statecell.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
@@ -167,7 +167,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	// writeCache.Write(stgcommon.SYSTEM, stgcommon.ETH_ACCOUNT_PREFIX, commutative.NewPath())
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
@@ -218,7 +218,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	buffer := statecell.StateCells(in).Encode()
 	out := statecell.StateCells{}.Decode(buffer).(statecell.StateCells)
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
 	committer.Precommit(toCommit)
 	committer.Commit(10)
@@ -232,7 +232,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	accesses3 := statecell.StateCells(slice.Clone(exports)).To(statecell.ITAccess{})
 	transitions3 := statecell.StateCells(slice.Clone(exports)).To(statecell.IPTransition{})
 
-	// url4 := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	// url4 := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	if _, err := writeCache.Write(4, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("url4-1-by-tx-3")); err != nil {
 		t.Error(err)
 	}
@@ -259,7 +259,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	out = statecell.StateCells{}.Decode(buffer).(statecell.StateCells)
 
 	acctTrans = append(transitions3, transitions4...)
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 
 	// committer.Import(committer.Decode(statecell.StateCells(append(transitions3, transitions4...)).Encode()))
@@ -286,7 +286,7 @@ func TestArbiWildcardConflict(t *testing.T) {
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele1", commutative.NewBoundedUint64(0, 100))
 
 	accesses1 := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(accesses1)
 	committer.Precommit([]uint64{1})
 	committer.Commit(1)

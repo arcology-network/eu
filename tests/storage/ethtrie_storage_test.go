@@ -32,14 +32,14 @@ import (
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/common-lib/merkle"
 	"github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	stgtypecommon "github.com/arcology-network/storage-committer/type/common"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	stgtypecommon "github.com/arcology-network/state-engine/type/common"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -139,7 +139,7 @@ func TestTrieUpdates(t *testing.T) {
 	}
 
 	trans := writeCache.Export(statecell.Sorter)
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells(slice.Clone(trans)).To(statecell.IPTransition{}))
 
 	committer.Precommit([]uint64{1})
@@ -168,7 +168,7 @@ func TestTrieUpdates(t *testing.T) {
 	// 	t.Error("Error: Cache() should be 3, actual", len(ds.AccountDict()))
 	// }
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{1})
 
@@ -192,7 +192,7 @@ func TestTrieUpdates(t *testing.T) {
 		t.Error(err)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{1})
 
@@ -229,7 +229,7 @@ func TestEthStorageConnection(t *testing.T) {
 	}
 
 	trans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans)
 
 	committer.Precommit([]uint64{1})
@@ -343,7 +343,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	//values := statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).([]*statecell.StateCell)
 	ts := statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells)
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(ts)
 
 	committer.Precommit([]uint64{1})
@@ -358,7 +358,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	transitions := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((&statecell.StateCells{}).Decode(statecell.StateCells(transitions).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)
@@ -375,7 +375,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 
 	trans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((&statecell.StateCells{}).Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)

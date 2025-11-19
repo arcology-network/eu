@@ -30,7 +30,7 @@ package stgtest
 // 	}
 
 // 	if !bytes.Equal(val, testval) {
-// 		fmt.Printf("retrive val is:%v\n", string(val))
+// 		fmt.Printf("Retrieve val is:%v\n", string(val))
 // 		return
 // 	}
 
@@ -46,7 +46,7 @@ package stgtest
 // 	}
 // 	acctTrans := statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-// 	committer := stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
+// 	committer := statecommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 // 	committer.Import(acctTrans)
 // 	committer.Precommit([]uint32{stgcomm.SYSTEM})
 // 	committer.Commit(stgcomm.SYSTEM)
@@ -63,7 +63,7 @@ package stgtest
 // 	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 // 	// committer.Import(acctTrans)
-// 	committer = stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
+// 	committer = statecommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 // 	committer.Import(acctTrans)
 // 	committer.Precommit([]uint32{1})
 // 	committer.Commit(2)

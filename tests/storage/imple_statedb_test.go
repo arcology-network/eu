@@ -23,8 +23,8 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/mempool"
 	eth "github.com/arcology-network/eu/eth"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	stgcomm "github.com/arcology-network/state-engine/state/committer"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
 	apihandler "github.com/arcology-network/eu/apihandler"

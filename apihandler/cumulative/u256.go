@@ -26,11 +26,11 @@ import (
 
 	abi "github.com/arcology-network/eu/abi"
 	"github.com/arcology-network/eu/common"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
-	// intf "github.com/arcology-network/storage-committer/execution"
+	// intf "github.com/arcology-network/state-engine/execution"
 	path "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
 )

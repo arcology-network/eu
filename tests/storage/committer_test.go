@@ -28,21 +28,21 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	"github.com/arcology-network/storage-committer/type/commutative"
-	"github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
+	"github.com/arcology-network/state-engine/type/commutative"
+	"github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	"github.com/holiman/uint256"
 )
 
 func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	// store := chooseDataStore()
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
@@ -66,7 +66,7 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	// committer.Import(acctTrans)
-	// committer = stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
+	// committer = statecommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	committer.Import(acctTrans).Precommit([]uint64{1})
 	// committer.Commit(2)
 
@@ -108,7 +108,7 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	t0 := time.Now()
-	committer = stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	fmt.Println("Time to create committer", time.Since(t0))
 	// new state committer slow!!! reuse faster !!!
 
@@ -138,7 +138,7 @@ func TestSize(t *testing.T) {
 	alice := AliceAccount()
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(111110)
@@ -166,7 +166,7 @@ func TestSize(t *testing.T) {
 	}
 
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(9999)
@@ -185,7 +185,7 @@ func TestSize2(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	// acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	// committer.Import(acctTrans)
 	// committer.Precommit([]uint64{1})
 	// committer.Commit(111110)
@@ -206,7 +206,7 @@ func TestSize2(t *testing.T) {
 	}
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	// committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	// committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(9999)
@@ -221,7 +221,7 @@ func TestSize2(t *testing.T) {
 func TestNativeStorageReadWrite(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
@@ -235,7 +235,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	//values := statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).([]*statecell.StateCell)
 	ts := statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells)
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(ts)
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)
@@ -250,7 +250,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 		t.Error(err)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	transitions := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	committer.Import(transitions)
 	committer.Precommit([]uint64{1})
@@ -327,7 +327,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	acctTrans := (&statecell.StateCells{}).Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells)
 	ts := statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells)
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(ts)
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)
@@ -355,7 +355,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	transitions := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	newTrans := (&statecell.StateCells{}).Decode(statecell.StateCells(transitions).Encode()).(statecell.StateCells)
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(newTrans)
 
 	committer.Precommit([]uint64{1})
@@ -374,7 +374,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 
 	// trans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	// committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	// committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	// committer.Import((&statecell.StateCells{}).Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 	// committer.Precommit([]uint64{1})
 	// committer.Commit(10)
@@ -395,7 +395,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 func TestBasic(t *testing.T) {
 	backend := chooseDataStore()
 	sstore := statestore.NewStateStore(backend.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(backend, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(backend, sstore.GetWriters())
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
@@ -477,7 +477,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	buffer := statecell.StateCells(statecell.StateCells(transitions).To(statecell.IPTransition{})).Encode()
-	// committer = stgcommitter.NewStateCommitter(backend, sstore.GetWriters())
+	// committer = statecommitter.NewStateCommitter(backend, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(buffer).(statecell.StateCells))
 	// committer.Import(committer.Decode(statecell.StateCells(transitions).Encode()))
 
@@ -504,7 +504,7 @@ func TestCommitter(t *testing.T) {
 	store := chooseDataStore()
 	// store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
 	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
@@ -599,7 +599,7 @@ func TestCommitter(t *testing.T) {
 func TestCommitter2(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
@@ -779,7 +779,7 @@ func TestCommitter2(t *testing.T) {
 func TestTransientDBv2(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
@@ -818,7 +818,7 @@ func TestCustomCodec(t *testing.T) {
 	buffer := statecell.StateCells(acctTrans).Encode()
 	statecell.StateCells{}.Decode(buffer)
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)
@@ -840,7 +840,7 @@ func TestCustomCodec(t *testing.T) {
 func TestPathReadAndWriteBatchCache2(b *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 	WriteNewAcountsToCache(writeCache, stgcommon.SYSTEM, AliceAccount(), BobAccount())
 
@@ -857,7 +857,7 @@ func TestPathReadAndWriteBatchCache2(b *testing.T) {
 		b.Error(err)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 
@@ -871,7 +871,7 @@ func TestPathReadAndWriteBatchCache2(b *testing.T) {
 		b.Error(err)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 
@@ -887,7 +887,7 @@ func TestPathReadAndWriteBatchCache2(b *testing.T) {
 func BenchmarkPathReadAndWriteBatch(b *testing.B) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 	WriteNewAcountsToCache(writeCache, stgcommon.SYSTEM, AliceAccount(), BobAccount())
 
@@ -941,7 +941,7 @@ func BenchmarkPathReadAndWriteBatch(b *testing.B) {
 	fmt.Println("1. New Path Write time:", time.Since(t0))
 
 	t0 = time.Now()
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	trans := writeCache.Export(statecell.Sorter)
 	committer.Import(statecell.StateCells(trans).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
@@ -1014,7 +1014,7 @@ func BenchmarkPathReadAndWriteBatch(b *testing.B) {
 func TestPathReadAndWrites(b *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 	WriteNewAcountsToCache(writeCache, stgcommon.SYSTEM, AliceAccount(), BobAccount())
 
@@ -1039,7 +1039,7 @@ func TestPathReadAndWrites(b *testing.T) {
 		}
 	}
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
@@ -1086,7 +1086,7 @@ func TestPathReadAndWrites(b *testing.T) {
 func TestPathReadAndWritesPath(b *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 	WriteNewAcountsToCache(writeCache, stgcommon.SYSTEM, AliceAccount())
 
@@ -1109,7 +1109,7 @@ func TestPathReadAndWritesPath(b *testing.T) {
 		b.Error(err)
 	}
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
@@ -1146,7 +1146,7 @@ func TestPathReadAndWritesPath(b *testing.T) {
 func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 	WriteNewAcountsToCache(writeCache, stgcommon.SYSTEM, AliceAccount())
 
@@ -1157,7 +1157,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{1, stgcommon.SYSTEM})
 	committer.Commit(99)
@@ -1195,13 +1195,13 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 func TestPathMultiBatch(b *testing.T) {
 	store := chooseDataStore()
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 	WriteNewAcountsToCache(writeCache, 1, AliceAccount())
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	// committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	// committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)
@@ -1216,7 +1216,7 @@ func TestPathMultiBatch(b *testing.T) {
 	}
 
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
@@ -1242,7 +1242,7 @@ func TestPathMultiBatch(b *testing.T) {
 	}
 
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
@@ -1296,7 +1296,7 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	}
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(111110)
@@ -1338,7 +1338,7 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	}
 
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(111110)
@@ -1360,7 +1360,7 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	}
 
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(111110)
@@ -1396,14 +1396,14 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
 	// acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{})
 
 	committer.Precommit([]uint64{1})
@@ -1418,7 +1418,7 @@ func TestAddAndDelete(t *testing.T) {
 	}
 
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{1})
@@ -1478,7 +1478,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 		}
 	}
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 
@@ -1502,7 +1502,7 @@ func TestPathReadAndWriteBatchCache(b *testing.T) {
 	}
 
 	trans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 

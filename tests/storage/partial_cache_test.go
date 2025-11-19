@@ -23,18 +23,18 @@ package stgtest
 
 // 	storage "github.com/arcology-network/common-lib/storage"
 // 	"github.com/arcology-network/common-lib/common"
-// 	stgcomm "github.com/arcology-network/storage-committer"
-// 	stgcommon "github.com/arcology-network/storage-committer/common"
-// 	importer "github.com/arcology-network/storage-committer/storage/committer"
-// 	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-// 	storage "github.com/arcology-network/storage-committer/storage/proxy"
+// 	stgcomm "github.com/arcology-network/state-engine"
+// 	stgcommon "github.com/arcology-network/state-engine/common"
+// 	importer "github.com/arcology-network/state-engine/state/committer"
+// 	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+// 	storage "github.com/arcology-network/state-engine/storage/proxy"
 // )
 
 // func TestPartialCache(t *testing.T) {
 // 	memDB := storage.NewMemoryDB()
 // 	policy := storage.NewCachePolicy(10000000, 1.0)
 // 	store := storage.NewDataStore( policy, memDB, stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode)
-// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+// 		committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.StateCache()
 // 	alice := AliceAccount()
 // 	if _, err := eucommon.CreateNewAccount(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -97,7 +97,7 @@ package stgtest
 // 	}
 
 // 	store := storage.NewDataStore( policy, memDB, stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode, excludeMemDB)
-// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+// 		committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.StateCache()
 // 	alice := AliceAccount()
 // 	if _, err := eucommon.CreateNewAccount(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -117,7 +117,7 @@ package stgtest
 
 // 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 
-// 	// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+// 	// 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.StateCache()
 
 // 	committer.StateCache().Clear()

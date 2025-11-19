@@ -23,13 +23,13 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
-	statestore "github.com/arcology-network/storage-committer"
-	"github.com/arcology-network/storage-committer/storage/proxy"
+	statestore "github.com/arcology-network/state-engine"
+	"github.com/arcology-network/state-engine/storage/proxy"
 	"github.com/holiman/uint256"
 )
 

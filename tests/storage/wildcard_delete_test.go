@@ -25,14 +25,14 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	"github.com/arcology-network/storage-committer/type/commutative"
-	"github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
+	"github.com/arcology-network/state-engine/type/commutative"
+	"github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 )
 
 func TestAddThenDeletePathAfterCommit(t *testing.T) {
@@ -67,7 +67,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	*/
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(1)
@@ -128,7 +128,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	}
 
 	acctTrans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(1)
@@ -142,7 +142,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 
 func CommitToDBs(writeCache *cache.StateCache, store *stgproxy.StorageProxy, sstore *statestore.StateStore, filter any) []*statecell.StateCell {
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(filter)
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(1)

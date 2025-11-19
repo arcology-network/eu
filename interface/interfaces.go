@@ -21,7 +21,7 @@ package interfaces
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	cache "github.com/arcology-network/storage-committer/storage/cache"
+	cache "github.com/arcology-network/state-engine/state/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/types"

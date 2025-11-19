@@ -26,23 +26,22 @@ import (
 	eth "github.com/arcology-network/eu/eth"
 
 	// "github.com/arcology-network/eu/gas"
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 
-	// "github.com/arcology-network/storage-committer/interfaces"
-	interfaces "github.com/arcology-network/storage-committer/common"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
+	// "github.com/arcology-network/state-engine/interfaces"
+	interfaces "github.com/arcology-network/state-engine/common"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	"github.com/arcology-network/state-engine/storage/proxy"
 )
 
 func GenerateDB(addr [20]uint8) (string, *cache.StateCache, stgcommon.ReadOnlyStore, error) {
 	store := chooseDataStore()
-	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
 
 	acct := CreateAccount(addr)
@@ -51,7 +50,7 @@ func GenerateDB(addr [20]uint8) (string, *cache.StateCache, stgcommon.ReadOnlySt
 	}
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
 	committer.Commit(10)

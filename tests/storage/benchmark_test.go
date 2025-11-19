@@ -26,13 +26,13 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	orderedmap "github.com/elliotchance/orderedmap"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/btree"
@@ -81,7 +81,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	transitions := statecell.StateCells(slice.Clone(writeCache.Export())).To(statecell.ITTransition{})
 
 	t0 := time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(transitions)
 	committer.Precommit([]uint64{stgcommon.SYSTEM, 0, 1})
 	committer.Commit(10)
@@ -135,7 +135,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	trans = statecell.StateCells(trans).To(statecell.IPTransition{})
 	fmt.Println("To(statecell.ITTransition{}):", len(trans), "in ", time.Since(t0))
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	t0 = time.Now()
 	committer.Import(trans)
 	fmt.Println("Import: ", len(trans), " in: ", time.Since(t0))
@@ -180,7 +180,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	writeCache.Write(stgcommon.SYSTEM, stgcommon.ETH_ACCOUNT_PREFIX, meta)
 	trans := statecell.StateCells(slice.Clone(writeCache.Export())).To(statecell.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans)
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
@@ -225,7 +225,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 
 	trans := statecell.StateCells(slice.Clone(writeCache.Export())).To(statecell.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
@@ -343,7 +343,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITAccess{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
@@ -418,7 +418,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	t0 = time.Now()
 
 	// transitions := statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells)
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
@@ -461,7 +461,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 // 	for i := 0; i < 1; i++ {
 // 		acct := RandomAccount()
 // 		for j := 0; j < 10; j++ {
-// 			paths = append(paths, (&stgcommitter.Platform{}).Eth10Account()+acct+"/"+fmt.Sprint(rand.Float64()))
+// 			paths = append(paths, (&statecommitter.Platform{}).Eth10Account()+acct+"/"+fmt.Sprint(rand.Float64()))
 // 		}
 // 	}
 
@@ -469,8 +469,8 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 // 	positions = append(positions, 0)
 // 	current := paths[0]
 // 	for i := 1; i < len(paths); i++ {
-// 		p0 := current[:len((&stgcommitter.Platform{}).Eth10Account())+stgcommon.ETH_ACCOUNT_LENGTH]
-// 		p1 := paths[i][:len((&stgcommitter.Platform{}).Eth10Account())+stgcommon.ETH_ACCOUNT_LENGTH]
+// 		p0 := current[:len((&statecommitter.Platform{}).Eth10Account())+stgcommon.ETH_ACCOUNT_LENGTH]
+// 		p1 := paths[i][:len((&statecommitter.Platform{}).Eth10Account())+stgcommon.ETH_ACCOUNT_LENGTH]
 // 		if p0 != p1 {
 // 			current = paths[i]
 // 			positions = append(positions, i)
@@ -594,7 +594,7 @@ func (s String) Less(b btree.Item) bool {
 
 // 	records := make([]string, 10000)
 // 	for i := 0; i < len(records); i++ {
-// 		records[i] = (&stgcommitter.Platform{}).Eth10() + RandomAccount()
+// 		records[i] = (&statecommitter.Platform{}).Eth10() + RandomAccount()
 // 	}
 
 // 	t0 := time.Now()
@@ -644,7 +644,7 @@ func (s String) Less(b btree.Item) bool {
 
 // 	fmt.Println("-------------")
 // 	t0 = time.Now()
-// 	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+// 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 // 	committer.Import(acctTrans)
 // 	// accountMerkle.Import(acctTrans)
 // 	fmt.Println("committer + accountMerkle Import "+fmt.Sprint(150000*9), time.Since(t0))
@@ -656,7 +656,7 @@ func (s String) Less(b btree.Item) bool {
 // 	store.Inject((stgcommon.ETH_ACCOUNT_PREFIX), meta)
 
 // 	t0 := time.Now()
-// 		committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+// 		committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 // writeCache := committer.StateCache()
 // 	for i := 0; i < 90000; i++ {
 // 		acct := RandomAccount()

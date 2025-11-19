@@ -23,13 +23,13 @@ import (
 	"time"
 
 	"github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	cache "github.com/arcology-network/storage-committer/storage/livecache"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	cache "github.com/arcology-network/state-engine/storage/livecache"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	"github.com/holiman/uint256"
 )
 
@@ -70,7 +70,7 @@ func TestLiveCache(t *testing.T) {
 func BenchmarkLiveCache(b *testing.B) {
 	store := chooseDataStore()
 
-	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
+	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
 	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {

@@ -23,9 +23,9 @@ import (
 
 	eu "github.com/arcology-network/eu"
 	eucommon "github.com/arcology-network/eu/common"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	stgcomm "github.com/arcology-network/storage-committer/storage/committer"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	stgcomm "github.com/arcology-network/state-engine/state/committer"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 

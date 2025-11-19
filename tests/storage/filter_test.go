@@ -24,18 +24,19 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
-	softdeltaset "github.com/arcology-network/common-lib/exp/softdeltaset"
+	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	"github.com/arcology-network/storage-committer/type/commutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	"github.com/arcology-network/state-engine/type/commutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	"github.com/holiman/uint256"
 )
 
 /* Commutative Int64 Test */
 func TestTransitionFilters(t *testing.T) {
+
 	store := chooseDataStore()
 
 	alice := RandomAccount()

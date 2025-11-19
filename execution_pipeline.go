@@ -25,12 +25,12 @@ import (
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/eth"
-	intf "github.com/arcology-network/eu/interface"
+	euintf "github.com/arcology-network/eu/interface"
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	workload "github.com/arcology-network/scheduler/workload"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/storage/cache"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	"github.com/arcology-network/state-engine/state/cache"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 )
@@ -62,7 +62,7 @@ type ExecutionPipeline struct {
 // don't want to cause any conflict. That is why we need to give different nonceOffset to different child threads, so they can deploy
 // their contracts at different addresses.
 
-func (this *ExecutionPipeline) RunGeneration(generation *workload.Generation, blockAPI intf.EthApiRouter) []*statecell.StateCell {
+func (this *ExecutionPipeline) RunGeneration(generation *workload.Generation, blockAPI euintf.EthApiRouter) []*statecell.StateCell {
 	seqIDs := make([][]uint64, len(generation.JobSeqs))
 	records := make([][]*statecell.StateCell, len(generation.JobSeqs))
 
@@ -95,7 +95,7 @@ func (this *ExecutionPipeline) DetectConflicts(seqIDs [][]uint64, records [][]*s
 }
 
 // Execute a sequence of jobs in a sequential order.
-func (this *ExecutionPipeline) RunSequence(jobSeq *workload.JobSequence, seqAPI intf.EthApiRouter, threadId uint64) ([]uint64, []*statecell.StateCell) {
+func (this *ExecutionPipeline) RunSequence(jobSeq *workload.JobSequence, seqAPI euintf.EthApiRouter, threadId uint64) ([]uint64, []*statecell.StateCell) {
 	// seqAPI = seqAPI //.Cascade() // Create a new write cache for the sequence with the main router as the data source.
 	seqAPI.DecrementDepth()
 
@@ -122,7 +122,7 @@ func (this *ExecutionPipeline) RunSequence(jobSeq *workload.JobSequence, seqAPI 
 	return slice.Fill(make([]uint64, len(accmulatedAccessRecords)), jobSeq.ID), accmulatedAccessRecords
 }
 
-func (this *ExecutionPipeline) RunJob(job *workload.Job, configInfo *eucommon.Config, api intf.EthApiRouter) {
+func (this *ExecutionPipeline) RunJob(job *workload.Job, configInfo *eucommon.Config, api euintf.EthApiRouter) {
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(job.StdMsg.TxHash, [32]byte{}, uint64(job.StdMsg.ID))
 

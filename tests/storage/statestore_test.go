@@ -26,13 +26,13 @@ import (
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/arcology-network/eu/eth"
 
-	statestore "github.com/arcology-network/storage-committer"
-	stgcomm "github.com/arcology-network/storage-committer/common"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	"github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	stgcomm "github.com/arcology-network/state-engine/common"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
+	"github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 )
 
 func TestRandomOrderImport(t *testing.T) {
@@ -46,7 +46,7 @@ func TestRandomOrderImport(t *testing.T) {
 	}
 	acctTrans := statecell.StateCells(slice.Clone(StateCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{stgcomm.SYSTEM})
 	committer.Commit(stgcomm.SYSTEM)
@@ -59,7 +59,7 @@ func TestRandomOrderImport(t *testing.T) {
 	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	// committer.Import(acctTrans)
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(2)
@@ -74,7 +74,7 @@ func TestRandomOrderImport(t *testing.T) {
 
 	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1, 2})
 	committer.Commit(2)
@@ -106,7 +106,7 @@ func TestRandomOrderImport(t *testing.T) {
 
 	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	common.Swap(&acctTrans[0], &acctTrans[1])
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1, 2})
 	committer.Commit(2)
@@ -126,7 +126,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	}
 	acctTrans := statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	committer := stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{stgcomm.SYSTEM})
 	committer.Commit(stgcomm.SYSTEM)
@@ -143,7 +143,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	// committer.Import(acctTrans)
-	committer = stgcommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(2)
@@ -228,7 +228,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	}
 	acctTrans := statecell.StateCells(slice.Clone(StateCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{stgcomm.SYSTEM})
 	committer.Commit(stgcomm.SYSTEM)
@@ -247,7 +247,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	acctTrans = statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
 	// committer.Import(acctTrans)
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
 	committer.Commit(2)

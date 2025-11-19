@@ -20,10 +20,10 @@ package eth
 import (
 	"reflect"
 
-	stgtypecommon "github.com/arcology-network/storage-committer/type/common"
-	"github.com/arcology-network/storage-committer/type/commutative"
-	"github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	stgtypecommon "github.com/arcology-network/state-engine/type/common"
+	"github.com/arcology-network/state-engine/type/commutative"
+	"github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 )
 
 // CreateDefaultPaths creates default paths for an account in the storage committer.

@@ -24,9 +24,9 @@ import (
 
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 
-	cache "github.com/arcology-network/storage-committer/storage/cache"
+	cache "github.com/arcology-network/state-engine/state/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"

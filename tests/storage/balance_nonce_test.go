@@ -26,16 +26,15 @@ import (
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
 
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
-	stgtypecommon "github.com/arcology-network/storage-committer/type/common"
+	statestore "github.com/arcology-network/state-engine"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	stgtypecommon "github.com/arcology-network/state-engine/type/common"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	"github.com/holiman/uint256"
 )
 
@@ -75,7 +74,7 @@ func TestSimpleBalance(t *testing.T) {
 		}
 	}
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
 	committer.Precommit([]uint64{stgcommon.SYSTEM, 0, 1})
 	committer.Commit(10)
@@ -228,7 +227,7 @@ func TestNonce(t *testing.T) {
 
 	trans := statecell.StateCells((writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans)
 
 	committer.Precommit([]uint64{0})
@@ -291,7 +290,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be ", 2)
 	}
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(trans0)
 	committer.Import(trans1)
 
@@ -301,7 +300,7 @@ func TestMultipleNonces(t *testing.T) {
 		t.Error("Error: blcc://eth1.0/account/bob/nonce should be 2", " actual: ", bobNonce)
 	}
 
-	// committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	// committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Precommit([]uint64{0, stgcommon.SYSTEM})
 	committer.Commit(10)
 
@@ -319,7 +318,7 @@ func TestMultipleNonces(t *testing.T) {
 }
 
 func TestUint64Delta(t *testing.T) {
-	store := stgproxy.NewMemDBStoreProxy()
+	store := proxy.NewMemDBStoreProxy()
 	sstore := statestore.NewStateStore(store)
 	writeCache := sstore.StateCache
 
@@ -329,7 +328,7 @@ func TestUint64Delta(t *testing.T) {
 	}
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans).Precommit([]uint64{stgcommon.SYSTEM})
 	committer.Commit(stgcommon.SYSTEM)
 
@@ -351,7 +350,7 @@ func TestUint64Delta(t *testing.T) {
 	fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&")
 	acctTrans1.Print()
 
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters())
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans0)
 	committer.Import(acctTrans1)
 	committer.Precommit([]uint64{1, 2})

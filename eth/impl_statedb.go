@@ -19,9 +19,9 @@ package eth
 
 import (
 	intf "github.com/arcology-network/eu/interface"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
 	"github.com/ethereum/go-ethereum/common"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"

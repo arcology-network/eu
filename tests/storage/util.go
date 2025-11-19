@@ -27,16 +27,15 @@ import (
 
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	eth "github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	interfaces "github.com/arcology-network/storage-committer/common"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	opadapter "github.com/arcology-network/storage-committer/op"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	"github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	interfaces "github.com/arcology-network/state-engine/common"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	opadapter "github.com/arcology-network/state-engine/op"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	ethstg "github.com/arcology-network/state-engine/storage/ethstorage"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	"github.com/arcology-network/state-engine/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
@@ -131,14 +130,14 @@ func NewStateCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string
 }
 
 func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfaces.ReadOnlyStore, t *testing.T) {
-	// roothash := store.(*stgproxy.StorageProxy).EthStore().Root()                               // Get the proof provider by a root hash.
-	ethdb := store.(*stgproxy.StorageProxy).EthStore().EthDB()                       // Get the proof provider by a root hash.
+	// roothash := store.(*proxy.StorageProxy).EthStore().Root()                               // Get the proof provider by a root hash.
+	ethdb := store.(*proxy.StorageProxy).EthStore().EthDB()                          // Get the proof provider by a root hash.
 	provider, err := ethstg.NewMerkleProofCache(2, ethdb).GetProofProvider(roothash) // Initiate the proof cache, maximum 2 blocks
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Verify Bob's stgproxy for a big int value.
+	// Verify Bob's proxy for a big int value.
 	bobAddr := ethcommon.BytesToAddress([]byte(hexutil.MustDecode(acct)))
 	accountResult, err := provider.GetProof(bobAddr, []string{key})
 	if err := accountResult.Validate(provider.Root()); err != nil {
@@ -158,7 +157,7 @@ func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
 		return v.GetTx()
 	})
 
-	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit(txs) // Write all the transitions to the store
 	committer.Commit(10)
@@ -173,7 +172,7 @@ func FlushGeneration(sstore *statestore.StateStore) []uint64 {
 		return v.GetTx()
 	})
 
-	committer := stgcommitter.NewStateCommitter(sstore, sstore.GetWriters())
+	committer := statecommitter.NewStateCommitter(sstore, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit(txs) // Write all the transitions to the store
 	return txs

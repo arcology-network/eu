@@ -25,15 +25,15 @@ import (
 	codec "github.com/arcology-network/common-lib/codec"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	common "github.com/arcology-network/storage-committer/common"
-	opadapter "github.com/arcology-network/storage-committer/op"
-	ethstg "github.com/arcology-network/storage-committer/storage/ethstorage"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	stgproxy "github.com/arcology-network/storage-committer/storage/proxy"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	common "github.com/arcology-network/state-engine/common"
+	opadapter "github.com/arcology-network/state-engine/op"
+	ethstg "github.com/arcology-network/state-engine/storage/ethstorage"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
@@ -270,20 +270,20 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	FlushToStore(sstore)
 
 	// Reads
-	v, _ := writeCache.ReadOnlyStore().Retrive("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.Bytes))
+	v, _ := writeCache.ReadOnlyStore().Retrieve("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000000", new(noncommutative.Bytes))
 	buffer := v.(*noncommutative.Bytes).Value().(codec.Bytes)
 	if buffer[0] != 1 {
 		// t.Error("Mismatch", v)
 	}
 
-	v, _ = writeCache.ReadOnlyStore().Retrive("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", new(noncommutative.Bytes))
+	v, _ = writeCache.ReadOnlyStore().Retrieve("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001", new(noncommutative.Bytes))
 	buffer = v.(*noncommutative.Bytes).Value().(codec.Bytes)
 	if buffer[31] != 1 { // Native encoder will remove the prefix zeros, so the result is 1 bytes.
 		t.Error("Mismatch", v)
 	}
 
 	// Big int encoder will trim the leading zeros, only keep the last 1, so when decoding, it will be 32 bytes with 31 zeros and 1
-	v, _ = writeCache.ReadOnlyStore().Retrive("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", new(noncommutative.Bytes))
+	v, _ = writeCache.ReadOnlyStore().Retrieve("blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000002", new(noncommutative.Bytes))
 	buffer = v.(*noncommutative.Bytes).Value().(codec.Bytes)
 	if buffer[0] != 1 { // Native encoder will remove the prefix zeros, so the result is 1 bytes.
 		// t.Error("Mismatch", v)
@@ -358,7 +358,7 @@ func TestProofCache(t *testing.T) {
 
 	// the readonlystore return the ccstorage, using arcology encoding, mk should use eth storage directly
 
-	v, _ := writeCache.ReadOnlyStore().Retrive("blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", new(noncommutative.Bytes))
+	v, _ := writeCache.ReadOnlyStore().Retrieve("blcc://eth1.0/account/"+bob+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000003", new(noncommutative.Bytes))
 	buffer := v.(*noncommutative.Bytes).Value().(codec.Bytes)
 
 	if !bytes.Equal(buffer, []byte{1, 1}) { // Native encoder will remove the prefix zeros, so the result is 2 bytes.

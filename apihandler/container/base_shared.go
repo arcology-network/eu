@@ -24,9 +24,9 @@ import (
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
 	abi "github.com/arcology-network/eu/abi"
 	eucommon "github.com/arcology-network/eu/common"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
 	"github.com/holiman/uint256"
 )
 

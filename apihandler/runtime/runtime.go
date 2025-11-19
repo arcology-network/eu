@@ -31,9 +31,9 @@ import (
 
 	eth "github.com/arcology-network/eu/eth"
 	intf "github.com/arcology-network/eu/interface"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	"github.com/arcology-network/storage-committer/type/commutative"
-	"github.com/arcology-network/storage-committer/type/noncommutative"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	"github.com/arcology-network/state-engine/type/commutative"
+	"github.com/arcology-network/state-engine/type/noncommutative"
 
 	workload "github.com/arcology-network/scheduler/workload"
 )

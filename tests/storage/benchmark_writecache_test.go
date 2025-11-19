@@ -26,15 +26,15 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/eu/eth"
-	statestore "github.com/arcology-network/storage-committer"
-	stgcommon "github.com/arcology-network/storage-committer/common"
-	cache "github.com/arcology-network/storage-committer/storage/cache"
-	stgcommitter "github.com/arcology-network/storage-committer/storage/committer"
-	"github.com/arcology-network/storage-committer/storage/proxy"
-	stgtypecommon "github.com/arcology-network/storage-committer/type/common"
-	commutative "github.com/arcology-network/storage-committer/type/commutative"
-	noncommutative "github.com/arcology-network/storage-committer/type/noncommutative"
-	statecell "github.com/arcology-network/storage-committer/type/statecell"
+	statestore "github.com/arcology-network/state-engine"
+	stgcommon "github.com/arcology-network/state-engine/common"
+	cache "github.com/arcology-network/state-engine/state/cache"
+	statecommitter "github.com/arcology-network/state-engine/state/committer"
+	"github.com/arcology-network/state-engine/storage/proxy"
+	stgtypecommon "github.com/arcology-network/state-engine/type/common"
+	commutative "github.com/arcology-network/state-engine/type/commutative"
+	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	statecell "github.com/arcology-network/state-engine/type/statecell"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"golang.org/x/crypto/sha3"
 	// "github.com/google/btree"
@@ -69,7 +69,7 @@ func TestWriteWithNewStateCacheSlowWrite(b *testing.T) {
 	}
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -123,7 +123,7 @@ func TestWriteWithNewStateCache(b *testing.T) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	fmt.Println("New committer + Import:", time.Since(t0))
 
 	t0 = time.Now()
@@ -179,7 +179,7 @@ func BenchmarkWriteAfterLargeCommitUint64(b *testing.B) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -211,7 +211,7 @@ func BenchmarkWriteAfterLargeCommitUint64(b *testing.B) {
 	fmt.Println("Second Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 	fmt.Println("2.Commit time:", time.Since(t0))
@@ -263,7 +263,7 @@ func BenchmarkWriteAfterLargeCommitUint256(b *testing.B) {
 	fmt.Println("First Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 	fmt.Println("Commit time:", time.Since(t0))
@@ -295,7 +295,7 @@ func BenchmarkWriteAfterLargeCommitUint256(b *testing.B) {
 	fmt.Println("Second Write time:", len(keys)*2, "keys in", time.Since(t0))
 
 	t0 = time.Now()
-	committer = stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
+	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{}))
 	committer.Precommit([]uint64{0})
 	committer.Commit(10)
 	fmt.Println("2.Commit time:", time.Since(t0))
@@ -348,7 +348,7 @@ func BenchmarkPathReadAndWrites(b *testing.B) {
 	fmt.Println("Inserted ", len(keys), "Keys in:", time.Since(t0))
 
 	t0 = time.Now()
-	committer := stgcommitter.NewStateCommitter(store, sstore.GetWriters()).Import(writeCache.Export())
+	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(writeCache.Export())
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
 	committer.Commit(10)
 	fmt.Println("committer ", len(keys), "Keys in:", time.Since(t0))
