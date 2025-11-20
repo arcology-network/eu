@@ -2,18 +2,18 @@ module github.com/arcology-network/eu
 
 go 1.22
 
-replace github.com/arcology-network/scheduler => ../scheduler/
+// replace github.com/arcology-network/scheduler => ../scheduler/
 
-replace github.com/ethereum/go-ethereum v1.14.8 => ../concurrent-evm/
+replace github.com/ethereum/go-ethereum v1.14.8 => github.com/arcology-network/concurrent-evm v0.0.0-20250714082425-8009ff40403f
 
-replace github.com/arcology-network/common-lib => ../common-lib/
+// replace github.com/arcology-network/common-lib => ../common-lib/
 
-replace github.com/arcology-network/state-engine => ../state-engine/
+// replace github.com/arcology-network/state-engine => ../state-engine/
 
 require (
-	github.com/arcology-network/common-lib v1.9.1-0.20250918121719-e35aaab097f3
-	github.com/arcology-network/scheduler v0.0.0-20250918124702-64b50a8f22ac
-	github.com/arcology-network/state-engine v1.9.1-0.20250918123336-0d750d223a7b
+	github.com/arcology-network/common-lib v1.9.1-0.20251120015519-6d5bd03457e7
+	github.com/arcology-network/scheduler v0.0.0-20251120020001-8bead9c27c6b
+	github.com/arcology-network/state-engine v1.9.1-0.20251120015712-bc8ca7726bfb
 	github.com/elliotchance/orderedmap v1.5.1
 	github.com/ethereum/go-ethereum v1.14.8
 	github.com/google/btree v1.1.3
