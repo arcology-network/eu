@@ -20,10 +20,10 @@ package eth
 import (
 	"reflect"
 
-	stgtypecommon "github.com/arcology-network/state-engine/type/common"
-	"github.com/arcology-network/state-engine/type/commutative"
-	"github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
+	"github.com/arcology-network/common-lib/crdt/commutative"
+	"github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
+	statecommon "github.com/arcology-network/state-engine/common"
 )
 
 // CreateDefaultPaths creates default paths for an account in the storage committer.
@@ -32,7 +32,7 @@ func CreateDefaultPaths(tx uint64, acct string, store interface {
 	Write(uint64, string, any, ...any) (int64, error)
 }) ([]*statecell.StateCell, error) {
 
-	paths, typeids := stgtypecommon.NewPlatform().GetDefault(acct)
+	paths, typeids := statecommon.NewPlatform().GetDefault(acct)
 
 	transitions := []*statecell.StateCell{}
 	for i, path := range paths {

@@ -21,18 +21,18 @@ import (
 	"reflect"
 	"testing"
 
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	statestore "github.com/arcology-network/state-engine"
+	statecommon "github.com/arcology-network/state-engine/common"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	cache "github.com/arcology-network/state-engine/state/cache"
 	statecommitter "github.com/arcology-network/state-engine/state/committer"
 	"github.com/arcology-network/state-engine/storage/proxy"
-	stgtypecommon "github.com/arcology-network/state-engine/type/common"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	"github.com/holiman/uint256"
 )
 
@@ -44,7 +44,7 @@ func TestEmptyNodeSet(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -75,7 +75,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -145,7 +145,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
@@ -186,7 +186,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -220,7 +220,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Precommit([]uint64{1})
 	committer.Commit(10)
 
-	writeCache = cache.NewStateCache(store, 1, 1, stgtypecommon.NewPlatform())
+	writeCache = cache.NewStateCache(store, 1, 1, statecommon.NewPlatform())
 	_1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.String))
 	if _1 != "1" {
 		t.Error("Error: Not match")
@@ -260,7 +260,7 @@ func TestStateUpdate(t *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, initTrans := writeCache.Export(statecell.Sorter)

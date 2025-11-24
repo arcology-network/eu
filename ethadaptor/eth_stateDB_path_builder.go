@@ -21,9 +21,9 @@ import (
 	commonlib "github.com/arcology-network/common-lib/common"
 	intf "github.com/arcology-network/eu/interface"
 
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	cache "github.com/arcology-network/state-engine/state/cache"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )

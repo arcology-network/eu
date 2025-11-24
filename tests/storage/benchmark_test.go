@@ -24,15 +24,15 @@ import (
 	"testing"
 	"time"
 
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	"github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	statestore "github.com/arcology-network/state-engine"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	statecommitter "github.com/arcology-network/state-engine/state/committer"
 	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	orderedmap "github.com/elliotchance/orderedmap"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/google/btree"
@@ -46,7 +46,7 @@ func BenchmarkAccountMerkleImportPerf(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.StateCache
 	for i := 0; i < 1000; i++ {
-		if _, err := eth.CreateDefaultPaths(0, fmt.Sprint(rand.Float64()), writeCache); err != nil { // Preload account structure {
+		if _, err := ethadaptor.CreateDefaultPaths(0, fmt.Sprint(rand.Float64()), writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -63,7 +63,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -94,7 +94,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -110,7 +110,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 		acct := hexutil.Encode(buf[:20])
 
 		// writeCache := committer.StateCache()
-		if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
+		if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 
@@ -187,7 +187,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	committer.Commit(10)
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -232,7 +232,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 	committer.Commit(10)
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -338,7 +338,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache)
+	ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache)
 	// acctTrans := statecell.StateCells(slice.Clone(writeCache.Export())).To(statecell.ITAccess{})
 
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITAccess{})
@@ -404,7 +404,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	writeCache := sstore.StateCache
 	for i := 0; i < 10; i++ {
 		acct := RandomAccount()
-		if _, err := eth.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
+		if _, err := ethadaptor.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
 			b.Error(err)
 		}
 	}
@@ -629,7 +629,7 @@ func (s String) Less(b btree.Item) bool {
 // 	// writeCache := committer.StateCache()
 // 	for i := 0; i < 150000; i++ {
 // 		acct := RandomAccount()
-// 		if _, err := eth.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
+// 		if _, err := ethadaptor.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
 // 	}
@@ -660,7 +660,7 @@ func (s String) Less(b btree.Item) bool {
 // writeCache := committer.StateCache()
 // 	for i := 0; i < 90000; i++ {
 // 		acct := RandomAccount()
-// 		if _, err := eth.CreateDefaultPaths(0, acct);err != nil { // Preload account structure {
+// 		if _, err := ethadaptor.CreateDefaultPaths(0, acct);err != nil { // Preload account structure {
 // 			b.Error(err)
 // 		}
 // 	}
@@ -692,7 +692,7 @@ func BenchmarkRandomAccountSort(t *testing.B) {
 	// writeCache := sstore.StateCache
 	// for i := 0; i < 100000; i++ {
 	// 	acct := RandomAccount()
-	// 	if _, err := eth.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
+	// 	if _, err := ethadaptor.CreateDefaultPaths(0, acct, writeCache); err != nil { // Preload account structure {
 	// 		// b.Error(err)
 	// 	}
 	// }

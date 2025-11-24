@@ -23,17 +23,17 @@ import (
 	"testing"
 
 	codec "github.com/arcology-network/common-lib/codec"
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	"github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	statestore "github.com/arcology-network/state-engine"
 	common "github.com/arcology-network/state-engine/common"
 	opadapter "github.com/arcology-network/state-engine/op"
 	ethstg "github.com/arcology-network/state-engine/storage/ethstorage"
 	"github.com/arcology-network/state-engine/storage/proxy"
 	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	hexutil "github.com/ethereum/go-ethereum/common/hexutil"
 	ethmpt "github.com/ethereum/go-ethereum/trie"
@@ -45,12 +45,12 @@ func TestEthWorldTrieProof(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(common.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
 	bob := BobAccount()
-	if _, err := eth.CreateDefaultPaths(common.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(common.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	FlushToStore(sstore)
@@ -109,13 +109,13 @@ func TestEthWorldTrieProof(t *testing.T) {
 	// bobStr := []byte(hexutil.MustDecode(bob))
 	bobAddr := ethcommon.BytesToAddress(hexutil.MustDecode(bob))
 	bobCache, _ := dstore.GetAccount(bobAddr, &ethmpt.AccessListCache{})
-	if _, _, err := bobCache.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
+	if _, _, err := bobCache.IsAccountStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000000"); err != nil {
 		t.Error(err)
 	}
 
 	aliceAddr := ethcommon.BytesToAddress(hexutil.MustDecode(alice))
 	aliceCache, _ := dstore.GetAccount(aliceAddr, &ethmpt.AccessListCache{})
-	if _, _, err := aliceCache.IsStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000009"); err != nil {
+	if _, _, err := aliceCache.IsAccountStorageProvable("0x0000000000000000000000000000000000000000000000000000000000000009"); err != nil {
 		t.Error(err)
 	}
 }
@@ -127,7 +127,7 @@ func TestGetProofAPI(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	bob := BobAccount()
-	eth.CreateDefaultPaths(common.SYSTEM, bob, writeCache)
+	ethadaptor.CreateDefaultPaths(common.SYSTEM, bob, writeCache)
 	FlushToStore(sstore)
 
 	/* Bob updates */
@@ -190,7 +190,7 @@ func TestProofCacheBigInt(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
+	ethadaptor.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
 
 	/* Alice updates */
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/0x0000000000000000000000000000000000000000000000000000000000000001",
@@ -249,7 +249,7 @@ func TestProofCacheNonNaitve(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
+	ethadaptor.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
 	FlushToStore(sstore)
 
 	buf := slice.New[byte](32, 0)
@@ -317,10 +317,10 @@ func TestProofCache(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
+	ethadaptor.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
 
 	bob := BobAccount()
-	eth.CreateDefaultPaths(common.SYSTEM, bob, writeCache)
+	ethadaptor.CreateDefaultPaths(common.SYSTEM, bob, writeCache)
 
 	FlushToStore(sstore)
 
@@ -462,7 +462,7 @@ func TestHistoryProofs(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	eth.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
+	ethadaptor.CreateDefaultPaths(common.SYSTEM, alice, writeCache)
 	FlushToStore(sstore)
 
 	/* Bob updates */

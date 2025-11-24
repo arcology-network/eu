@@ -23,15 +23,17 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
+
 	// "github.com/arcology-network/common-lib/exp/softdeltaset"
-	"github.com/arcology-network/eu/eth"
+	crdtcommon "github.com/arcology-network/common-lib/crdt/common"
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	statestore "github.com/arcology-network/state-engine"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	statecommitter "github.com/arcology-network/state-engine/state/committer"
 	"github.com/arcology-network/state-engine/storage/proxy"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 )
 
 func TestAuxTrans(t *testing.T) {
@@ -41,7 +43,7 @@ func TestAuxTrans(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -101,7 +103,7 @@ func TestAuxTrans(t *testing.T) {
 	}
 
 	transitions := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
-	delv, _ := transitions[0].Value().(stgcommon.Type).Delta()
+	delv, _ := transitions[0].Value().(crdtcommon.Type).Delta()
 	if len(transitions) == 0 || !reflect.DeepEqual(delv.(*softdeltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000"}) {
 		t.Error("keys don't match")
 	}
@@ -132,7 +134,7 @@ func TestCheckAccessRecords(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

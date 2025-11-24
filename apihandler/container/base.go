@@ -29,36 +29,36 @@ import (
 
 	// "github.com/arcology-network/common-lib/exp/deltaset"
 
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
 	abi "github.com/arcology-network/eu/abi"
 	eucommon "github.com/arcology-network/eu/common"
-	eth "github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	intf "github.com/arcology-network/eu/interface"
-	stgcommon "github.com/arcology-network/state-engine/common"
 	cache "github.com/arcology-network/state-engine/state/cache"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
+	crdtcommon "github.com/arcology-network/common-lib/crdt/common"
 	"github.com/holiman/uint256"
 )
 
 // APIs under the concurrency namespace
 type BaseHandlers struct {
 	api         intf.EthApiRouter
-	pathBuilder *eth.ContainerPathBuilder
+	pathBuilder *ethadaptor.ContainerPathBuilder
 	args        []any
 }
 
 func NewBaseHandlers(api intf.EthApiRouter, args ...any) *BaseHandlers {
 	return &BaseHandlers{
 		api:         api,
-		pathBuilder: eth.NewPathBuilder("/storage/container", api),
+		pathBuilder: ethadaptor.NewPathBuilder("/storage/container", api),
 		args:        args,
 	}
 }
 
-func (this *BaseHandlers) Address() [20]byte                    { return eucommon.BYTES_HANDLER }
-func (this *BaseHandlers) Connector() *eth.ContainerPathBuilder { return this.pathBuilder }
+func (this *BaseHandlers) Address() [20]byte                           { return eucommon.BYTES_HANDLER }
+func (this *BaseHandlers) Connector() *ethadaptor.ContainerPathBuilder { return this.pathBuilder }
 
 func (this *BaseHandlers) Call(caller, callee [20]byte, input []byte, origin [20]byte, nonce uint64, isFromStaticCall bool) ([]byte, bool, int64) {
 	// Real handlers
@@ -288,7 +288,7 @@ func (this *BaseHandlers) committedLength(caller evmcommon.Address, _ []byte) ([
 
 	if typedv != nil {
 		type measurable interface{ Length() int }
-		numKeys := uint64(typedv.(stgcommon.Type).Value().(measurable).Length())
+		numKeys := uint64(typedv.(crdtcommon.Type).Value().(measurable).Length())
 		if encoded, err := abi.Encode(uint256.NewInt(numKeys)); err == nil {
 			return encoded, true, gasMeter.TotalGasUsed + eucommon.GAS_ENCODE
 		}

@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	eu "github.com/arcology-network/eu"
 	"github.com/arcology-network/eu/compiler"
@@ -31,7 +32,6 @@ import (
 	workload "github.com/arcology-network/scheduler/workload"
 	statestore "github.com/arcology-network/state-engine"
 	cache "github.com/arcology-network/state-engine/state/cache"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	evmcore "github.com/ethereum/go-ethereum/core"

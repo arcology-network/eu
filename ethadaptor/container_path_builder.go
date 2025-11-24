@@ -19,10 +19,10 @@ package eth
 
 import (
 	common "github.com/arcology-network/common-lib/common"
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
 	"github.com/arcology-network/common-lib/types"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	cache "github.com/arcology-network/state-engine/state/cache"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 

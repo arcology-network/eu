@@ -31,7 +31,7 @@ import (
 	stgcommon "github.com/arcology-network/state-engine/common"
 	cache "github.com/arcology-network/state-engine/state/cache"
 	stgcomm "github.com/arcology-network/state-engine/state/committer"
-	ethstg "github.com/arcology-network/state-engine/storage/ethstorage"
+	ethrlp "github.com/arcology-network/state-engine/storage/codec/ethcodec/rlp"
 	"github.com/arcology-network/state-engine/storage/proxy"
 	storage "github.com/arcology-network/state-engine/storage/proxy"
 	"github.com/ethereum/go-ethereum/common"
@@ -49,7 +49,7 @@ import (
 	apihandler "github.com/arcology-network/eu/apihandler"
 	eucommon "github.com/arcology-network/eu/common"
 	"github.com/arcology-network/eu/compiler"
-	ethimpl "github.com/arcology-network/eu/eth"
+	ethimpl "github.com/arcology-network/eu/ethadaptor"
 	workload "github.com/arcology-network/scheduler/workload"
 )
 
@@ -59,8 +59,8 @@ const (
 )
 
 var (
-	encoder = ethstg.Rlp{}.Encode
-	decoder = ethstg.Rlp{}.Decode
+	encoder = ethrlp.RlpCodec{}.Encode
+	decoder = ethrlp.RlpCodec{}.Decode
 )
 
 func MainTestConfig() *eucommon.Config {

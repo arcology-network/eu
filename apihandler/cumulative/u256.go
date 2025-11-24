@@ -24,21 +24,21 @@ import (
 	"github.com/arcology-network/common-lib/types"
 	"github.com/holiman/uint256"
 
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
 	abi "github.com/arcology-network/eu/abi"
 	"github.com/arcology-network/eu/common"
 	cache "github.com/arcology-network/state-engine/state/cache"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 
 	// intf "github.com/arcology-network/state-engine/execution"
-	path "github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	intf "github.com/arcology-network/eu/interface"
 )
 
 // U256CumulativeHandlers handles the U256Cumulative APIs that can be called by concurrent API called.
 type U256CumHandler struct {
 	api       intf.EthApiRouter
-	connector *path.ContainerPathBuilder
+	connector *ethadaptor.ContainerPathBuilder
 	key       string
 }
 
@@ -46,7 +46,7 @@ func NewU256CumulativeHandler(api intf.EthApiRouter) *U256CumHandler {
 	k := [20]byte{}
 	return &U256CumHandler{
 		api:       api,
-		connector: path.NewPathBuilder("/storage/container", api),
+		connector: ethadaptor.NewPathBuilder("/storage/container", api),
 		key:       hex.EncodeToString(k[:]),
 	}
 }

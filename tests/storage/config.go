@@ -20,7 +20,7 @@ package stgtest
 import (
 	// "github.com/arcology-network/state-engine/interfaces"
 	interfaces "github.com/arcology-network/state-engine/common"
-	ethstg "github.com/arcology-network/state-engine/storage/ethstorage"
+	ethrlp "github.com/arcology-network/state-engine/storage/codec/ethcodec/rlp"
 	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
 	// trie "github.com/ethereum/go-ethereum/trie"
 )
@@ -34,8 +34,8 @@ var (
 	// encoder = stgtypecommonCodec{}.Encode
 	// decoder = stgtypecommonCodec{}.Decode
 
-	encoder = ethstg.Rlp{}.Encode
-	decoder = ethstg.Rlp{}.Decode
+	encoder = ethrlp.RlpCodec{}.Encode
+	decoder = ethrlp.RlpCodec{}.Decode
 )
 
 func chooseDataStore() interfaces.ReadOnlyStore {

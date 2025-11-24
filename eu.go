@@ -23,11 +23,11 @@ import (
 	"math"
 	"math/big"
 
-	eth "github.com/arcology-network/eu/eth"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	intf "github.com/arcology-network/eu/interface"
 	workload "github.com/arcology-network/scheduler/workload"
 	cache "github.com/arcology-network/state-engine/state/cache"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	evmcore "github.com/ethereum/go-ethereum/core"
@@ -62,7 +62,7 @@ func NewEU(chainConfig *params.ChainConfig, vmConfig vm.Config, statedb vm.State
 }
 
 func (this *EU) Run(job *workload.Job, blockContext vm.BlockContext, txContext vm.TxContext) (*evmcoretypes.Receipt, *evmcore.ExecutionResult, error) {
-	this.statedb.(*eth.ImplStateDB).PrepareFormer(job.StdMsg.TxHash, ethcommon.Hash{}, uint64(job.StdMsg.ID))
+	this.statedb.(*ethadaptor.ImplStateDB).PrepareFormer(job.StdMsg.TxHash, ethcommon.Hash{}, uint64(job.StdMsg.ID))
 	this.evm.Context = blockContext
 	this.evm.TxContext = txContext
 	this.job = job
@@ -97,7 +97,7 @@ func (this *EU) Run(job *workload.Job, blockContext vm.BlockContext, txContext v
 			this.api.AddLog("ContractAddressWarning", fmt.Sprintf("user specified address = %v, inner address = %v", userSpecifiedAddress, result.ContractAddress))
 		}
 	}
-	receipt.Logs = this.statedb.(*eth.ImplStateDB).GetLogs(job.StdMsg.TxHash)
+	receipt.Logs = this.statedb.(*ethadaptor.ImplStateDB).GetLogs(job.StdMsg.TxHash)
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
 	return receipt, result, err

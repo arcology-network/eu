@@ -23,8 +23,8 @@ import (
 	"sync/atomic"
 
 	"github.com/arcology-network/common-lib/common"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	"github.com/arcology-network/common-lib/exp/slice"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 
 	cache "github.com/arcology-network/state-engine/state/cache"
 	evmcommon "github.com/ethereum/go-ethereum/common"

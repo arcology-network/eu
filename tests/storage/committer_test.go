@@ -25,17 +25,18 @@ import (
 	"time"
 
 	"github.com/arcology-network/common-lib/codec"
+	crdtcommon "github.com/arcology-network/common-lib/crdt/common"
+	"github.com/arcology-network/common-lib/crdt/commutative"
+	"github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	statestore "github.com/arcology-network/state-engine"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	statecommitter "github.com/arcology-network/state-engine/state/committer"
 	"github.com/arcology-network/state-engine/storage/proxy"
 	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
-	"github.com/arcology-network/state-engine/type/commutative"
-	"github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	"github.com/holiman/uint256"
 )
 
@@ -46,7 +47,7 @@ func CommitterCache(sstore *statestore.StateStore, t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
@@ -143,7 +144,7 @@ func TestSize(t *testing.T) {
 	committer.Precommit([]uint64{1})
 	committer.Commit(111110)
 
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -192,7 +193,7 @@ func TestSize2(t *testing.T) {
 
 	key := RandomKey(0)
 	alice := AliceAccount()
-	eth.CreateDefaultPaths(1, alice, writeCache)
+	ethadaptor.CreateDefaultPaths(1, alice, writeCache)
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", noncommutative.NewString("124"))
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/"+key, noncommutative.NewBytes(slice.New[byte](320, 11)))
 
@@ -225,7 +226,7 @@ func TestNativeStorageReadWrite(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, trans := writeCache.Export(statecell.Sorter)
@@ -276,7 +277,7 @@ func TestReadWriteAt(t *testing.T) {
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -319,7 +320,7 @@ func TestAddThenDeletePath2(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	// _, trans := writeCache.Export(statecell.Sorter)
@@ -399,7 +400,7 @@ func TestBasic(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -461,7 +462,7 @@ func TestBasic(t *testing.T) {
 	trans := slice.Clone(writeCache.Export(statecell.Sorter))
 	transitions := statecell.StateCells(trans).To(statecell.ITTransition{})
 
-	deltav, _ := transitions[0].Value().(stgcommon.Type).Delta()
+	deltav, _ := transitions[0].Value().(crdtcommon.Type).Delta()
 	if !reflect.DeepEqual(deltav.(*softdeltaset.DeltaSet[string]).Added().Elements(), []string{"elem-000", "elem-111"}) {
 		t.Error("Error: keys are missing from the Updated buffer!", deltav.(*softdeltaset.DeltaSet[string]).Added())
 	}
@@ -507,7 +508,7 @@ func TestCommitter(t *testing.T) {
 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -583,7 +584,7 @@ func TestCommitter(t *testing.T) {
 	// 	t.Error("Error: keys don't match")
 	// }
 
-	deltav, _ := transitions[2].Value().(stgcommon.Type).Delta()
+	deltav, _ := transitions[2].Value().(crdtcommon.Type).Delta()
 	addedkeys := codec.Strings(deltav.(*softdeltaset.DeltaSet[string]).Added().Elements()).Sort()
 	if !reflect.DeepEqual([]string(addedkeys), []string{"elem-0", "elem-000", "elem-001", "elem-002"}) {
 		t.Error("Error: keys don't match", addedkeys)
@@ -603,7 +604,7 @@ func TestCommitter2(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -783,7 +784,7 @@ func TestTransientDBv2(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -808,7 +809,7 @@ func TestCustomCodec(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -1091,7 +1092,7 @@ func TestPathReadAndWritesPath(b *testing.T) {
 	WriteNewAcountsToCache(writeCache, stgcommon.SYSTEM, AliceAccount())
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -1151,7 +1152,7 @@ func TestEthDataStoreAddDeleteRead(t *testing.T) {
 	WriteNewAcountsToCache(writeCache, stgcommon.SYSTEM, AliceAccount())
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		fmt.Println(err)
 	}
 
@@ -1276,7 +1277,7 @@ func TestMultiBatchPrecommitWithSingleCommit(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -1391,7 +1392,7 @@ func TestAddAndDelete(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

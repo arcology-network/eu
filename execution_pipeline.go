@@ -21,16 +21,16 @@ import (
 	"errors"
 
 	"github.com/arcology-network/common-lib/common"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	slice "github.com/arcology-network/common-lib/exp/slice"
 	eucommon "github.com/arcology-network/eu/common"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	euintf "github.com/arcology-network/eu/interface"
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	workload "github.com/arcology-network/scheduler/workload"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	"github.com/arcology-network/state-engine/state/cache"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 )
@@ -123,7 +123,7 @@ func (this *ExecutionPipeline) RunSequence(jobSeq *workload.JobSequence, seqAPI 
 }
 
 func (this *ExecutionPipeline) RunJob(job *workload.Job, configInfo *eucommon.Config, api euintf.EthApiRouter) {
-	statedb := eth.NewImplStateDB(api)
+	statedb := ethadaptor.NewImplStateDB(api)
 	statedb.PrepareFormer(job.StdMsg.TxHash, [32]byte{}, uint64(job.StdMsg.ID))
 
 	eu := NewEU(

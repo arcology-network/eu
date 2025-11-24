@@ -29,31 +29,32 @@ import (
 	evmcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 
-	eth "github.com/arcology-network/eu/eth"
+	crdtcommon "github.com/arcology-network/common-lib/crdt/common"
+	"github.com/arcology-network/common-lib/crdt/commutative"
+	"github.com/arcology-network/common-lib/crdt/noncommutative"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	intf "github.com/arcology-network/eu/interface"
-	stgcommon "github.com/arcology-network/state-engine/common"
-	"github.com/arcology-network/state-engine/type/commutative"
-	"github.com/arcology-network/state-engine/type/noncommutative"
+	statecommon "github.com/arcology-network/state-engine/common"
 
 	workload "github.com/arcology-network/scheduler/workload"
 )
 
 type RuntimeHandlers struct {
 	api         intf.EthApiRouter
-	pathBuilder *eth.ContainerPathBuilder
+	pathBuilder *ethadaptor.ContainerPathBuilder
 }
 
 func NewRuntimeHandlers(ethApiRouter intf.EthApiRouter) *RuntimeHandlers {
 	return &RuntimeHandlers{
 		api:         ethApiRouter,
-		pathBuilder: eth.NewPathBuilder("/storage", ethApiRouter),
+		pathBuilder: ethadaptor.NewPathBuilder("/storage", ethApiRouter),
 	}
 }
 
 // To register the runtime handler to the API router.
 func (this *RuntimeHandlers) Address() [20]byte { return eucommon.RUNTIME_HANDLER }
 
-func (this *RuntimeHandlers) writeCache(path string, val stgcommon.Type, gasMeter *eucommon.GasMeter) error {
+func (this *RuntimeHandlers) writeCache(path string, val crdtcommon.Type, gasMeter *eucommon.GasMeter) error {
 	txID, cache := this.api.GetTxContext()
 	writeDataSize, err := cache.Write(txID, path, val)
 	gasMeter.Use(0, writeDataSize, 0)
@@ -158,7 +159,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	}
 
 	// Check if the property path exists, if not create it.
-	funcPath := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField("")
+	funcPath := (&statecommon.PathBuilder{caller, selector, statecommon.ETH_PATH}).ProfileField("")
 	if _, cache := this.api.GetTxContext(); !cache.IfExists(funcPath) {
 		if err := this.writeCache(funcPath, commutative.NewPath(), gasMeter); err != nil {
 			return []byte{}, false, gasMeter.TotalGasUsed // If the property path write fails, return an error.
@@ -166,7 +167,7 @@ func (this *RuntimeHandlers) setExecutionParallelism(caller, _ evmcommon.Address
 	}
 
 	// blcc://eth1.0/account/[0x...]/profiles/paraDegree
-	path := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField(stgcommon.PARALLELISM_DEGREE)
+	path := (&statecommon.PathBuilder{caller, selector, statecommon.ETH_PATH}).ProfileField(statecommon.PARALLELISM_DEGREE)
 	v := noncommutative.NewUint32(uint32(degree))
 	if err := this.writeCache(path, v, gasMeter); err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
@@ -203,7 +204,7 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	// It may be created by the developer in setting the parallelism
 	// level in the constructor as well.
 	selector := new(codec.Bytes4).FromBytes(selectorBytes)
-	profilePath := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField("")
+	profilePath := (&statecommon.PathBuilder{caller, selector, statecommon.ETH_PATH}).ProfileField("")
 	if _, cache := this.api.GetTxContext(); !cache.IfExists(profilePath) {
 		if err := this.writeCache(profilePath, commutative.NewPath(), gasMeter); err != nil {
 			return []byte{}, false, gasMeter.TotalGasUsed
@@ -212,7 +213,7 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 
 	// Create the prepayer path if not existent.
 	txID, cache := this.api.GetTxContext()
-	prepayerPath := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField(stgcommon.PREPAYERS)
+	prepayerPath := (&statecommon.PathBuilder{caller, selector, statecommon.ETH_PATH}).ProfileField(statecommon.PREPAYERS)
 	if v, _, _ := cache.Read(txID, prepayerPath, new(commutative.Path)); v == nil {
 		// Create the full function path.
 		if err := this.writeCache(prepayerPath, commutative.NewPath(), gasMeter); err != nil {
@@ -221,7 +222,7 @@ func (this *RuntimeHandlers) deferCall(caller, _ evmcommon.Address, input []byte
 	}
 
 	// Write the required prepaid amount to storage
-	path := (&stgcommon.PathBuilder{caller, selector, stgcommon.ETH_PATH}).ProfileField(stgcommon.DEFERRED_PAYMENT)
+	path := (&statecommon.PathBuilder{caller, selector, statecommon.ETH_PATH}).ProfileField(statecommon.DEFERRED_PAYMENT)
 	if err := this.writeCache(path, noncommutative.NewUint64(requiredPrepayment.(uint64)), gasMeter); err != nil {
 		return []byte{}, false, gasMeter.TotalGasUsed
 	}

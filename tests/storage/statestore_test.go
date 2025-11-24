@@ -24,15 +24,15 @@ import (
 	"github.com/arcology-network/common-lib/common"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 
+	"github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	statestore "github.com/arcology-network/state-engine"
 	stgcomm "github.com/arcology-network/state-engine/common"
 	statecommitter "github.com/arcology-network/state-engine/state/committer"
 	stgproxy "github.com/arcology-network/state-engine/storage/proxy"
-	"github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 )
 
 func TestRandomOrderImport(t *testing.T) {
@@ -41,7 +41,7 @@ func TestRandomOrderImport(t *testing.T) {
 	sstore := statestore.NewStateStore(store)
 	StateCache := sstore.StateCache
 
-	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, StateCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcomm.SYSTEM, alice, StateCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := statecell.StateCells(slice.Clone(StateCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
@@ -121,7 +121,7 @@ func commitToStateStore(sstore *statestore.StateStore, t *testing.T) {
 	alice := AliceAccount()
 	// sstore:= statestore.NewStateStore(store)
 
-	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, sstore.StateCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcomm.SYSTEM, alice, sstore.StateCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
@@ -223,7 +223,7 @@ func TestAsyncCommitToStateStore(t *testing.T) {
 	sstore := statestore.NewStateStore(store)
 	StateCache := sstore.StateCache
 
-	if _, err := eth.CreateDefaultPaths(stgcomm.SYSTEM, alice, StateCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcomm.SYSTEM, alice, StateCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := statecell.StateCells(slice.Clone(StateCache.Export(statecell.Sorter))).To(statecell.IPTransition{})

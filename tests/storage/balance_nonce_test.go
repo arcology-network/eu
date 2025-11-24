@@ -24,17 +24,17 @@ import (
 	"testing"
 
 	"github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	statestore "github.com/arcology-network/state-engine"
+	statecommon "github.com/arcology-network/state-engine/common"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	cache "github.com/arcology-network/state-engine/state/cache"
 	statecommitter "github.com/arcology-network/state-engine/state/committer"
 	"github.com/arcology-network/state-engine/storage/proxy"
-	stgtypecommon "github.com/arcology-network/state-engine/type/common"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	"github.com/holiman/uint256"
 )
 
@@ -44,7 +44,7 @@ func TestSimpleBalance(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -111,7 +111,7 @@ func TestBalance(t *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -199,7 +199,7 @@ func TestNonce(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -246,7 +246,7 @@ func TestMultipleNonces(t *testing.T) {
 	WriteNewAcountsToCache(writeCache, stgcommon.SYSTEM, AliceAccount(), BobAccount())
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -262,7 +262,7 @@ func TestMultipleNonces(t *testing.T) {
 	trans0 := statecell.StateCells((writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 
 	bob := BobAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -323,7 +323,7 @@ func TestUint64Delta(t *testing.T) {
 	writeCache := sstore.StateCache
 
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
@@ -337,7 +337,7 @@ func TestUint64Delta(t *testing.T) {
 		t.Error(err)
 	}
 
-	writeCache2 := cache.NewStateCache(store, 1, 1, stgtypecommon.NewPlatform())
+	writeCache2 := cache.NewStateCache(store, 1, 1, statecommon.NewPlatform())
 	deltav2 := commutative.NewUint64Delta(21)
 	if _, err := writeCache2.Write(2, "blcc://eth1.0/account/"+alice+"/nonce", deltav2); err != nil {
 		t.Error(err)

@@ -24,7 +24,7 @@ package api
 // 	"github.com/arcology-network/state-engine"
 // 	"github.com/holiman/uint256"
 
-// 	"github.com/arcology-network/state-engine/type/commutative"
+// 	"github.com/arcology-network/common-lib/crdt/commutative"
 // 	evmcommon "github.com/ethereum/go-ethereum/common"
 // 	abi "github.com/arcology-network/eu/abi"
 // 	"github.com/arcology-network/eu/common"

@@ -22,15 +22,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/arcology-network/common-lib/crdt/commutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	"github.com/arcology-network/common-lib/exp/orderedset"
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	statestore "github.com/arcology-network/state-engine"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	"github.com/arcology-network/state-engine/storage/proxy"
-	"github.com/arcology-network/state-engine/type/commutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 	"github.com/holiman/uint256"
 )
 
@@ -47,10 +47,10 @@ func TestTransitionFilters(t *testing.T) {
 
 	// writeCache = cache.NewStateCache(store, 1, 1, stgtypecommon.NewPlatform())
 
-	eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache)
+	ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache)
 	// committer.NewAccount(stgcommon.SYSTEM, bob)
 
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -143,8 +143,8 @@ func TestAccessFilters(t *testing.T) {
 
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
-	eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache)
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
+	ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache)
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 

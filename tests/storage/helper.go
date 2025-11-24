@@ -23,14 +23,14 @@ import (
 
 	"github.com/arcology-network/common-lib/exp/slice"
 	"github.com/arcology-network/common-lib/exp/softdeltaset"
-	eth "github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 
 	// "github.com/arcology-network/eu/gas"
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	statestore "github.com/arcology-network/state-engine"
 	stgcommon "github.com/arcology-network/state-engine/common"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 
 	// "github.com/arcology-network/state-engine/interfaces"
 	interfaces "github.com/arcology-network/state-engine/common"
@@ -45,7 +45,7 @@ func GenerateDB(addr [20]uint8) (string, *cache.StateCache, stgcommon.ReadOnlySt
 	writeCache := sstore.StateCache
 
 	acct := CreateAccount(addr)
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, acct, writeCache); err != nil { // NewAccount account structure {
 		return acct, nil, nil, errors.New("Failed to create new account: " + err.Error())
 	}
 

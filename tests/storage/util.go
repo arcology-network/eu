@@ -25,8 +25,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/arcology-network/common-lib/crdt/statecell"
 	slice "github.com/arcology-network/common-lib/exp/slice"
-	eth "github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	statestore "github.com/arcology-network/state-engine"
 	interfaces "github.com/arcology-network/state-engine/common"
 	stgcommon "github.com/arcology-network/state-engine/common"
@@ -35,7 +36,6 @@ import (
 	statecommitter "github.com/arcology-network/state-engine/state/committer"
 	ethstg "github.com/arcology-network/state-engine/storage/ethstorage"
 	"github.com/arcology-network/state-engine/storage/proxy"
-	"github.com/arcology-network/state-engine/type/statecell"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	rlp "github.com/ethereum/go-ethereum/rlp"
@@ -112,7 +112,7 @@ func WriteNewAcountsToCache(writeCache *cache.StateCache, tx uint64, accounts ..
 	// sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	// writeCache := sstore.StateCache
 	for i := range accounts {
-		if _, err := eth.CreateDefaultPaths(tx, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := ethadaptor.CreateDefaultPaths(tx, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}
@@ -122,7 +122,7 @@ func NewStateCacheWithAcounts(store interfaces.ReadOnlyStore, accounts ...string
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
 	for i := range accounts {
-		if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
+		if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, accounts[i], writeCache); err != nil { // NewAccount account structure {
 			fmt.Println(err)
 		}
 	}
@@ -152,7 +152,8 @@ func verifierEthMerkle(roothash [32]byte, acct string, key string, store interfa
 
 // It's mainly used for TESTING purpose.
 func FlushToStore(sstore *statestore.StateStore) interfaces.ReadOnlyStore {
-	acctTrans := statecell.StateCells(slice.Clone(sstore.Export(statecell.Sorter))).To(statecell.IPTransition{})
+	rawTrans := sstore.Export(statecell.Sorter)
+	acctTrans := statecell.StateCells(slice.Clone(rawTrans)).To(statecell.IPTransition{})
 	txs := slice.Transform(acctTrans, func(_ int, v *statecell.StateCell) uint64 {
 		return v.GetTx()
 	})

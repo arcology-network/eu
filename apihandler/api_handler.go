@@ -33,10 +33,10 @@ import (
 	softdeltaset "github.com/arcology-network/common-lib/exp/softdeltaset"
 	"github.com/holiman/uint256"
 
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	"github.com/arcology-network/common-lib/crdt/noncommutative"
 	stgcommon "github.com/arcology-network/state-engine/common"
 	cache "github.com/arcology-network/state-engine/state/cache"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	"github.com/arcology-network/state-engine/type/noncommutative"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/vm"

@@ -26,8 +26,8 @@ import (
 
 	codec "github.com/arcology-network/common-lib/codec"
 
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
 	rlp "github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -41,7 +41,7 @@ func TestNoncommutativeCodec(t *testing.T) {
 
 	/* Noncommutative String Test */
 	inStr := noncommutative.NewString("ctrn-0")
-	strBytes := inStr.(*noncommutative.String).Encode()
+	strBytes := inStr.Encode()
 	stringer := noncommutative.String("")
 	outStr := stringer.Decode(strBytes)
 	if !reflect.DeepEqual(inStr, outStr) {

@@ -26,7 +26,7 @@ package stgtest
 // 	stgcomm "github.com/arcology-network/state-engine"
 // 	stgcommon "github.com/arcology-network/state-engine/common"
 // 	importer "github.com/arcology-network/state-engine/state/committer"
-// 	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
+// 	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
 // 	storage "github.com/arcology-network/state-engine/storage/proxy"
 // )
 

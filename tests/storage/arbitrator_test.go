@@ -24,13 +24,13 @@ import (
 	"testing"
 	"time"
 
+	commutative "github.com/arcology-network/common-lib/crdt/commutative"
+	noncommutative "github.com/arcology-network/common-lib/crdt/noncommutative"
+	statecell "github.com/arcology-network/common-lib/crdt/statecell"
 	mapi "github.com/arcology-network/common-lib/exp/map"
 	"github.com/arcology-network/common-lib/exp/slice"
-	"github.com/arcology-network/eu/eth"
+	ethadaptor "github.com/arcology-network/eu/ethadaptor"
 	stgcommon "github.com/arcology-network/state-engine/common"
-	commutative "github.com/arcology-network/state-engine/type/commutative"
-	noncommutative "github.com/arcology-network/state-engine/type/noncommutative"
-	statecell "github.com/arcology-network/state-engine/type/statecell"
 
 	arbitrator "github.com/arcology-network/scheduler/arbitrator"
 	statestore "github.com/arcology-network/state-engine"
@@ -57,7 +57,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	// Create Alice account
 	alice := AliceAccount()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	accesses1 := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITAccess{})
@@ -66,7 +66,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 
 	// Create Bob account
 	bob := BobAccount()
-	if _, err := eth.CreateDefaultPaths(2, bob, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(2, bob, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	accesses2 := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITAccess{})
@@ -105,7 +105,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	alice := AliceAccount()
 
 	// = committer.StateCache()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -119,12 +119,12 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	writeCache.Clear()
 
 	// = committer.StateCache()
-	if _, err := eth.CreateDefaultPaths(2, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(2, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
 
 	// writeCache = committer.StateCache()
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 	path2 := commutative.NewPath() // create a path
@@ -160,7 +160,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	sstore := statestore.NewStateStore(store.(*proxy.StorageProxy))
 	writeCache := sstore.StateCache
 
-	if _, err := eth.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -176,7 +176,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// committer.NewAccount(1, alice)
 
-	if _, err := eth.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(1, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	}
 
@@ -189,7 +189,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 
 	// writeCache = committer.StateCache()
 
-	if _, err := eth.CreateDefaultPaths(2, alice, writeCache); err != nil { // NewAccount account structure {
+	if _, err := ethadaptor.CreateDefaultPaths(2, alice, writeCache); err != nil { // NewAccount account structure {
 		t.Error(err)
 	} // NewAccount account structure {
 	path2 := commutative.NewPath() // create a path
@@ -279,7 +279,7 @@ func TestArbiWildcardConflict(t *testing.T) {
 	sstore := statestore.NewStateStore(store.(*stgproxy.StorageProxy))
 	writeCache := sstore.StateCache
 	alice := AliceAccount()
-	eth.CreateDefaultPaths(1, alice, writeCache)
+	ethadaptor.CreateDefaultPaths(1, alice, writeCache)
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/ele0", commutative.NewBoundedUint64(0, 100))
