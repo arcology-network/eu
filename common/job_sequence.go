@@ -33,6 +33,7 @@ import (
 	univalue "github.com/arcology-network/storage-committer/type/univalue"
 
 	evmcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core"
 	evmcore "github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
@@ -53,12 +54,21 @@ func (this *Job) execute(StdMsg *commontype.StandardMessage, config *Config, api
 	this.StdMsg = StdMsg
 	statedb := eth.NewImplStateDB(api)
 	statedb.PrepareFormer(this.StdMsg.TxHash, [32]byte{}, uint64(this.StdMsg.ID))
+	vmconfig := vm.Config{}
+	var txctx *vm.TxContext
+	if config.VMConfig.Tracer != nil {
+		vmconfig.Tracer = config.VMConfig.Tracer
+		vmconfig.NoBaseFee = config.VMConfig.NoBaseFee
+		ctx := core.NewEVMTxContext(StdMsg.Native)
+		txctx = &ctx
+	}
 
 	eu := NewEU(
 		config.ChainConfig,
-		vm.Config{},
+		vmconfig, //vm.Config{},
 		statedb,
 		api,
+		txctx,
 	)
 
 	receipt, evmResult, prechkErr :=

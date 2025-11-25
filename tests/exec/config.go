@@ -128,7 +128,7 @@ func NewTestEU(coinbase evmcommon.Address, genesisAccts ...evmcommon.Address) *T
 	config.Time = new(big.Int).SetUint64(10000000)
 
 	return &TestEu{
-		eu:          eucommon.NewEU(config.ChainConfig, *config.VMConfig, statedb, api),
+		eu:          eucommon.NewEU(config.ChainConfig, *config.VMConfig, statedb, api, nil),
 		config:      config,
 		store:       sstore,
 		committer:   committer,
@@ -246,7 +246,7 @@ func AliceCall(executor *eucommon.EU, contractAddress evmcommon.Address, funcNam
 	}, func(cache *cache.WriteCache) { cache.Clear() }))
 
 	statedb := ethimpl.NewImplStateDB(api)
-	eucommon.NewEU(config.ChainConfig, *config.VMConfig, statedb, api)
+	eucommon.NewEU(config.ChainConfig, *config.VMConfig, statedb, api, nil)
 
 	data := crypto.Keccak256([]byte(funcName))[:4]
 	msg := core.NewMessage(Alice, &contractAddress, 0, new(big.Int).SetUint64(amount), 1e15, new(big.Int).SetUint64(1), data, nil, false)

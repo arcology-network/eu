@@ -44,11 +44,14 @@ type EU struct {
 	VmConfig    vm.Config
 }
 
-func NewEU(chainConfig *params.ChainConfig, vmConfig vm.Config, statedb vm.StateDB, api intf.EthApiRouter) *EU {
+func NewEU(chainConfig *params.ChainConfig, vmConfig vm.Config, statedb vm.StateDB, api intf.EthApiRouter, txctx *vm.TxContext) *EU {
+	if txctx == nil {
+		txctx = &vm.TxContext{}
+	}
 	eu := &EU{
 		ChainConfig: chainConfig,
 		VmConfig:    vmConfig,
-		evm:         vm.NewEVM(vm.BlockContext{BlockNumber: new(big.Int).SetUint64(100000000)}, vm.TxContext{}, statedb, chainConfig, vmConfig),
+		evm:         vm.NewEVM(vm.BlockContext{BlockNumber: new(big.Int).SetUint64(100000000)}, *txctx, statedb, chainConfig, vmConfig),
 		statedb:     statedb,
 		api:         api,
 	}
