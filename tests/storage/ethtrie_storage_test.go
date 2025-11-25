@@ -143,7 +143,7 @@ func TestTrieUpdates(t *testing.T) {
 	committer.Import(statecell.StateCells(slice.Clone(trans)).To(statecell.IPTransition{}))
 
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	// ds := committer.Store().(*storage.StorageProxy).EthStore()
 	// if (len(ds.AccountDict())) != 3 {
@@ -176,7 +176,7 @@ func TestTrieUpdates(t *testing.T) {
 	// if len(ds.Dirties()) != 1 || ds.Dirties()[0].Address() != aliceAddr || !ds.Dirties()[0].StorageDirty {
 	// 	t.Error("Error: Dirties() should be 1, actual", len(ds.Dirties()))
 	// }
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	committer.SetStore(store)
 
@@ -233,7 +233,7 @@ func TestEthStorageConnection(t *testing.T) {
 	committer.Import(trans)
 
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	writeCache = cache.NewStateCache(store, 1, 1, statecommon.NewPlatform()) // Reset the write cache
 	v, _, err := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path))
@@ -347,7 +347,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	committer.Import(ts)
 
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	committer.SetStore(store)
 
 	// create a path
@@ -361,7 +361,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((&statecell.StateCells{}).Decode(statecell.StateCells(transitions).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", &commutative.Path{})
 	if v == nil {
@@ -378,7 +378,7 @@ func TestAddThenDeletePathInEthTrie(t *testing.T) {
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import((&statecell.StateCells{}).Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	if v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", new(commutative.Path)); v != nil {
 		t.Error("Error: The path should have been deleted")

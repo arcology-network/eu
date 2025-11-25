@@ -53,18 +53,18 @@ func TestEmptyNodeSet(t *testing.T) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	// acctTrans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.ITTransition{})
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{})
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{})
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 }
 
 func TestRecursiveDeletionSameBatch(t *testing.T) {
@@ -84,7 +84,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	committer.SetStore(store)
 	// create a path
 	path := commutative.NewPath()
@@ -97,7 +97,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	// committer.Import(committer.Decode(statecell.StateCells(addPath).Encode()))
 
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	committer.SetStore(store)
 
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", noncommutative.NewInt64(1))
@@ -108,7 +108,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(addTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v == nil {
 		t.Error("Error: Failed to read the key !")
@@ -131,7 +131,7 @@ func TestRecursiveDeletionSameBatch(t *testing.T) {
 	committer.Import(append(addTrans, deleteTrans...))
 
 	committer.Precommit([]uint64{1, 2})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	if v, _, _ := writeCache.Read(2, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.Int64)); v != nil {
 		t.Error("Error: Failed to delete the entry !")
@@ -154,7 +154,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	committer.SetStore(store)
 	// path := commutative.NewPath()
@@ -168,7 +168,7 @@ func TestApplyingTransitionsFromMulitpleBatches(t *testing.T) {
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	committer.SetStore(store)
 
@@ -200,7 +200,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(out).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	committer.SetStore(store)
 	// create a path
@@ -218,7 +218,7 @@ func TestRecursiveDeletionDifferentBatch(t *testing.T) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(out).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	writeCache = cache.NewStateCache(store, 1, 1, statecommon.NewPlatform())
 	_1, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/1", new(noncommutative.String))
@@ -271,7 +271,7 @@ func TestStateUpdate(t *testing.T) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(initTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	committer.SetStore(store)
 
 	tx0bytes, trans, err := Create_Ctrn_0(alice, store)
@@ -292,7 +292,7 @@ func TestStateUpdate(t *testing.T) {
 	committer.Import((append(tx0Out, tx1Out...)))
 
 	committer.Precommit([]uint64{0, 1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	//need to encode delta only now it encodes everything
 
 	if err := CheckPaths(alice, writeCache); err != nil {
@@ -330,7 +330,7 @@ func TestStateUpdate(t *testing.T) {
 	committer.Import(out)
 
 	committer.Precommit([]uint64{1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	if v, _, _ := writeCache.Read(stgcommon.SYSTEM, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", &commutative.Path{}); v != nil {
 		t.Error("Error: Should be gone already !")
@@ -357,7 +357,7 @@ func TestCommitUint256(b *testing.T) {
 	trans := statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
 	committer.Precommit([]uint64{0})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	writeCache = NewStateCacheWithAcounts(store)
 	delta := commutative.NewU256DeltaFromU64(uint64(11), true)
@@ -368,7 +368,7 @@ func TestCommitUint256(b *testing.T) {
 	trans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
 	committer.Precommit([]uint64{0})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	writeCache = NewStateCacheWithAcounts(store)
 	if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+RandomKey(0), new(commutative.U256)); v == nil ||
@@ -389,7 +389,7 @@ func TestCommitUint256(b *testing.T) {
 	trans = statecell.StateCells(slice.Clone(writeCache.Export(statecell.Sorter))).To(statecell.IPTransition{})
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters()).Import(trans)
 	committer.Precommit([]uint64{0})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	writeCache = NewStateCacheWithAcounts(store)
 	if v, _, err := writeCache.Read(0, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/alice-elem-"+RandomKey(0), new(commutative.U256)); v == nil ||

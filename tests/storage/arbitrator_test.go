@@ -53,7 +53,7 @@ func TestArbiCreateTwoAccountsNoConflict(t *testing.T) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	// Create Alice account
 	alice := AliceAccount()
@@ -99,7 +99,7 @@ func TestArbiCreateTwoAccounts1Conflict(t *testing.T) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	committer.SetStore(store)
 	alice := AliceAccount()
@@ -171,7 +171,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	committer.SetStore(store)
 
 	// committer.NewAccount(1, alice)
@@ -221,7 +221,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(out)
 	committer.Precommit(toCommit)
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	if _, err := writeCache.Write(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", noncommutative.NewString("committer-1-by-tx-3")); err != nil {
 		t.Error(err)
@@ -265,7 +265,7 @@ func TestArbiTwoTxModifyTheSameAccount(t *testing.T) {
 	// committer.Import(committer.Decode(statecell.StateCells(append(transitions3, transitions4...)).Encode()))
 
 	committer.Precommit(toCommit)
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	committer.SetStore(store)
 
 	v, _, _ := writeCache.Read(3, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-2/elem-1", new(noncommutative.String))
@@ -289,7 +289,7 @@ func TestArbiWildcardConflict(t *testing.T) {
 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(accesses1)
 	committer.Precommit([]uint64{1})
-	committer.Commit(1)
+	committer.DebugCommit(1)
 	writeCache.Clear()
 
 	// this should conflict

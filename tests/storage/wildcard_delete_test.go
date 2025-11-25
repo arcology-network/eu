@@ -70,7 +70,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
-	committer.Commit(1)
+	committer.DebugCommit(1)
 
 	v, _, _ := writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/ctrn-0/", commutative.NewPath())
 	elems := v.(*softdeltaset.DeltaSet[string]).Elements()
@@ -131,7 +131,7 @@ func TestAddThenDeletePathAfterCommit(t *testing.T) {
 	committer = statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
-	committer.Commit(1)
+	committer.DebugCommit(1)
 
 	v, _, _ = writeCache.Read(1, "blcc://eth1.0/account/"+alice+"/storage/container/", commutative.NewPath())
 	elems = v.(*softdeltaset.DeltaSet[string]).Elements()
@@ -145,7 +145,7 @@ func CommitToDBs(writeCache *cache.StateCache, store *stgproxy.StorageProxy, sst
 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(acctTrans)
 	committer.Precommit([]uint64{1})
-	committer.Commit(1)
+	committer.DebugCommit(1)
 	writeCache.Clear()
 	return acctTrans
 }

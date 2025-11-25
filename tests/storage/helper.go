@@ -53,7 +53,7 @@ func GenerateDB(addr [20]uint8) (string, *cache.StateCache, stgcommon.ReadOnlySt
 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	return acct, writeCache, store, nil
 }

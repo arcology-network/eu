@@ -84,7 +84,7 @@ func BenchmarkSingleAccountCommit(b *testing.B) {
 	committer := statecommitter.NewStateCommitter(store, sstore.GetWriters())
 	committer.Import(transitions)
 	committer.Precommit([]uint64{stgcommon.SYSTEM, 0, 1})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	fmt.Println("Init committer= :", time.Since(t0), "with initial transitions:", len(transitions))
 }
 
@@ -151,7 +151,7 @@ func BenchmarkMultipleAccountCommit(b *testing.B) {
 	fmt.Println("Root: ", sstore.Backend().EthStore().LatestWorldTrieRoot())
 
 	t0 = time.Now()
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	fmt.Println("Commit:", time.Since(t0))
 
 	t0 = time.Now()
@@ -184,7 +184,7 @@ func BenchmarkAddThenDelete(b *testing.B) {
 	committer.Import(trans)
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	alice := AliceAccount()
 	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -229,7 +229,7 @@ func BenchmarkAddThenPop(b *testing.B) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(trans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	alice := AliceAccount()
 	if _, err := ethadaptor.CreateDefaultPaths(stgcommon.SYSTEM, alice, writeCache); err != nil { // NewAccount account structure {
@@ -347,7 +347,7 @@ func BenchmarkEncodeTransitions(b *testing.B) {
 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 
 	path := commutative.NewPath()
 	writeCache.Write(1, "blcc://eth1.0/account/"+alice+"/storage/ctrn-0/", path)
@@ -422,7 +422,7 @@ func BenchmarkAccountCreationWithMerkle(b *testing.B) {
 	committer.Import(acctTrans)
 
 	committer.Precommit([]uint64{stgcommon.SYSTEM})
-	committer.Commit(10)
+	committer.DebugCommit(10)
 	// errs := committer.AllInOneCommit(acctTrans, []uint64{0})
 
 	// if len(errs) > 0 {

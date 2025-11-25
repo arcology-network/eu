@@ -45,7 +45,7 @@ package stgtest
 // 		persistentDB.Set(fmt.Sprint(i), stgtypecommonCodec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 // 	}
 // 	serverDataStore.Precommit(keys[:4], values[:4]) // 4 in the server side cache
-// 	serverDataStore.Commit()
+// 	serverDataStore.DebugCommit()
 
 // 	// Simulated Client
 // 	keys1 := []string{}
@@ -62,7 +62,7 @@ package stgtest
 // 	clientCachePolicy := storage.NewCachePolicy(1, 0.8)
 // 	clientDataStore := storage.NewDataStore( clientCachePolicy, readonlyClientProxy, placeholderEncoder, placeholderDecoder)
 // 	clientDataStore.Precommit(keys1[:2], values1[:2]) // 2 in the client side cache
-// 	clientDataStore.Commit()
+// 	clientDataStore.DebugCommit()
 
 // 	// Retrieve two entries from the client cache
 // 	v0, err := clientDataStore.Retrieve(keys1[0])
@@ -105,7 +105,7 @@ package stgtest
 // 		persistentDB.Set(fmt.Sprint(i), stgtypecommonCodec{}.Encode(noncommutative.NewInt64(int64(i)))) // save to the DB directly
 // 	}
 // 	serverDataStore.Precommit(keys[:4], values[:4]) // 4 in the server side cache
-// 	serverDataStore.Commit()
+// 	serverDataStore.DebugCommit()
 
 // 	server := storage.NewReadonlyServer("", stgtypecommonCodec{}.Encode, stgtypecommonCodec{}.Decode, serverDataStore)
 // 	go func() {
@@ -128,7 +128,7 @@ package stgtest
 // 	clientCachePolicy := storage.NewCachePolicy(1, 0.8)
 // 	clientDataStore := storage.NewDataStore( clientCachePolicy, readonlyClientProxy, proxyEncoder, proxyDecoder)
 // 	clientDataStore.Precommit(keys1[:2], values1[:2]) // 2 in the client side cache
-// 	clientDataStore.Commit()
+// 	clientDataStore.DebugCommit()
 
 // 	// Retrieve two entries from the client cache
 // 	v0, err := clientDataStore.Retrieve(keys1[0])

@@ -49,7 +49,7 @@ package stgtest
 // 	committer := statecommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 // 	committer.Import(acctTrans)
 // 	committer.Precommit([]uint32{stgcomm.SYSTEM})
-// 	committer.Commit(stgcomm.SYSTEM)
+// 	committer.DebugCommit(stgcomm.SYSTEM)
 
 // 	if _, err := sstore.Write(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), noncommutative.NewBytes([]byte{1, 2, 3})); err != nil {
 // 		t.Error(err)
@@ -66,7 +66,7 @@ package stgtest
 // 	committer = statecommitter.NewStateCommitter(sstore.ReadOnlyStore(), sstore.GetWriters())
 // 	committer.Import(acctTrans)
 // 	committer.Precommit([]uint32{1})
-// 	committer.Commit(2)
+// 	committer.DebugCommit(2)
 
 // 	// sstore1 := statestore.NewStateStore(stgproxy.NewLevelDBStoreProxy(dbpath))
 

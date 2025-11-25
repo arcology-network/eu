@@ -67,7 +67,7 @@ func TestSequence(t *testing.T) {
 	// acctTrans := statecell.StateCells(slice.Clone(accesses)).To(committer.IPTransition{})
 	// committer := stgcomm.NewStateCommitter(testEu.store)
 	// committer.Import(acctTrans).Precommit([]uint32{1})
-	// committer.Commit(20)
+	// committer.DebugCommit(20)
 	// committer.Clear()
 
 	// Prepare the messages for the contract calls
@@ -238,7 +238,7 @@ func TestMultiCummutiaves(t *testing.T) {
 	wcache := api.StateCache().(*cache.StateCache)
 	testEu.store.(*statestore.StateStore).StateCache.Insert(wcache.Export())
 	tests.FlushGeneration(testEu.store.(*statestore.StateStore))
-	testEu.store.(*statestore.StateStore).Commit(10)
+	testEu.store.(*statestore.StateStore).DebugCommit(10)
 	testEu.store.(*statestore.StateStore).Clear()
 
 	// Prepare the messages for the contract calls

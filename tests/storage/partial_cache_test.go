@@ -46,7 +46,7 @@ package stgtest
 // 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 //
 // 	committer.Precommit([]uint32{stgcommon.SYSTEM})
-// committer.Commit(10)
+// committer.DebugCommit(10)
 
 // 	/* Filter persistent data source */
 // 	excludeMemDB := func(db storage.PersistentStorageInterface) bool { // Do not access MemDB
@@ -60,7 +60,7 @@ package stgtest
 // 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells), true, excludeMemDB) // The changes will be discarded.
 //
 // 	committer.Precommit([]uint32{1})
-// committer.Commit(10)
+// committer.DebugCommit(10)
 
 // 	// if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 	// 	t.Error("Error: The entry shouldn't be in the DB !")
@@ -76,7 +76,7 @@ package stgtest
 // 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells)) // This should take effect
 //
 // 	committer.Precommit([]uint32{1})
-// committer.Commit(10)
+// committer.DebugCommit(10)
 
 // 	if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 		t.Error("Error: The entry shouldn't be in the DB !")
@@ -109,7 +109,7 @@ package stgtest
 // 	committer.Import(statecell.StateCells{}.Decode(statecell.StateCells(acctTrans).Encode()).(statecell.StateCells))
 //
 // 	committer.Precommit([]uint32{stgcommon.SYSTEM})
-// committer.Commit(10)
+// committer.DebugCommit(10)
 
 // 	if _, err := committer.Write(1, "blcc://eth1.0/account/"+alice+"/storage/1234", noncommutative.NewString("9999")); err != nil {
 // 		t.Error(err)
@@ -128,7 +128,7 @@ package stgtest
 // 	committer.Import(out, true, excludeMemDB) // The changes will be discarded.
 //
 // 	committer.Precommit([]uint32{1})
-// committer.Commit(10)
+// committer.DebugCommit(10)
 
 // 	if v, _ := committer.Read(2, "blcc://eth1.0/account/"+alice+"/storage/1234"); v == nil {
 // 		t.Error("Error: The entry shouldn't be in the DB as the persistent DB has been excluded !")
