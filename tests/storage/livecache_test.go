@@ -57,14 +57,14 @@ func TestLiveCache(t *testing.T) {
 
 	// outV, _, _ := statecell.NewStateCell(1, "blcc://eth1.0/account/"+alice+"/storage/native/"+RandomKey(0), new(noncommutative.Bytes))
 	liveCache := cache.NewLiveCache(151)
-	liveCache.DebugCommit([]*statecell.StateCell{metaIn, u256In, bytesIn}, 1)
+	liveCache.Commit([]*statecell.StateCell{metaIn, u256In, bytesIn}, 1)
 	liveCache.Print()
 
 	bytes = noncommutative.NewBytes([]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 	bytesIn = statecell.NewStateCell(1, "blcc://eth1.0/account/"+alice+"/storage/bytes", 3, 4, 5, bytes, nil)
 	fmt.Println("bytesIn size: ", bytesIn.Value().(crdtcommon.Type).MemSize())
 
-	liveCache.DebugCommit([]*statecell.StateCell{bytesIn}, 2)
+	liveCache.Commit([]*statecell.StateCell{bytesIn}, 2)
 	liveCache.Print()
 }
 
@@ -94,7 +94,7 @@ func BenchmarkLiveCache(b *testing.B) {
 
 	liveCache := cache.NewLiveCache(1280)
 	t0 := time.Now()
-	liveCache.DebugCommit(trans, 1)
+	liveCache.Commit(trans, 1)
 	fmt.Println("liveCache Commit time: ", liveCache.Length(), liveCache.Size(), time.Since(t0))
 
 	// if liveCache.Length() != 11 || liveCache.Size() != 194 {
